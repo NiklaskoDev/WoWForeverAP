@@ -77,6 +77,11 @@ ns.locales.deDE = {
     CARE_NO = "Abbrechen",
     CARE_USED = "Hilfspaket benutzt. %d übrig.",
 
+    -- locked zone and profession warnings (honor system)
+    ZONE_LOCKED = "%s ist gesperrt: nur durchreisen - keine Quests, keine Kills für Erfahrung, kein Sammeln oder Looten.",
+    PROFESSION_LOCKED = "%s ist gesperrt: Erlerne den Beruf nicht, bevor sein fortschreitendes Item angekommen ist.",
+    PROFESSION_ABOVE_CAP = "%s-Fertigkeit %d liegt über deiner freigeschalteten Stufe (%d). Warte auf das nächste fortschreitende Item.",
+
     -- capture (developer tool)
     CAPTURE_ON = "Capture ist an: Zonen und abgegebene Quests werden für die Datenprüfung protokolliert.",
     CAPTURE_OFF = "Capture ist aus.",

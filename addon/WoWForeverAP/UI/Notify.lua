@@ -7,6 +7,8 @@ ns.Notify = Notify
 Notify.PREFIX = "|cffd4a017[AP]|r"
 Notify.MAX_NEW_ITEM_LINES = 5
 
+local ALERT_COLOR = { r = 1, g = 0.1, b = 0.1 }
+
 --- Where text goes; replaced in specs.
 function Notify.out(text)
     print(text)
@@ -23,6 +25,27 @@ function Notify.say(key, ...)
         text = text:format(...)
     end
     Notify.print(text)
+end
+
+--- Shows `text` on screen (honor-system warning) and in chat. On screen it uses the raid warning frame, the way
+--- the 12.x UI source does (RaidWarningUtil.AddMessage; RaidNotice_AddMessage is its deprecated predecessor),
+--- then the error frame. Returns which one was used: "raidwarning", "raidnotice", "errorframe" or "chat".
+function Notify.alert(text)
+    local used = "chat"
+    if RaidWarningUtil and type(RaidWarningUtil.AddMessage) == "function" then
+        if pcall(RaidWarningUtil.AddMessage, text, ALERT_COLOR) then
+            used = "raidwarning"
+        end
+    elseif type(RaidNotice_AddMessage) == "function" and RaidWarningFrame then
+        if pcall(RaidNotice_AddMessage, RaidWarningFrame, text, ALERT_COLOR) then
+            used = "raidnotice"
+        end
+    end
+    if used == "chat" and UIErrorsFrame and pcall(UIErrorsFrame.AddMessage, UIErrorsFrame, text, 1, 0.1, 0.1, 1) then
+        used = "errorframe"
+    end
+    Notify.print(text)
+    return used
 end
 
 --- Reminder that checks only reach the server after the game wrote its SavedVariables.

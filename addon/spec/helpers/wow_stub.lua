@@ -6,7 +6,7 @@ local FAKE_GLOBALS = {
     "GetLocale", "time", "UnitGUID", "UnitName", "UnitLevel", "UnitFactionGroup", "UnitClass", "GetBuildInfo",
     "CreateFrame", "geterrorhandler", "StaticPopup_Show", "StaticPopupDialogs", "SlashCmdList", "SLASH_WFAP1",
     "C_Map", "C_QuestLog", "C_TradeSkillUI", "GetProfessions", "GetProfessionInfo",
-    "Enum", "C_EventUtils", "UIErrorsFrame",
+    "Enum", "C_EventUtils", "UIErrorsFrame", "RaidWarningUtil", "RaidNotice_AddMessage", "RaidWarningFrame",
     "WoWForeverAP_DB", "WoWForeverAP_Inbox", "WoWForeverAP_OnCompartmentClick",
 }
 
@@ -61,7 +61,7 @@ function Stub.install()
     _G.Enum = { PlayerInteractionType = {
         TradePartner = 1, Merchant = 5, Banker = 8, GuildBanker = 10, MailInfo = 17, Auctioneer = 21,
         AccountBanker = 68,
-    } }
+    }, UIMapType = { Cosmic = 0, World = 1, Continent = 2, Zone = 3, Dungeon = 4, Micro = 5, Orphan = 6 } }
     _G.UIErrorsFrame = {
         AddMessage = function(_, text, red, green, blue, alpha)
             game.uiErrors[#game.uiErrors + 1] = { text = text, color = { red, green, blue, alpha } }

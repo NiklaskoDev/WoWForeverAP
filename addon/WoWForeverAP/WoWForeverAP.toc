@@ -26,5 +26,6 @@ Detect\Level.lua
 Detect\Professions.lua
 Detect\Capture.lua
 Rules\Economy.lua
+Rules\Warnings.lua
 Commands.lua
 Main.lua

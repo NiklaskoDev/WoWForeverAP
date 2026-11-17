@@ -77,6 +77,11 @@ ns.locales.enUS = {
     CARE_NO = "Cancel",
     CARE_USED = "Care Package used. %d left.",
 
+    -- locked zone and profession warnings (honor system)
+    ZONE_LOCKED = "%s is locked: travel only - no quests, kills for XP, gathering or looting.",
+    PROFESSION_LOCKED = "%s is locked: do not learn it before its Progressive item has arrived.",
+    PROFESSION_ABOVE_CAP = "%s skill %d is above your unlocked tier (%d). Wait for the next Progressive item.",
+
     -- capture (developer tool)
     CAPTURE_ON = "Capture is on: zones and turned-in quests are logged for the data review.",
     CAPTURE_OFF = "Capture is off.",

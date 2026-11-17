@@ -19,6 +19,16 @@ function Tracker.linkedSlot(db, inbox, guid)
     return character, character.slotKey, slot
 end
 
+--- The same for the logged-in character: character, slot key and inbox slot, nil unless it is linked and the
+--- inbox holds its slot.
+function Tracker.playerContext()
+    local guid = ns.ready and UnitGUID("player")
+    if not guid then
+        return nil
+    end
+    return Tracker.linkedSlot(ns.db, ns.Inbox.current(), guid)
+end
+
 --- Records `locationId` for the linked character `guid` when the seed contains it and the server has not
 --- checked it yet. Returns true when a new outbox entry was added.
 function Tracker.record(db, inbox, guid, locationId, now)
