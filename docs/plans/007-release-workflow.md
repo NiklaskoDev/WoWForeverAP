@@ -1,6 +1,6 @@
 # 007 — Release workflow that builds, verifies and attaches the deliverables
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: none — CI/tooling only (`docs/ai/versioning.md`: "Docs/CI/test-only changes need no release"); takes effect with the first release the programmer orders. No tag is pushed by this plan.
 
@@ -113,6 +113,7 @@ None.
 - `ci.yml` triggers still include `workflow_call`.
 
 ## Decisions for the programmer
+Resolved 2026-11-17: the programmer accepted every recommendation below (D1 workflow_dispatch dry run + local script; D2 attach SHA256SUMS; D3 read-only build job + write-only publish job via upload/download-artifact; D4 fail a final release without its CHANGELOG section; D5 delete the Docker step and `packages: write`).
 - D1 Dry run on GitHub — (a) add `workflow_dispatch`: runs test, build, verify and uploads the files as a 7-day workflow artifact, never publishes; usable only after merge to `main` (b) local `scripts/release_dry_run.sh` only. Recommendation: (a) plus the script; it proves the workflow on GitHub's runner before the first real tag.
 - D2 Checksums — (a) attach `SHA256SUMS` (stdlib `hashlib`) (b) none (c) additionally GitHub build-provenance attestations (`actions/attest-build-provenance`, needs `id-token: write` and `attestations: write`). Recommendation: (a); (c) adds write scopes and a new action for little gain now.
 - D3 Job split — (a) read-only `build` and write-only `publish` that runs no repo code, using `actions/upload-artifact@v4` / `actions/download-artifact@v4` (first-party GitHub actions, new to this repo) (b) one job with `contents: write` that builds and publishes (no new actions, but the write token is live while repo Python runs). Recommendation: (a).
