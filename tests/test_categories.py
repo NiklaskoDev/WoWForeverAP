@@ -232,12 +232,28 @@ class WoWWorldBase(WorldTestBase):
 
 
 class TestDefaults(WoWWorldBase):
-    def test_default_options_turn_boss_and_discovery_on_and_reputation_and_pvp_off(self):
+    def test_default_options_turn_only_discovery_on_with_a_weight_of_20(self):
         self.assertEqual(options.category_switches(self.world.options),
-                         {"boss": True, "discovery": True, "reputation": False, "pvp": False})
-        self.assertEqual(options.category_weights(self.world.options), {"boss": 100, "discovery": 100})
-        for _, weight in options.CATEGORY_OPTIONS.values():
-            self.assertEqual(getattr(self.world.options, weight).value, 100)
+                         {"boss": False, "discovery": True, "reputation": False, "pvp": False})
+        self.assertEqual(options.category_weights(self.world.options), {"discovery": 20})
+        for category, (_, weight) in options.CATEGORY_OPTIONS.items():
+            self.assertEqual(getattr(self.world.options, weight).value, 20 if category == "discovery" else 100)
+
+    def test_option_classes_carry_the_defaults(self):
+        self.assertFalse(options.BossChecks.default)
+        self.assertTrue(options.DiscoveryChecks.default)
+        self.assertFalse(options.ReputationChecks.default)
+        self.assertFalse(options.PvpChecks.default)
+        self.assertEqual(options.DiscoveryWeight.default, 20)
+        for weight in (options.BossWeight, options.ReputationWeight, options.PvpWeight):
+            self.assertEqual(weight.default, 100)
+
+    def test_default_seed_has_no_boss_locations_and_a_fifth_of_the_eligible_discoveries(self):
+        self.assertNotIn(LocationKind.BOSS, self.kinds())
+        zones = {zone.ui_map_id for zone in self.world.allowed_zones}
+        eligible = len([area for area in load_game_data().discoveries if area.ui_map_id in zones])
+        self.assertEqual(self.kinds()[LocationKind.DISCOVERY], (eligible * 20 + 50) // 100)
+        self.assertAlmostEqual(self.kinds()[LocationKind.DISCOVERY] / eligible, 0.2, delta=0.01)
 
     def test_default_seed_holds_discoveries_but_neither_reputation_nor_pvp(self):
         kinds = self.kinds()
@@ -258,7 +274,7 @@ class TestDefaults(WoWWorldBase):
 
     def test_slot_data_carries_the_category_switches_and_no_legacy_key(self):
         self.assertEqual(self.world.fill_slot_data()["categories"],
-                         {"boss": True, "discovery": True, "reputation": False, "pvp": False})
+                         {"boss": False, "discovery": True, "reputation": False, "pvp": False})
 
 
 class TestOptions(WoWWorldBase):
@@ -344,7 +360,7 @@ class FixtureWorld(WorldTestBase):
     """A world on the fixture data: bosses in a dungeon, a raid and a level-gated dungeon, all categories on."""
     game = GAME
     auto_construct = False
-    options = {"faction": "alliance", "start_zone": "elwynn_forest", **ALL_ON}
+    options = {"faction": "alliance", "start_zone": "elwynn_forest", **ALL_ON, "discovery_weight": 100}
 
     def setUp(self) -> None:
         with mock.patch.object(wow_world, "load_game_data", return_value=fixture_data()):

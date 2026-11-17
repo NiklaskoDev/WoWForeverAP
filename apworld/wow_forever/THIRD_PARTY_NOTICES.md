@@ -35,4 +35,5 @@ SOFTWARE.
 ## Others
 
 The WoW-Pro Guides (CC BY-NC-ND 3.0, used only as an id lookup, no text copied) and WoW_ClassicUIResources by Hoizame
-are credited in the repository `README.md`, section "Data and sources".
+(no licence file; only Blizzard ids and names are taken from it) are credited in the repository `README.md`,
+section "Data and sources".

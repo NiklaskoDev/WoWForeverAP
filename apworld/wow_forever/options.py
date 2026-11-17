@@ -116,8 +116,10 @@ class CarePackageStacks(Range):
     default = 5
 
 
-class BossChecks(DefaultOnToggle):
-    """Killing a dungeon boss is a check, for dungeons whose entrance zone is in the seed."""
+class BossChecks(Toggle):
+    """Killing a dungeon boss is a check, for dungeons whose entrance zone is in the seed. Off by default: the
+    boss encounter ids have to be captured in the live Forever client first, so with the current data this
+    category has no checks."""
     display_name = "Boss Checks"
 
 
@@ -138,11 +140,11 @@ class DiscoveryChecks(DefaultOnToggle):
 
 class DiscoveryWeight(Range):
     """Percentage of the eligible area discoveries that are included in the seed (at least one when any are
-    eligible). There are many of them: lower this for a shorter seed."""
+    eligible). There are many of them (about 500 per faction), so only a fifth is included by default."""
     display_name = "Discovery Weight"
     range_start = 1
     range_end = 100
-    default = 100
+    default = 20
 
 
 class ReputationChecks(Toggle):

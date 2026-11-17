@@ -42,7 +42,9 @@ Game data lives in `apworld/wow_forever/data/*.csv`; each file names its sources
   (quest ids, quest titles and prerequisite chains) and for the Zephra's Isle level range. No guide text is
   copied. Credit to the WoW-Pro Guides authors.
 - **WoW_ClassicUIResources** ([Hoizame/WoW_ClassicUIResources](https://github.com/Hoizame/WoW_ClassicUIResources)):
-  Classic client UiMap and SkillLine tables, the source of zone and profession ids and names.
+  Classic client UiMap, SkillLine, Map, Faction and BattlemasterList tables, the source of zone, profession,
+  instance, faction and battleground ids and names. The repository has no licence file; only Blizzard's ids and
+  names are taken from it, no code or text. Credit to its author.
 - **AllTheThings** ([ATTWoWAddon/AllTheThings](https://github.com/ATTWoWAddon/AllTheThings)): Forever map ids
   (used to cross-check zone ids, and for Zephra's Isle).
 - **Extra check categories (plan 004).** `instances.csv`: instance ids and names from the Classic Map table

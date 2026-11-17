@@ -26,20 +26,20 @@ on the way up (levels 1-5, 6-10, 11-15, and so on), so a gap in the zones you ow
 
 ## Extra check categories
 
-Four optional categories add more checks. Each has an on/off option and a weight (1-100, default 100): the
+Four optional categories add more checks. Each has an on/off option and a weight (1-100, default 100, except `discovery_weight`: 20): the
 weight is the percentage of the category's eligible checks that are put into your seed, drawn with the seed's
 random generator (at least one when any are eligible). Rows of a later content release and rows of the other
 faction are never eligible.
 
 | Category | Options (default) | A check is... |
 |---|---|---|
-| Boss | `boss_checks` (on), `boss_weight` | killing a dungeon boss (`ENCOUNTER_END` with a kill) |
-| Discovery | `discovery_checks` (on), `discovery_weight` | exploring a map area of a zone, for example "Discover Elwynn Forest: Crystal Lake" |
+| Boss | `boss_checks` (off), `boss_weight` | killing a dungeon boss (`ENCOUNTER_END` with a kill) |
+| Discovery | `discovery_checks` (on), `discovery_weight` (20) | exploring a map area of a zone, for example "Discover Elwynn Forest: Crystal Lake" |
 | Reputation | `reputation_checks` (off), `reputation_weight` | reaching Friendly, Honored, Revered or Exalted with a city or Steamwheedle Cartel faction |
 | PvP | `pvp_checks` (off), `pvp_weight` | 100, 250, 500 and 1000 honorable kills, and a first win in Warsong Gulch, Arathi Basin and Alterac Valley |
 
-- **Discoveries are many** (about 500 for a seed with every zone of your faction). Lower `discovery_weight` for a
-  shorter seed. Unlike reputation and PvP, an area you explored **before** linking still counts: the next time you
+- **Discoveries are many** (about 500 for a seed with every zone of your faction), so by default only 20% of them
+  are included. Raise or lower `discovery_weight` to taste. Unlike reputation and PvP, an area you explored **before** linking still counts: the next time you
   stand in it the check is recorded, because the game does not say when an area was discovered.
 - **Bosses:** a dungeon belongs to the zone with its entrance, so its bosses need that zone's unlock item and the
   dungeon's level; there are no separate dungeon unlock items. Raids (not part of the first release) would also
