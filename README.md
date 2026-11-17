@@ -75,6 +75,19 @@ Client facts (D2):
   `AccountBanker`; `C_EventUtils.IsEventValid`; `UIErrorsFrame:AddMessage`. When the enum or the event is
   missing the addon falls back to `AUCTION_HOUSE_SHOW`, `MAIL_SHOW`, `TRADE_SHOW` and `GUILDBANKFRAME_OPENED`
   (no fallback exists for the account bank) and skips an event the client refuses to register.
+- **In-game UI (plan 003).** Checked against the same 12.x mirror, unconfirmed for the Forever client:
+  `ButtonFrameTemplate`, `PanelTabButtonTemplate`, `WowScrollBoxList`, `MinimalScrollBar`, `UIPanelButtonTemplate`,
+  `CreateScrollBoxListLinearView`, `ScrollUtil.InitScrollBoxListWithScrollBar`, `CreateDataProvider`,
+  `PanelTemplates_SetNumTabs` / `PanelTemplates_SetTab`, `ButtonFrameTemplate_HidePortrait` (a missing template
+  makes `/wfap` print one chat line instead of opening the window); `WorldMapFrame:AddDataProvider` with
+  `MapCanvasDataProviderMixin` and `RegisterDataProviderOnUpdate`, `C_Map.GetMapChildrenInfo`,
+  `C_Map.GetMapRectOnMap` (returns left, right, top, bottom), `Enum.UIMapType` (the overlay is skipped when
+  one is missing); `RaidWarningUtil.AddMessage` (falls back to the deprecated `RaidNotice_AddMessage`, then
+  `UIErrorsFrame`, then chat); `Settings.RegisterVerticalLayoutCategory` / `RegisterProxySetting` /
+  `CreateCheckbox` / `RegisterAddOnCategory` / `OpenToCategory` (without them the options stay at their
+  defaults); the events `ZONE_CHANGED_NEW_AREA` and `PLAYER_ENTERING_WORLD`. Also unconfirmed: how the map
+  tints look (zone rectangles overlap at borders, frame level above the map art and below pins) and that the
+  window may open in combat (it has no protected frames).
 - **`## AddonCompartmentFunc`** and the `StaticPopup` link prompt (button3 / `OnAlt`) are Mainline features.
 
 Provisional data files:

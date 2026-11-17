@@ -98,6 +98,34 @@ function Frame:GetID()
     return self.id
 end
 
+function Frame:SetSize(width, height)
+    self.width, self.height = width, height
+end
+
+function Frame:GetWidth()
+    return self.width or 0
+end
+
+function Frame:GetHeight()
+    return self.height or 0
+end
+
+function Frame:SetColorTexture(red, green, blue, alpha)
+    self.color = { red, green, blue, alpha }
+end
+
+function Frame:SetFrameLevel(level)
+    self.level = level
+end
+
+function Frame:GetFrameLevel()
+    return self.level or 1
+end
+
+function Frame:EnableMouse(enabled)
+    self.mouseEnabled = enabled
+end
+
 function Frame:IsTruncated()
     return self.truncated == true
 end
@@ -168,9 +196,10 @@ function Stub.install()
     game.tooltip = { lines = {}, shown = false }
     _G.GameTooltip = {
         SetOwner = function(_, owner) game.tooltip.owner = owner end,
+        IsOwned = function(_, frame) return game.tooltip.owner == frame end,
         AddLine = function(_, text) game.tooltip.lines[#game.tooltip.lines + 1] = text end,
         Show = function() game.tooltip.shown = true end,
-        Hide = function() game.tooltip.shown = false end,
+        Hide = function() game.tooltip.shown, game.tooltip.lines = false, {} end,
     }
     -- Blizzard's panel, tab and scroll helpers, as far as the addon calls them.
     _G.ButtonFrameTemplate_HidePortrait = function(target) target.portraitHidden = true end

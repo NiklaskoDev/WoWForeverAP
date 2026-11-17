@@ -32,6 +32,8 @@ Style.FONTS = {
     meta = "GameFontHighlightSmall",
 }
 
+Style.BANNER_ALPHA = 0.85 -- the "Locked" banner on a zone map is more opaque than the map tint, so its text reads
+
 Style.SPACING = { xs = 4, sm = 8, md = 12, lg = 16, xl = 24 }
 Style.ROW_HEIGHT = 20
 Style.WINDOW = { width = 420, height = 520 }

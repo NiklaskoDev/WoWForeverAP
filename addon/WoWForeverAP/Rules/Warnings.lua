@@ -127,12 +127,6 @@ function Warnings.onSkillLinesChanged()
     end
 end
 
---- Forgets which zone the player was in and which warnings were shown (a new session, or a spec).
-function Warnings.reset()
-    lastZone = nil
-    reported = { learned = {}, rank = {} }
-end
-
 --- Registers the events; returns the names that registered (a client that refuses one just skips it).
 function Warnings.register()
     local wanted = {
