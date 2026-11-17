@@ -4,6 +4,8 @@ Versions follow `{major}.{minor}.{hotfix}[-prN]` — see `docs/ai/versioning.md`
 Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-11-17
 ### Added
 - Archipelago apworld "World of Warcraft Forever": zone unlocks and progressive profession tiers as items; quest turn-ins, level milestones and profession-skill milestones as locations; goal is reaching level 60. IDs are derived from Blizzard ids, rows carry a content release, options cover faction, start zone, content release, professions and milestone steps. Quest data is unconfirmed until checked in the live client.
 - Archipelago client (launcher component) that reads the addon's SavedVariables and writes only the inbox addon file; commands `/wowpath`, `/sync`, `/status`.
@@ -25,7 +27,3 @@ Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ### Fixed
 - Security workflow: the secret scan (gitleaks) has `pull-requests: read`, so it no longer fails with 403 on pull requests.
-
-## [0.1.0] - YYYY-MM-DD
-### Added
-- Initial version.

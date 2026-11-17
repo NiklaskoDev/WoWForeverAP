@@ -1,6 +1,6 @@
 # 007 — Release workflow that builds, verifies and attaches the deliverables
 
-Status: approved
+Status: implemented
 Type: feature
 Version impact: none — CI/tooling only (`docs/ai/versioning.md`: "Docs/CI/test-only changes need no release"); takes effect with the first release the programmer orders. No tag is pushed by this plan.
 
