@@ -38,7 +38,9 @@ the addon asks whether to link the character. Otherwise use:
 
 - `/wfap link` to link to the only slot, or `/wfap link <number>` to pick one from the list,
 - `/wfap unlink` to remove the link,
-- `/wfap status` for the linked slot, received items and open checks.
+- `/wfap status` for the linked slot, received items and open checks,
+- `/wfap rules` for the economy rules of the slot (Auction House, trading, mail, shared banks, boosts),
+- `/wfap care` for your Care Packages, and `/wfap care use` to spend one.
 
 A character must be of the faction of the slot. If it is above level 1 the addon warns you: progress made
 before linking does not count. Link as many characters as you like to the same slot.
@@ -59,7 +61,8 @@ Checks are only stored when the game writes its saved data. If the game crashes,
 
 Locked zones and locked profession tiers are an honor system, see the game guide. Passing through a locked
 zone is fine; questing, killing for experience, gathering and looting there is not. Do not train a profession
-tier you have not unlocked.
+tier you have not unlocked. The economy rules work the same way: the addon warns when you open a window your
+seed does not allow, but it cannot stop you.
 
 ## Client commands
 

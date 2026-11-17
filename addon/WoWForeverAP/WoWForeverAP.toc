@@ -24,5 +24,6 @@ Detect\Quests.lua
 Detect\Level.lua
 Detect\Professions.lua
 Detect\Capture.lua
+Rules\Economy.lua
 Commands.lua
 Main.lua

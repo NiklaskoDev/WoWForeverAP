@@ -80,6 +80,8 @@ function Names.item(itemId, tier)
         return ns.L.ITEM_PROFESSION_TIER:format(Names.profession(native), tier or 1)
     elseif category == ns.Ids.ItemCat.FILLER then
         return fillerName(native)
+    elseif category == ns.Ids.ItemCat.CARE_PACKAGE then
+        return ns.L.ITEM_CARE_PACKAGE
     end
     return ns.L.ITEM_UNKNOWN:format(tostring(itemId))
 end

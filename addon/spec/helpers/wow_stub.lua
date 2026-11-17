@@ -6,6 +6,7 @@ local FAKE_GLOBALS = {
     "GetLocale", "time", "UnitGUID", "UnitName", "UnitLevel", "UnitFactionGroup", "UnitClass", "GetBuildInfo",
     "CreateFrame", "geterrorhandler", "StaticPopup_Show", "StaticPopupDialogs", "SlashCmdList", "SLASH_WFAP1",
     "C_Map", "C_QuestLog", "C_TradeSkillUI", "GetProfessions", "GetProfessionInfo",
+    "Enum", "C_EventUtils", "UIErrorsFrame",
     "WoWForeverAP_DB", "WoWForeverAP_Inbox", "WoWForeverAP_OnCompartmentClick",
 }
 
@@ -35,6 +36,7 @@ function Stub.install()
         level = 1,
         frames = {},
         popups = {},
+        uiErrors = {}, -- messages shown through UIErrorsFrame:AddMessage
         errors = {},
         chat = {},
     }
@@ -55,6 +57,16 @@ function Stub.install()
         game.popups[#game.popups + 1] = { which = which, arg1 = arg1, arg2 = arg2, data = data }
     end
     _G.SlashCmdList = {}
+    -- Values as in the 12.x API documentation (Blizzard_APIDocumentationGenerated).
+    _G.Enum = { PlayerInteractionType = {
+        TradePartner = 1, Merchant = 5, Banker = 8, GuildBanker = 10, MailInfo = 17, Auctioneer = 21,
+        AccountBanker = 68,
+    } }
+    _G.UIErrorsFrame = {
+        AddMessage = function(_, text, red, green, blue, alpha)
+            game.uiErrors[#game.uiErrors + 1] = { text = text, color = { red, green, blue, alpha } }
+        end,
+    }
     return game
 end
 

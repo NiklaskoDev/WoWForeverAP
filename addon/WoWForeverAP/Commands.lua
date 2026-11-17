@@ -116,6 +116,30 @@ function handlers.items()
     character.seenItemCount = #received
 end
 
+function handlers.rules()
+    local character, _, slot = linkedContext()
+    if not character then
+        ns.Notify.say("NOT_LINKED")
+    elseif not slot then
+        ns.Notify.say("SLOT_MISSING", character.slotKey)
+    else
+        ns.Economy.printRules(slot)
+    end
+end
+
+function handlers.care(argument)
+    local character, slotKey, slot = linkedContext()
+    if not character then
+        ns.Notify.say("NOT_LINKED")
+    elseif not slot then
+        ns.Notify.say("SLOT_MISSING", character.slotKey)
+    elseif argument:lower() == "use" then
+        ns.Economy.askToUse(ns.db, slotKey, slot)
+    else
+        ns.Economy.printCare(ns.db, slotKey, slot)
+    end
+end
+
 function handlers.capture(argument)
     local choice = argument:lower()
     if (choice ~= "on" and choice ~= "off") or not ns.ready then
@@ -128,7 +152,8 @@ end
 
 function handlers.help()
     ns.Notify.say("HELP_HEADER")
-    for _, key in ipairs({ "HELP_STATUS", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS", "HELP_CAPTURE" }) do
+    local keys = { "HELP_STATUS", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS", "HELP_RULES", "HELP_CARE", "HELP_CAPTURE" }
+    for _, key in ipairs(keys) do
         ns.Notify.print(ns.L[key])
     end
 end

@@ -12,7 +12,7 @@ as many characters as you like, but every zone and every profession tier is **lo
 unlocks it arrives. What you do in the game sends out checks.
 
 - **Items:** a zone unlock for every zone of your faction, and one *Progressive* item per profession (each
-  copy unlocks the next tier). Everything else is filler.
+  copy unlocks the next tier). Then the *Care Package* items (see below). Everything else is filler.
 - **Locations (checks):**
   - turning in a quest (see the quest list of your seed),
   - reaching a character level (every `level_milestone_step` levels, and always level 60),
@@ -22,6 +22,47 @@ unlocks it arrives. What you do in the game sends out checks.
 Your start zone is unlocked from the beginning (`start_zone`), and one more zone of your faction that covers
 level 11 is sent early so you are never stuck. The logic assumes a character needs a zone that covers every five levels
 on the way up (levels 1-5, 6-10, 11-15, and so on), so a gap in the zones you own blocks the levels above it.
+
+## Economy and self-found rules
+
+Five options decide how much help a character may get from other players and from your other characters:
+
+| Option | Default | Meaning |
+|---|---|---|
+| `allow_auction_house` | on | Buying and selling at the Auction House |
+| `allow_trading` | on | The trade window with other players |
+| `allow_mail` | on | Sending and receiving items and gold by mail |
+| `allow_shared_banks` | off | The guild bank and the account (warband) bank |
+| `allow_main_boosts` | off | Dungeon carries and power levelling by a main character |
+
+The first four change the logic of the profession checks. With **any** of them on, materials are assumed to be
+obtainable from other players, so a profession skill check only needs the character level of its skill range.
+With **all four off** you are self-found: every crafting profession must get its materials itself.
+
+- Blacksmithing, Engineering: ore from Mining. Alchemy: herbs from Herbalism. Leatherworking: hides from
+  Skinning. The gathering profession must be in your `professions` and its *Progressive* item must have
+  unlocked the tier that reaches the material (for example Mining tier 3 for Mithril).
+- Enchanting, Tailoring, Cooking, First Aid: the materials come from loot, so the character level of the skill
+  range is enough.
+- Mining, Herbalism, Skinning and Fishing need nothing.
+- If a crafting profession needs a gathering profession that is not in `professions`, generation stops with a
+  message that names both. Select the gathering profession or turn one of the four options on.
+
+`allow_main_boosts` changes nothing in the logic. It only tells you whether a main may carry you through
+dungeons or power-level you.
+
+### Care Packages
+
+`care_packages` (default 5) adds that many *Care Package* items to the item pool. Each one allows **one** pull
+from a main character: up to `care_package_gold` gold (default 50) **or** `care_package_stacks` stacks of
+materials (default 5). The logic never requires a Care Package, and they are the first items dropped if the
+seed has fewer locations than items. In the game:
+
+- `/wfap rules` shows the economy rules of your slot.
+- `/wfap care` shows how many Care Packages are available (received minus used).
+- `/wfap care use` asks for confirmation and counts one as used. It cannot go below zero.
+
+The tool never moves gold or items. The count is only a reminder of what you agreed to.
 
 ## Several characters, one slot
 
@@ -39,6 +80,8 @@ guide, nothing enforces them.
   paths, boats, the way to your next zone) is allowed.
 - **Start zone:** one start zone per seed is open. Characters of other races travel to it first.
 - **Locked profession tier:** do not train the tier before its *Progressive* item has arrived.
+- **Economy windows:** when you open the Auction House, a mailbox, the trade window or a guild or account bank
+  that your seed does not allow, the addon shows a warning. It cannot stop you: keeping to it is up to you.
 - No gold, items or services are created for you by this tool. Items you receive are unlocks, not goods.
 
 ## How the game and Archipelago talk to each other

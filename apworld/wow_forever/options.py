@@ -92,8 +92,8 @@ class AllowMainBoosts(Toggle):
 
 class CarePackages(Range):
     """How many Care Package items are added to the item pool. Each one allows a single pull from a main
-    character (see Care Package Gold and Care Package Stacks). Honor system, never required by the logic.
-    They are the first items dropped when there are fewer locations than items."""
+    character: up to Care Package Gold gold or Care Package Stacks stacks of materials. Honor system, never
+    required by the logic. They are the first items dropped when there are fewer locations than items."""
     display_name = "Care Packages"
     range_start = 0
     range_end = 20
@@ -101,7 +101,7 @@ class CarePackages(Range):
 
 
 class CarePackageGold(Range):
-    """Gold one Care Package allows you to pull from a main character."""
+    """Gold one Care Package allows you to pull from a main character (or the stacks of materials below)."""
     display_name = "Care Package Gold"
     range_start = 0
     range_end = 10000
@@ -109,7 +109,7 @@ class CarePackageGold(Range):
 
 
 class CarePackageStacks(Range):
-    """Stacks of crafting materials one Care Package allows you to pull from a main character."""
+    """Stacks of crafting materials one Care Package allows you to pull from a main character (or the gold above)."""
     display_name = "Care Package Stacks"
     range_start = 0
     range_end = 20

@@ -111,3 +111,17 @@ function DB.setGoal(db, slotKey, guid, now)
     slot.goal = { char = guid, t = now }
     return true
 end
+
+--- Care Packages the slot has used (honor-system counter); 0 when none was recorded.
+function DB.carePackagesUsed(db, slotKey)
+    local slot = db.slots[slotKey]
+    local count = slot and slot.carePackagesUsed
+    return type(count) == "number" and count > 0 and count or 0
+end
+
+--- Counts one more used Care Package for the slot and returns the new total.
+function DB.addCarePackageUse(db, slotKey)
+    local slot = slotTable(db, slotKey)
+    slot.carePackagesUsed = DB.carePackagesUsed(db, slotKey) + 1
+    return slot.carePackagesUsed
+end

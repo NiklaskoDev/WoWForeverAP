@@ -69,6 +69,12 @@ Client facts (D2):
   `C_Map.GetBestMapForUnit` (capture mode), and the events `QUEST_TURNED_IN`, `PLAYER_LEVEL_UP`,
   `SKILL_LINES_CHANGED`. A missing profession API shows one chat warning; if the client is Classic-style, the
   `Detect/*` files change (`GetSkillLineInfo` is not implemented: it does not exist in 12.x).
+- **Economy warnings (plan 002).** Checked against the Gethe/wow-ui-source mirror (live branch, 12.x),
+  unconfirmed for the Forever client: the event `PLAYER_INTERACTION_MANAGER_FRAME_SHOW` and
+  `Enum.PlayerInteractionType` members `Auctioneer`, `MailInfo`, `TradePartner`, `GuildBanker` and
+  `AccountBanker`; `C_EventUtils.IsEventValid`; `UIErrorsFrame:AddMessage`. When the enum or the event is
+  missing the addon falls back to `AUCTION_HOUSE_SHOW`, `MAIL_SHOW`, `TRADE_SHOW` and `GUILDBANKFRAME_OPENED`
+  (no fallback exists for the account bank) and skips an event the client refuses to register.
 - **`## AddonCompartmentFunc`** and the `StaticPopup` link prompt (button3 / `OnAlt`) are Mainline features.
 
 Provisional data files:
@@ -82,7 +88,9 @@ Provisional data files:
 - `material_brackets.csv`: a game-design approximation, not game data; tune freely.
 - `releases.csv`: only the launch release (2026-11-04) is confirmed. Later releases are added once their date
   is confirmed.
-- `misc_items.csv`: our own filler ids; permanent once released.
+- `profession_materials.csv`: a game-design approximation (which source supplies the main material of each
+  crafting profession per skill bracket, and the gathering skill it needs), not game data; tune freely.
+- `misc_items.csv`: our own filler and care package ids; permanent once released.
 
 The dev capture mode (`/wfap capture on`, then `python tools/import_capture.py <WoW folder>`) logs zones
 and quests in the live client into review CSVs in `data_capture/`; it is the intended way to replace the

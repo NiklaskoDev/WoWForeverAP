@@ -51,7 +51,10 @@ function Env.inbox(overrides)
     local slot = {
         seed = "S1", slot = "Wow", worldVersion = "0.0.0",
         options = { faction = "alliance", startZone = 1429, contentRelease = 1, goalLevel = 60,
-                    professions = { 171, 186 }, levelStep = 1, professionStep = 25 },
+                    professions = { 171, 186 }, levelStep = 1, professionStep = 25,
+                    economy = { auctionHouse = true, trading = true, mail = false, sharedBanks = false,
+                                mainBoosts = false, carePackages = 5, carePackageGold = 50,
+                                carePackageStacks = 5 } },
         locations = {}, checked = {}, items = {},
     }
     for key, value in pairs(overrides or {}) do

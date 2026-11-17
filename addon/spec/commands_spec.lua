@@ -64,8 +64,10 @@ describe("Commands", function()
             ns.Commands.run("")
             ns.Commands.run("frobnicate")
             assert.equals(ns.L.HELP_HEADER, chat()[1])
-            assert.equals(ns.L.HELP_HEADER, chat()[7]) -- the header plus five command lines come first
+            assert.equals(ns.L.HELP_HEADER, chat()[9]) -- the header plus seven command lines come first
             assert.equals(ns.L.HELP_STATUS, chat()[2])
+            assert.equals(ns.L.HELP_RULES, chat()[6])
+            assert.equals(ns.L.HELP_CARE, chat()[7])
         end)
 
         it("is registered as the slash command and the compartment click shows the status", function()
@@ -73,7 +75,7 @@ describe("Commands", function()
             SlashCmdList["WFAP"]("help")
             assert.equals(ns.L.HELP_HEADER, chat()[1])
             WoWForeverAP_OnCompartmentClick("WoWForeverAP", "LeftButton")
-            assert.equals(ns.L.NOT_LINKED, chat()[7])
+            assert.equals(ns.L.NOT_LINKED, chat()[9])
         end)
 
         it("status of an unlinked character names the slots in the inbox", function()

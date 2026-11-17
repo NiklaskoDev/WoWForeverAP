@@ -1,6 +1,6 @@
 # 002 — Economy and self-found rules
 
-Status: approved
+Status: implemented
 Type: feature
 Version impact: none until release — part of the first release together with 001, 003 and 004 (expected `0.1.0`). Must land before the first release, because it changes profession logic and adds an item category.
 

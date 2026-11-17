@@ -14,15 +14,18 @@ globals = {
 -- Blizzard API functions and tables the addon is allowed to read. Keep this list explicit:
 -- every entry is an API the addon really calls.
 read_globals = {
+    "C_EventUtils",
     "C_Map",
     "C_QuestLog",
     "C_TradeSkillUI",
     "CreateFrame",
+    "Enum",
     "GetBuildInfo",
     "GetLocale",
     "GetProfessionInfo",
     "GetProfessions",
     "StaticPopup_Show",
+    "UIErrorsFrame",
     "UnitClass",
     "UnitFactionGroup",
     "UnitGUID",
