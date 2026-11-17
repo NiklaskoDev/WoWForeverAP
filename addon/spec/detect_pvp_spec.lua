@@ -175,6 +175,31 @@ describe("PvP", function()
             assert.same({ pvpId(WSG) }, Linked.outbox(db))
         end)
 
+        it("does not count a running match: no winner yet is not a win", function()
+            inInstance(WSG_MAP)
+            _G.GetBattlefieldWinner = function() return nil end
+            ns.Events.dispatch("UPDATE_BATTLEFIELD_STATUS", 1)
+            ns.Events.dispatch("PVP_MATCH_COMPLETE", nil, 0)
+            assert.same({}, Linked.outbox(db))
+            assert.same({}, db.characters[game.guid].baselines.bgWins)
+        end)
+
+        it("does not count a win for a Neutral or unknown faction, whatever the winner is", function()
+            inInstance(WSG_MAP)
+            _G.GetBattlefieldWinner = function() return nil end
+            for _, faction in ipairs({ "Neutral", "Pandaren", false }) do
+                game.faction = faction
+                ns.Events.dispatch("UPDATE_BATTLEFIELD_STATUS", 1)
+                ns.Events.dispatch("PVP_MATCH_COMPLETE", HORDE, 600)
+                ns.Events.dispatch("PVP_MATCH_COMPLETE", ALLIANCE, 600)
+            end
+            game.faction = nil
+            ns.Events.dispatch("PVP_MATCH_COMPLETE", nil, 600)
+            assert.same({}, Linked.outbox(db))
+            assert.same({}, db.characters[game.guid].baselines.bgWins)
+            assert.same({}, game.errors)
+        end)
+
         it("raises no error when GetBattlefieldWinner is missing or fails", function()
             inInstance(WSG_MAP)
             assert.has_no.errors(function() ns.Events.dispatch("UPDATE_BATTLEFIELD_STATUS", 1) end)

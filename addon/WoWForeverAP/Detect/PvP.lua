@@ -2,6 +2,8 @@
 -- baselines stored when the character was linked. A battleground win is read from PVP_MATCH_COMPLETE(winner) and,
 -- as a second source, from UPDATE_BATTLEFIELD_STATUS plus GetBattlefieldWinner(); both are matched to the
 -- player's faction and counted once per match. Battleground = the instance id GetInstanceInfo() reports.
+-- `character.baselines.bgWins` is not a snapshot like the other baselines: it is the running count of won
+-- matches per battleground map id since the character was linked (there is no API for lifetime wins).
 local _, ns = ...
 
 local PvP = {}
@@ -75,9 +77,13 @@ function PvP.instanceId()
     return type(instanceId) == "number" and instanceId or nil
 end
 
+--- True when `winner` is a faction number equal to the player's. A running match has no winner (nil), and a
+--- Neutral or unknown player has no faction number: neither may count as a win. Wrapped in pcall in case the
+--- client hands over a restricted value, which raises when compared.
 local function playerWon(winner)
     local ok, won = pcall(function()
-        return winner == PvP.FACTION_INDEX[UnitFactionGroup("player")]
+        local playerIndex = PvP.FACTION_INDEX[UnitFactionGroup("player")]
+        return winner ~= nil and playerIndex ~= nil and winner == playerIndex
     end)
     return ok and won
 end
