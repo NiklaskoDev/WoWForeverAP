@@ -186,7 +186,7 @@ def write_review_files(captures: list[dict], out_dir: Path) -> tuple[list[str], 
     write_csv(out_dir / "zones.csv", [REVIEW_NOTE, ZONE_NOTE], ZONE_COLUMNS, _zone_rows(zones))
     write_csv(out_dir / "quests.csv", [REVIEW_NOTE, QUEST_NOTE], QUEST_COLUMNS, _quest_rows(quests))
     write_csv(out_dir / "encounters.csv", [REVIEW_NOTE, ENCOUNTER_NOTE], ENCOUNTER_COLUMNS,
-               _encounter_rows(encounters))
+              _encounter_rows(encounters))
     write_csv(out_dir / "discoveries.csv", [REVIEW_NOTE, DISCOVERY_NOTE], DISCOVERY_COLUMNS, _discovery_rows(areas))
     summary = [f"{len(zones)} zones, {len(quests)} quests, {len(encounters)} boss kills and {len(areas)} areas "
                f"written to {out_dir}", _build_summary(captures)]
