@@ -2,7 +2,7 @@
 # The apworld is loaded by Archipelago from a symlink (scripts/setup_ap.sh).
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py311"
 line-length = 120
 extend-exclude = [".ap", "dist", "data_capture"]
 

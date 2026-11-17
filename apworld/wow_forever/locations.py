@@ -3,6 +3,7 @@ import random
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
+from typing import TypeVar
 
 from BaseClasses import Location
 
@@ -13,6 +14,8 @@ from .items import GAME_NAME
 CHARACTER_REGION = "Character"
 GOAL_LOCATION_NAME = "Goal"
 VICTORY_ITEM_NAME = "Victory"
+
+_T = TypeVar("_T")
 
 
 class LocationKind(Enum):
@@ -85,7 +88,7 @@ def milestone_levels(step: int) -> list[int]:
     return sorted(levels)
 
 
-def sample_by_weight[T](candidates: Sequence[T], weight: int, rng: random.Random | None) -> list[T]:
+def sample_by_weight(candidates: Sequence[_T], weight: int, rng: random.Random | None) -> list[_T]:
     """``weight`` percent of the candidates (rounded half up, at least one when there are any), in their original
     order. Weight 100 keeps everything and needs no ``rng``."""
     if weight >= 100 or not candidates:
