@@ -66,6 +66,22 @@ describe("Inbox", function()
                        items = { { id = 1 } } }
         assert.same({ locations = 3, checked = 1, open = 2, items = 1 }, Inbox.counts(slot))
     end)
+
+    describe("hints and age", function()
+        it("returns the hints the client wrote and an empty list for an inbox without any", function()
+            local hints = { { item = "Zone: Dun Morogh", found = false } }
+            assert.equals(hints, Inbox.hints({ hints = hints }))
+            assert.same({}, Inbox.hints({}))
+            assert.same({}, Inbox.hints({ hints = "garbage" }))
+        end)
+
+        it("returns the time the inbox was written when it is a number", function()
+            assert.equals(1763380000, Inbox.written({ written = 1763380000 }))
+            assert.is_nil(Inbox.written({}))
+            assert.is_nil(Inbox.written({ written = "now" }))
+            assert.is_nil(Inbox.written(nil))
+        end)
+    end)
 end)
 
 describe("Inbox written by the Python client", function()

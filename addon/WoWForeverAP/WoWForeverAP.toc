@@ -17,6 +17,7 @@ Core\Ids.lua
 Core\DB.lua
 Core\Inbox.lua
 Core\Names.lua
+Core\Checks.lua
 UI\Notify.lua
 Core\Tracker.lua
 Core\Link.lua

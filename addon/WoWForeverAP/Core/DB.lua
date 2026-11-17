@@ -7,9 +7,18 @@ ns.DB = DB
 
 local KIND_CHECK = "check"
 
+--- Account-wide UI options: every key has a default that fills in when it is missing.
+DB.UI_DEFAULTS = { mapOverlay = true, zoneWarnings = true }
+
 local function ensureTables(db)
     db.characters = db.characters or {}
     db.slots = db.slots or {}
+    db.ui = type(db.ui) == "table" and db.ui or {}
+    for key, default in pairs(DB.UI_DEFAULTS) do
+        if type(db.ui[key]) ~= "boolean" then
+            db.ui[key] = default
+        end
+    end
 end
 
 --- Upgrades `db` to the current schema in place. Safe to run repeatedly.
@@ -88,6 +97,18 @@ function DB.prune(db, slotKey, checked)
     end
     slot.outbox = kept
     return removed
+end
+
+--- The location ids waiting in the slot's outbox, as a set (id to true).
+function DB.outboxIds(db, slotKey)
+    local ids = {}
+    local slot = db.slots[slotKey]
+    for _, entry in ipairs(slot and slot.outbox or {}) do
+        if entry.kind == KIND_CHECK then
+            ids[entry.id] = true
+        end
+    end
+    return ids
 end
 
 --- Number of outbox checks the server has not confirmed yet.

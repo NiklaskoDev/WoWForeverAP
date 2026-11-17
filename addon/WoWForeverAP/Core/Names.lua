@@ -36,16 +36,7 @@ function Names.quest(questId)
     return title or ns.L.QUEST_FMT:format(questId)
 end
 
-local function decode(id)
-    if type(id) ~= "number" then
-        return nil
-    end
-    local ok, category, native = pcall(ns.Ids.decode, id)
-    if ok then
-        return category, native
-    end
-    return nil
-end
+local decode = ns.Ids.tryDecode
 
 --- Display name of a location id.
 function Names.location(locationId)

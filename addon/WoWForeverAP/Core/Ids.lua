@@ -74,3 +74,11 @@ function Ids.decode(id)
     local native = offset % Ids.CATEGORY_SIZE
     return (offset - native) / Ids.CATEGORY_SIZE, native
 end
+
+--- Like decode, but returns nothing for a value that is not a number or lies below BASE.
+function Ids.tryDecode(id)
+    if type(id) ~= "number" or id < Ids.BASE then
+        return nil
+    end
+    return Ids.decode(id)
+end

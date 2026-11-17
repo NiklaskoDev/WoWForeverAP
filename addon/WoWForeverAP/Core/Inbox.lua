@@ -96,3 +96,13 @@ end
 function Inbox.options(slot)
     return type(slot.options) == "table" and slot.options or {}
 end
+
+--- Hints of the slot, as the client wrote them (ours first is the panel's job); empty for an inbox without hints.
+function Inbox.hints(slot)
+    return type(slot.hints) == "table" and slot.hints or {}
+end
+
+--- Unix time the client wrote the inbox file, nil when it is missing.
+function Inbox.written(inbox)
+    return type(inbox) == "table" and type(inbox.written) == "number" and inbox.written or nil
+end
