@@ -9,21 +9,19 @@ boss kills become encounter rows; their instance_id is the instance the characte
 instances.csv (a raid or new dungeon needs a row there first).
 """
 import argparse
-import csv
 import sys
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
 from _apworld import ROOT, apworld_module
+from _csvout import QUEST_COLUMNS, write_csv
 
 lua_table = apworld_module("client.lua_table")
 savedvars = apworld_module("client.savedvars")
 
 DEFAULT_OUT = ROOT / "data_capture"
 ZONE_COLUMNS = ("ui_map_id", "name", "min_level", "max_level", "faction", "is_start", "release")
-QUEST_COLUMNS = ("quest_id", "name", "zone_ui_map_id", "req_level", "faction", "release",
-                 "prereq_quest_ids", "extra_zone_ids", "name_suffix")
 ENCOUNTER_COLUMNS = ("encounter_id", "name", "instance_id", "release")
 DISCOVERY_COLUMNS = ("area_id", "name", "ui_map_id", "release")
 FACTIONS = {"Alliance": "alliance", "Horde": "horde"}
@@ -140,15 +138,6 @@ def _cell(value: object) -> object:
     return "" if value is None else value
 
 
-def _write_csv(path: Path, comments: list[str], columns: tuple[str, ...], rows: list[tuple]) -> None:
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        for comment in comments:
-            handle.write(f"# {comment}\n")
-        writer = csv.writer(handle, lineterminator="\n")
-        writer.writerow(columns)
-        writer.writerows(rows)
-
-
 def duplicate_names(zones: Mapping[int, dict], quests: Mapping[int, dict]) -> list[str]:
     """AP location names ('<zone>: <title>') that more than one quest would get; each needs a name_suffix."""
     seen: dict[str, int] = {}
@@ -194,11 +183,11 @@ def write_review_files(captures: list[dict], out_dir: Path) -> tuple[list[str], 
     zones, quests = merge_zones(captures), merge_quests(captures)
     encounters, areas = merge_encounters(captures), merge_areas(captures)
     out_dir.mkdir(parents=True, exist_ok=True)
-    _write_csv(out_dir / "zones.csv", [REVIEW_NOTE, ZONE_NOTE], ZONE_COLUMNS, _zone_rows(zones))
-    _write_csv(out_dir / "quests.csv", [REVIEW_NOTE, QUEST_NOTE], QUEST_COLUMNS, _quest_rows(quests))
-    _write_csv(out_dir / "encounters.csv", [REVIEW_NOTE, ENCOUNTER_NOTE], ENCOUNTER_COLUMNS,
+    write_csv(out_dir / "zones.csv", [REVIEW_NOTE, ZONE_NOTE], ZONE_COLUMNS, _zone_rows(zones))
+    write_csv(out_dir / "quests.csv", [REVIEW_NOTE, QUEST_NOTE], QUEST_COLUMNS, _quest_rows(quests))
+    write_csv(out_dir / "encounters.csv", [REVIEW_NOTE, ENCOUNTER_NOTE], ENCOUNTER_COLUMNS,
                _encounter_rows(encounters))
-    _write_csv(out_dir / "discoveries.csv", [REVIEW_NOTE, DISCOVERY_NOTE], DISCOVERY_COLUMNS, _discovery_rows(areas))
+    write_csv(out_dir / "discoveries.csv", [REVIEW_NOTE, DISCOVERY_NOTE], DISCOVERY_COLUMNS, _discovery_rows(areas))
     summary = [f"{len(zones)} zones, {len(quests)} quests, {len(encounters)} boss kills and {len(areas)} areas "
                f"written to {out_dir}", _build_summary(captures)]
     warnings = [f"quest {quest_id} has no title (not in the client cache yet)"

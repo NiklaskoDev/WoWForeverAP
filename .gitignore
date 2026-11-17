@@ -40,6 +40,7 @@ Thumbs.db
 # Claude Code local settings
 .claude/settings.local.json
 
-# Pinned Archipelago checkout (scripts/setup_ap.sh) and dev capture output
+# Pinned Archipelago checkout (scripts/setup_ap.sh), pinned AllTheThings checkout (scripts/fetch_att.sh), dev capture output
 .ap/
 data_capture/
+.att/
