@@ -257,6 +257,17 @@ Resolved 2026-11-17: the programmer accepted every recommendation below (D1 drop
   - (c) As (a), plus a CI job that fetches ATT and runs `--check` (network in CI, slower).
   - **Recommend (a).**
 
+## Implemented deviations (review 2026-11-17, recorded by the main session)
+Parsing details found in the real ATT files at the pinned commit; none changes the design (import as data, pinned commit, same CSV schema and ids):
+- Races: Forever adds Skyborne (`SKYBORNE_ALLIANCE`, `SKYBORNE_HORDE`), so each faction has 5 races; a single race may be written without braces; `exclude(...)` in `races` counts as race-restricted; any `classes` value counts as class-restricted.
+- Faction-split quests (`allianceQuestData = q(a)`, `hordeQuestData = q(h)` + shared fields) become two quests with forced factions; `aqd`/`hqd` giver blocks are ignored.
+- Faction follows the zones a quest needs: a raceless quest in an Alliance zone is Alliance; a quest needing the other faction's zone is excluded as `faction-mismatch`; a prerequisite of another faction excludes the dependent as `prereq-faction`, a faction-less dependent takes its prerequisite's faction.
+- Extra exclusion reasons: `created` (`CREATED_1_60_1` = not yet in game), `outside-maproot` (quests under `root(ROOTS.HiddenQuestTriggers, …)`; they count as unknown prerequisites). A file without `maproot` is an error only if it contains quests.
+- Map references may be bare names (resolved via `maps.lua` or `m(...)` declarations; unknown `MAP.X` is an error); timeline markers may lack the `TIMELINE.` prefix; `DELETED` counts as removed; `coords` may be one flat coordinate; `AttAssign` node type for assignment nodes.
+- Local helper calls such as `CRAFTSMANS_WRIT_QUEST(...)` are not evaluated (never executed), so those repeatable profession writ quests are absent.
+- Fixtures sit under `tests/fixtures/att/` directly.
+- Zephra's Isle stays 1–12: ATT quest levels are 2 / 4 / 8 and the report's flag rule (min within 2, max ≥ highest quest level) does not flag it, so ATT does not contradict the range; the `zones.csv` comment cites ATT. Still provisional until the live-client check.
+
 ## Risks / follow-ups
 - ATT's Forever DB is community-maintained and partly unverified for Forever. The quest data stays "unconfirmed" in the README until checked in the live client (001 D1/D2).
 - The ATT syntax may contain forms the parser does not know. Step 5 stops on them instead of guessing. Expect one parser amendment after the first real run.
