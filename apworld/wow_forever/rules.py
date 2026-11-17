@@ -125,11 +125,35 @@ def _quest_rule(world: "WoWForeverWorld", spec: LocationSpec):
                           and can_reach_level(state, world, quest.effective_level))
 
 
+def _boss_rule(world: "WoWForeverWorld", spec: LocationSpec):
+    """The entrance zone is unlocked and the character is at the instance's level; raids need the goal level."""
+    instance = world.data.instances_by_id[world.data.encounters_by_id[spec.native].instance_id]
+    level = max(instance.min_level, GOAL_LEVEL) if instance.kind == "raid" else instance.min_level
+    return lambda state: (has_zone(state, world, instance.entrance_ui_map_id)
+                          and can_reach_level(state, world, level))
+
+
+def _reputation_rule(world: "WoWForeverWorld", spec: LocationSpec):
+    reputation = world.data.reputations_by_native[spec.native]
+    return lambda state: (all(has_zone(state, world, zone_id) for zone_id in reputation.required_ui_map_ids)
+                          and can_reach_level(state, world, reputation.required_level))
+
+
 def _rule_for(world: "WoWForeverWorld", spec: LocationSpec):
     if spec.kind is LocationKind.QUEST:
         return _quest_rule(world, spec)
     if spec.kind is LocationKind.LEVEL:
         return lambda state: can_reach_level(state, world, spec.level)
+    if spec.kind is LocationKind.BOSS:
+        return _boss_rule(world, spec)
+    if spec.kind is LocationKind.DISCOVERY:
+        ui_map_id = world.data.discoveries_by_id[spec.native].ui_map_id
+        return lambda state: has_zone(state, world, ui_map_id)
+    if spec.kind is LocationKind.REPUTATION:
+        return _reputation_rule(world, spec)
+    if spec.kind is LocationKind.PVP:
+        required_level = world.data.pvp_by_id[spec.native].required_level
+        return lambda state: can_reach_level(state, world, required_level)
     return lambda state: (has_profession_tier(state, world, spec.skill_line_id, spec.skill)
                           and has_material_access(state, world, spec.skill_line_id, spec.skill))
 

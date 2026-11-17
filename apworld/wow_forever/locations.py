@@ -1,4 +1,6 @@
 """Location table and per-seed selection. Names and ids come from the CSV data (``data_loader``)."""
+import random
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 
@@ -17,6 +19,10 @@ class LocationKind(Enum):
     QUEST = "quest"
     LEVEL = "level"
     PROFESSION_SKILL = "profession_skill"
+    BOSS = "boss"
+    DISCOVERY = "discovery"
+    REPUTATION = "reputation"
+    PVP = "pvp"
 
 
 @dataclass(frozen=True)
@@ -30,6 +36,7 @@ class LocationSpec:
     level: int = 0
     skill_line_id: int = 0
     skill: int = 0
+    native: int = 0  # native id of the extra categories: encounter id, area id, faction*10+standing, pvp id
 
 
 class WoWForeverLocation(Location):
@@ -60,6 +67,14 @@ def build_location_name_to_id(data: GameData) -> dict[str, int]:
             native = ids.profession_skill_native(profession.skill_line_id, skill)
             table[profession_location_name(profession.name, skill)] = ids.location_id(
                 ids.LocCat.PROFESSION_SKILL, native)
+    for encounter in data.encounters:
+        table[encounter.location_name] = ids.location_id(ids.LocCat.BOSS, encounter.encounter_id)
+    for discovery in data.discoveries:
+        table[discovery.location_name] = ids.location_id(ids.LocCat.AREA_DISCOVERY, discovery.area_id)
+    for reputation in data.reputations:
+        table[reputation.location_name] = ids.location_id(ids.LocCat.REPUTATION, reputation.native_id)
+    for milestone in data.pvp_milestones:
+        table[milestone.location_name] = ids.location_id(ids.LocCat.PVP, milestone.pvp_id)
     return table
 
 
@@ -70,6 +85,49 @@ def milestone_levels(step: int) -> list[int]:
     return sorted(levels)
 
 
+def sample_by_weight[T](candidates: Sequence[T], weight: int, rng: random.Random | None) -> list[T]:
+    """``weight`` percent of the candidates (rounded half up, at least one when there are any), in their original
+    order. Weight 100 keeps everything and needs no ``rng``."""
+    if weight >= 100 or not candidates:
+        return list(candidates)
+    if rng is None:
+        raise ValueError(f"a random generator is needed to sample at weight {weight}")
+    count = max(1, (len(candidates) * weight + 50) // 100)
+    return [candidates[index] for index in sorted(rng.sample(range(len(candidates)), count))]
+
+
+def _extra_category_specs(content_release: int, faction: str, allowed_zone_ids: frozenset[int],
+                          data: GameData) -> dict[str, list[LocationSpec]]:
+    """Every location of the extra categories this release, faction and zone set allows, in data order."""
+    def usable(release: int) -> bool:
+        return release <= content_release
+
+    bosses = []
+    for encounter in data.encounters:
+        instance = data.instances_by_id[encounter.instance_id]
+        if (usable(encounter.release) and usable(instance.release) and instance.faction in (faction, "both")
+                and instance.entrance_ui_map_id in allowed_zone_ids):
+            bosses.append(LocationSpec(
+                encounter.location_name, ids.location_id(ids.LocCat.BOSS, encounter.encounter_id),
+                data.zones_by_id[instance.entrance_ui_map_id].name, LocationKind.BOSS, native=encounter.encounter_id))
+    discoveries = [
+        LocationSpec(discovery.location_name, ids.location_id(ids.LocCat.AREA_DISCOVERY, discovery.area_id),
+                     data.zones_by_id[discovery.ui_map_id].name, LocationKind.DISCOVERY, native=discovery.area_id)
+        for discovery in data.discoveries
+        if usable(discovery.release) and discovery.ui_map_id in allowed_zone_ids]
+    reputations = [
+        LocationSpec(reputation.location_name, ids.location_id(ids.LocCat.REPUTATION, reputation.native_id),
+                     CHARACTER_REGION, LocationKind.REPUTATION, native=reputation.native_id)
+        for reputation in data.reputations
+        if (usable(reputation.release) and reputation.faction_side in (faction, "both")
+            and allowed_zone_ids.issuperset(reputation.required_ui_map_ids))]
+    pvp = [
+        LocationSpec(milestone.location_name, ids.location_id(ids.LocCat.PVP, milestone.pvp_id),
+                     CHARACTER_REGION, LocationKind.PVP, native=milestone.pvp_id)
+        for milestone in data.pvp_milestones if usable(milestone.release)]
+    return {"boss": bosses, "discovery": discoveries, "reputation": reputations, "pvp": pvp}
+
+
 def select_locations(
     content_release: int,
     faction: str,
@@ -78,8 +136,13 @@ def select_locations(
     level_step: int,
     profession_step: int,
     data: GameData | None = None,
+    category_weights: Mapping[str, int] | None = None,
+    rng: random.Random | None = None,
 ) -> list[LocationSpec]:
-    """Locations of one seed (all filtered by release and faction), without the event location."""
+    """Locations of one seed (all filtered by release and faction), without the event location.
+
+    ``category_weights`` holds the extra categories (boss, discovery, reputation, pvp) that are on, each with the
+    percentage of its eligible locations to include; sampling uses ``rng``. Absent categories add nothing."""
     data = data or load_game_data()
     specs: list[LocationSpec] = []
     for quest in data.quests:
@@ -101,4 +164,9 @@ def select_locations(
                 profession_location_name(profession.name, skill),
                 ids.location_id(ids.LocCat.PROFESSION_SKILL, native), CHARACTER_REGION,
                 LocationKind.PROFESSION_SKILL, skill_line_id=profession.skill_line_id, skill=skill))
+    if category_weights:
+        eligible = _extra_category_specs(content_release, faction, allowed_zone_ids, data)
+        for category, candidates in eligible.items():
+            if category in category_weights:
+                specs.extend(sample_by_weight(candidates, category_weights[category], rng))
     return specs

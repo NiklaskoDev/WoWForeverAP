@@ -27,6 +27,7 @@ _OPTION_KEYS = {
     "level_step": "levelStep",
     "profession_step": "professionStep",
     "economy": "economy",
+    "categories": "categories",
 }
 
 

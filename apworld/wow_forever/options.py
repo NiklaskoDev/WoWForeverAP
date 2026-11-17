@@ -116,6 +116,71 @@ class CarePackageStacks(Range):
     default = 5
 
 
+class BossChecks(DefaultOnToggle):
+    """Killing a dungeon boss is a check, for dungeons whose entrance zone is in the seed."""
+    display_name = "Boss Checks"
+
+
+class BossWeight(Range):
+    """Percentage of the eligible boss checks that are included in the seed (at least one when any are eligible)."""
+    display_name = "Boss Weight"
+    range_start = 1
+    range_end = 100
+    default = 100
+
+
+class DiscoveryChecks(DefaultOnToggle):
+    """Discovering a map area (the parts of a zone map that are revealed as you explore) is a check."""
+    display_name = "Discovery Checks"
+
+
+class DiscoveryWeight(Range):
+    """Percentage of the eligible area discoveries that are included in the seed (at least one when any are
+    eligible). There are many of them: lower this for a shorter seed."""
+    display_name = "Discovery Weight"
+    range_start = 1
+    range_end = 100
+    default = 100
+
+
+class ReputationChecks(Toggle):
+    """Reaching Friendly, Honored, Revered or Exalted with a city or Steamwheedle Cartel faction is a check.
+    Only standing gained after the character was linked counts."""
+    display_name = "Reputation Checks"
+
+
+class ReputationWeight(Range):
+    """Percentage of the eligible reputation checks that are included in the seed (at least one when any are
+    eligible)."""
+    display_name = "Reputation Weight"
+    range_start = 1
+    range_end = 100
+    default = 100
+
+
+class PvpChecks(Toggle):
+    """Honorable-kill totals and a first win in each battleground are checks. Only kills and wins after the
+    character was linked count. Whether battlegrounds are open depends on the Forever release."""
+    display_name = "PvP Checks"
+
+
+class PvpWeight(Range):
+    """Percentage of the eligible PvP checks that are included in the seed (at least one when any are eligible)."""
+    display_name = "PvP Weight"
+    range_start = 1
+    range_end = 100
+    default = 100
+
+
+# Category key (slot data, location selection) -> names of its toggle and weight in WoWForeverOptions.
+CATEGORY_OPTIONS = {
+    "boss": ("boss_checks", "boss_weight"),
+    "discovery": ("discovery_checks", "discovery_weight"),
+    "reputation": ("reputation_checks", "reputation_weight"),
+    "pvp": ("pvp_checks", "pvp_weight"),
+}
+
+
 @dataclass
 class WoWForeverOptions(PerGameCommonOptions):
     faction: Faction
@@ -132,3 +197,22 @@ class WoWForeverOptions(PerGameCommonOptions):
     care_packages: CarePackages
     care_package_gold: CarePackageGold
     care_package_stacks: CarePackageStacks
+    boss_checks: BossChecks
+    boss_weight: BossWeight
+    discovery_checks: DiscoveryChecks
+    discovery_weight: DiscoveryWeight
+    reputation_checks: ReputationChecks
+    reputation_weight: ReputationWeight
+    pvp_checks: PvpChecks
+    pvp_weight: PvpWeight
+
+
+def category_switches(options: WoWForeverOptions) -> dict[str, bool]:
+    """Which extra check categories are on, by category key."""
+    return {key: bool(getattr(options, toggle)) for key, (toggle, _) in CATEGORY_OPTIONS.items()}
+
+
+def category_weights(options: WoWForeverOptions) -> dict[str, int]:
+    """Weight (percent) of every extra check category that is on; categories that are off are absent."""
+    return {key: getattr(options, weight).value for key, (toggle, weight) in CATEGORY_OPTIONS.items()
+            if getattr(options, toggle)}

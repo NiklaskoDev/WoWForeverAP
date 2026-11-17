@@ -11,7 +11,7 @@ from . import items, locations, regions, rules
 from .data_loader import GameData, Profession, ProfessionMaterial, ProfessionTier, Zone, load_game_data
 from .items import CARE_PACKAGE_ITEM_NAME, FILLER_ITEM_NAME, GAME_NAME, ITEM_NAME_TO_ID, ITEM_TABLE, WoWForeverItem
 from .locations import GOAL_LEVEL, LocationSpec, build_location_name_to_id
-from .options import RANDOM_START_ZONE, WoWForeverOptions
+from .options import RANDOM_START_ZONE, WoWForeverOptions, category_switches, category_weights
 from .settings import WoWForeverSettings
 
 SLOT_DATA_SCHEMA = 1
@@ -46,7 +46,8 @@ class WoWForeverWeb(WebWorld):
 class WoWForeverWorld(World):
     """
     World of Warcraft: Forever as an honor-system multiworld. Zones and profession tiers are the items;
-    quest turn-ins, character levels and profession skill milestones are the checks. Reach level 60 to win.
+    quest turn-ins, character levels and profession skill milestones are the checks, plus optional dungeon bosses,
+    map-area discoveries, reputation standings and PvP milestones. Reach level 60 to win.
     """
 
     game = GAME_NAME
@@ -91,7 +92,8 @@ class WoWForeverWorld(World):
         self.location_specs = locations.select_locations(
             self.content_release, self.faction, frozenset(zone.ui_map_id for zone in self.allowed_zones),
             frozenset(profession.skill_line_id for profession in self.selected_professions),
-            self.options.level_milestone_step.value, self.options.profession_milestone_step.value, self.data)
+            self.options.level_milestone_step.value, self.options.profession_milestone_step.value, self.data,
+            category_weights(self.options), self.random)
 
     def _check_self_found_materials(self) -> None:
         missing = rules.unreachable_material_sources(self)
@@ -171,6 +173,7 @@ class WoWForeverWorld(World):
                 "carePackageGold": self.options.care_package_gold.value,
                 "carePackageStacks": self.options.care_package_stacks.value,
             },
+            "categories": category_switches(self.options),
         }
 
     @classmethod

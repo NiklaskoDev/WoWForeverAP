@@ -44,6 +44,12 @@ WoWForeverAP_Inbox = {
 				[5130171025] = true,
 			},
 			["options"] = {
+				["categories"] = {
+					["boss"] = true,
+					["discovery"] = true,
+					["pvp"] = false,
+					["reputation"] = false,
+				},
 				["contentRelease"] = 1,
 				["economy"] = {
 					["auctionHouse"] = true,

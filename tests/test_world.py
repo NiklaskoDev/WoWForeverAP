@@ -12,6 +12,7 @@ ALL_START_ZONE_KEYS = ["elwynn_forest", "dun_morogh", "teldrassil", "durotar", "
                        "zephras_isle"]
 ALLIANCE_START = {"elwynn_forest", "dun_morogh", "teldrassil", "zephras_isle"}
 HORDE_START = {"durotar", "mulgore", "tirisfal_glades", "zephras_isle"}
+NO_EXTRA_CATEGORIES = {"boss_checks": False, "discovery_checks": False}  # keeps location counts small and exact
 
 
 class WoWTestBase(WorldTestBase):
@@ -84,6 +85,8 @@ class TestDefaultOptions(WoWTestBase):
                 self.assertEqual((category, native), (ids.LocCat.QUEST, spec.quest_id))
             elif spec.level:
                 self.assertEqual((category, native), (ids.LocCat.LEVEL, spec.level))
+            elif spec.kind is locations.LocationKind.DISCOVERY:
+                self.assertEqual((category, native), (ids.LocCat.AREA_DISCOVERY, spec.native))
             else:
                 self.assertEqual((category, native), (ids.LocCat.PROFESSION_SKILL,
                                                       ids.profession_skill_native(spec.skill_line_id, spec.skill)))
@@ -217,7 +220,7 @@ class TestOptions(WoWTestBase):
 
     def test_too_few_locations_is_an_option_error(self):
         with self.assertRaises(OptionError) as error:
-            self.generate(professions=[], level_milestone_step=10, start_zone="elwynn_forest")
+            self.generate(professions=[], level_milestone_step=10, start_zone="elwynn_forest", **NO_EXTRA_CATEGORIES)
         self.assertIn("enable more professions or a later content_release", str(error.exception))
 
 
@@ -235,7 +238,7 @@ class TestEconomyOptions(WoWTestBase):
 
     def test_care_packages_are_dropped_before_the_pool_is_rejected(self):
         # 38 locations, 35 progression items: room for three of the five requested care packages and no filler
-        self.generate(professions=[], level_milestone_step=3, care_packages=5)
+        self.generate(professions=[], level_milestone_step=3, care_packages=5, **NO_EXTRA_CATEGORIES)
         self.assertEqual(self.pool_count("Care Package"), 3)
         self.assertEqual(self.pool_count("Traveler's Tale"), 0)
         self.assertEqual(self.world.fill_slot_data()["economy"]["carePackages"], 3)
@@ -243,7 +246,7 @@ class TestEconomyOptions(WoWTestBase):
 
     def test_progression_that_does_not_fit_is_still_an_error_without_care_packages(self):
         with self.assertRaises(OptionError):
-            self.generate(professions=[], level_milestone_step=4, care_packages=0)
+            self.generate(professions=[], level_milestone_step=4, care_packages=0, **NO_EXTRA_CATEGORIES)
 
     def test_slot_data_follows_the_economy_options(self):
         self.generate(allow_auction_house=0, allow_trading=0, allow_mail=0, allow_shared_banks=1, allow_main_boosts=1,

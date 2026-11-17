@@ -72,6 +72,7 @@ def connected_context(wow_path: Path) -> RecordingContext:
         "goal_level": 60, "professions": [171], "level_step": 1, "profession_step": 25,
         "economy": {"auctionHouse": True, "trading": True, "mail": True, "sharedBanks": False, "mainBoosts": False,
                     "carePackages": 5, "carePackageGold": 50, "carePackageStacks": 5},
+        "categories": {"boss": True, "discovery": True, "reputation": False, "pvp": False},
     }
     ctx.server_locations = {5110000783, 5120000002, 5110000007}
     ctx.missing_locations = set(ctx.server_locations)

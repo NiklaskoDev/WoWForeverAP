@@ -11,9 +11,11 @@ ECONOMY = {
     "auctionHouse": True, "trading": True, "mail": False, "sharedBanks": False, "mainBoosts": False,
     "carePackages": 5, "carePackageGold": 50, "carePackageStacks": 5,
 }
+CATEGORIES = {"boss": True, "discovery": True, "reputation": False, "pvp": False}
 SLOT_DATA = {
     "schema": 1, "world_version": "0.1.0", "faction": "alliance", "start_zone": 1429, "content_release": 1,
     "goal_level": 60, "professions": [171, 186], "level_step": 1, "profession_step": 25, "economy": ECONOMY,
+    "categories": CATEGORIES,
 }
 NAMES = {1: "Me", 2: "Friend"}
 
@@ -46,7 +48,7 @@ def test_build_follows_the_inbox_schema():
         "seed": "seed1", "slot": "Me", "worldVersion": "0.1.0",
         "options": {"faction": "alliance", "startZone": 1429, "contentRelease": 1, "goalLevel": 60,
                     "professions": [171, 186], "levelStep": 1, "professionStep": 25,
-                    "economy": ECONOMY},
+                    "economy": ECONOMY, "categories": CATEGORIES},
         "locations": {5110000783: True, 5120000002: True, 5130171025: True},
         "checked": {5120000002: True},
         "items": [{"id": 5110001429, "sender": "Friend", "loc": 5110000783},

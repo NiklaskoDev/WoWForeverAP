@@ -88,7 +88,8 @@ def build_inbox_fixture() -> str:
                  "profession_step": 25,
                  "economy": {"auctionHouse": True, "trading": True, "mail": False, "sharedBanks": False,
                              "mainBoosts": False, "carePackages": 5, "carePackageGold": 50,
-                             "carePackageStacks": 5}}
+                             "carePackageStacks": 5},
+                 "categories": {"boss": True, "discovery": True, "reputation": False, "pvp": False}}
     quest = ids.location_id(ids.LocCat.QUEST, 783)
     levels = [ids.location_id(ids.LocCat.LEVEL, level) for level in (2, 3)]
     skill = ids.location_id(ids.LocCat.PROFESSION_SKILL, ids.profession_skill_native(171, 25))

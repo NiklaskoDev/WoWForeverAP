@@ -54,7 +54,8 @@ function Env.inbox(overrides)
                     professions = { 171, 186 }, levelStep = 1, professionStep = 25,
                     economy = { auctionHouse = true, trading = true, mail = false, sharedBanks = false,
                                 mainBoosts = false, carePackages = 5, carePackageGold = 50,
-                                carePackageStacks = 5 } },
+                                carePackageStacks = 5 },
+                    categories = { boss = true, discovery = true, reputation = false, pvp = false } },
         locations = {}, checked = {}, items = {},
     }
     for key, value in pairs(overrides or {}) do
