@@ -85,5 +85,6 @@ Resolved 2026-11-17: the programmer accepted every recommendation below.
 - **Default strictness.** (a) Market allowed, banks and boosts off (above). (b) Strict self-found by default. **Recommend (a)**: friendlier for levelling alts, which is the project's purpose.
 
 ## Risks / follow-ups
+- Follow-up (review, minor): `_parse_profession_materials` checks `gather_skill` only against the top tier of all releases; a later-release data edit could make `tier_for` raise at fill time. Validate against the tiers available in the row's release (or add a test that every row resolves under its release).
 - Material source data (`profession_materials.csv`) is hand-curated like 001's data (001 D1).
 - `PLAYER_INTERACTION_MANAGER_FRAME_SHOW` and the enum names must exist in Forever's API (001 D2); otherwise fall back to `AUCTION_HOUSE_SHOW`, `MAIL_SHOW`, `TRADE_SHOW`, `GUILDBANKFRAME_OPENED`.
