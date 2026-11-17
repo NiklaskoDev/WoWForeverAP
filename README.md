@@ -72,11 +72,10 @@ Client facts (D2):
 - Confirmed 2026-11-17 by the programmer in the live Forever client: `GetBuildInfo()` returns "1.60.1", "70938",
   "Nov 12 2026", 16001, so both TOCs declare `## Interface: 16001` (the addon targets Forever only). `GetProfessions()`
   exists and returned 5 slot indices (the addon reads up to 6 positions).
-- **7th return of `GetProfessionInfo(index)`** is assumed to be the skill line id (checked against the 12.1.5 UI
-  source). Confirm in game with `/dump GetProfessionInfo(select(1, GetProfessions()))`.
+- Confirmed 2026-11-17 by the programmer in the live Forever client: `GetProfessionInfo(index)` returns the rank as
+  3rd and the skill line id as 7th value (e.g. Tailoring: rank 135, skill line 197), as the addon reads them.
 - **Mainline 12.x API.** The addon assumes the Mainline API (checked against the 12.1.5 UI source). Unconfirmed
-  for the Forever client: `GetProfessionInfo` (used for profession skill, fallback
-  `C_TradeSkillUI.GetProfessionInfoBySkillLineID`), `C_TradeSkillUI.GetProfessionInfoBySkillLineID` and
+  for the Forever client: `C_TradeSkillUI.GetProfessionInfoBySkillLineID` (profession fallback and
   `C_Map.GetMapInfo` (localised names), `C_QuestLog.GetTitleForQuestID`, `C_Map.GetMapLevels` and
   `C_Map.GetBestMapForUnit` (capture mode), and the events `QUEST_TURNED_IN`, `PLAYER_LEVEL_UP`,
   `SKILL_LINES_CHANGED`. A missing profession API shows one chat warning; if the client is Classic-style, the
