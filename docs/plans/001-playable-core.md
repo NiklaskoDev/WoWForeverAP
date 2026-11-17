@@ -295,6 +295,9 @@ Resolved 2026-11-17: the programmer accepted every recommendation below (D1 a, D
 - **D9 Honor rule for locked zones and start areas.** Travel: (a) passing through a locked zone (roads, flight paths, boats) is allowed, but no questing, XP kills, gathering or looting there; (b) locked zones may not be entered at all — then the logic would need a zone-adjacency graph. **Recommend (a)** (no graph needed). Start areas: (a) one start zone per seed, precollected; characters of other races travel to it; (b) every start zone of the faction is free. **Recommend (a)**.
 
 ## Risks / follow-ups
+- Implemented deviation (review of Phases D–E, accepted): `Data/Generated.lua` holds a top-level `tiers` list and adds `name`/`kind`/`release` to professions (English fallback names for `Core/Names.lua`) instead of `professions[skillLineID] = {key, tiers}`.
+- Follow-up (optional): with several slots in the inbox, the link hint repeats on every login for unlinked characters; consider `/wfap link never` or a one-time hint.
+- Follow-up (optional): `Link.linkPlayer` records an empty profession baseline when no profession API exists; record a "baseline unknown" marker if this ever matters.
 - Data coverage: with D1 (a) the first release depends on how much the programmer captures; a seed with few quests still works (level and profession checks), but is less varied.
 - API uncertainty: the scout's "Mainline/Midnight 12.x API, interface ~16001" is unverified; D2 must be answered before Phase D. Combat restrictions in 12.x do not affect us (no combat-log reading in 001).
 - Release dates: only launch 2026-11-04 is confirmed by several sources; the 9 Dec 2026 raid release appears in one source only. Do not add release rows until the programmer confirms them.
