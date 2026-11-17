@@ -2,7 +2,7 @@
 
 Binding for every AI agent working in this repo. Terse on purpose.
 Detail files live in `docs/ai/` — read one only when its trigger (§9) applies.
-Guideline version: 1.4.0
+Guideline version: 1.4.1
 
 ## Project (fill in once, keep current)
 - Purpose: Archipelago multiworld apworld for World of Warcraft: Forever (Blizzard, live since 2026-11-04) that doubles as a guided way to level alts and professions. Must stay within Blizzard's EULA/ToS: official in-game addon API only, no automation, memory reading, packet tampering or input injection; addon ↔ outside world only via SavedVariables / addon files on `/reload` or logout.
