@@ -1,0 +1,17 @@
+# Tool configuration only: this repo is not an installable Python package.
+# The apworld is loaded by Archipelago from a symlink (scripts/setup_ap.sh).
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = [".ap", ".att", "dist", "data_capture"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+# Archipelago modules are top-level imports from .ap/Archipelago.
+known-third-party = ["BaseClasses", "CommonClient", "Options", "NetUtils", "Utils", "settings", "worlds", "test"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

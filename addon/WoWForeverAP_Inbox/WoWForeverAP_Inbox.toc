@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: WoWForeverAP Inbox
+## Notes: Data file written by the Archipelago client for WoWForeverAP. Do not edit.
+## Author: WoWForeverAP contributors
+## Version: @version@
+
+Inbox.lua

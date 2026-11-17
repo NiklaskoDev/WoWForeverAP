@@ -1,0 +1,7 @@
+# Game-design approximation (not game data): character level the logic assumes is needed to gather or buy materials
+# up to a skill. Self-gathered default; plan 002 extends it. Tunable without changing code.
+max_skill,required_level
+75,1
+150,15
+225,30
+300,45

@@ -1,0 +1,5 @@
+# Filler and care package items. Native ids are ours, permanent once released; unique per kind (a filler and a care
+# package may share a native id: they sit in different item categories).
+native_id,kind,name,release
+1,filler,Traveler's Tale,1
+1,care_package,Care Package,1

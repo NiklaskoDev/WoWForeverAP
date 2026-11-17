@@ -1,7 +1,7 @@
 name: CI
 
 # Lint, test, build. Stacks in this project: Python (apworld + AP client), Lua (WoW addon).
-# Lua checks and apworld packaging go into scripts/ci.sh once plan 001 defines them.
+# Lua checks, generated-data check and apworld packaging run from scripts/ci.sh.
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
         if: hashFiles('pyproject.toml', 'requirements.txt') != ''
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.12'
       - name: Python - install, lint, test
         if: hashFiles('pyproject.toml', 'requirements.txt') != ''
         run: |
@@ -42,6 +42,8 @@ jobs:
           pip install ruff pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f pyproject.toml ] && grep -q '^\[project\]' pyproject.toml; then pip install -e .; fi
+          # The apworld imports Archipelago, so a pinned checkout is needed to import or test it.
+          bash scripts/setup_ap.sh
           ruff check .
           pytest
 

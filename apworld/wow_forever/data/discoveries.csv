@@ -1,0 +1,625 @@
+# PROVISIONAL - map-exploration areas of the zones in zones.csv; confirm in the live Forever client (plan 004, plan 001 D2).
+# area_id: the areas the Forever client reveals on the world map (WorldMapOverlay.AreaID), as the area-to-map pairs of
+#   github.com/ATTWoWAddon/AllTheThings .contrib/.db/forever/.config/exploration/ExplorationAreaPositionDB.lua (points harvested in
+#   game) and ExplorationPositions.lua (estimated from the same WorldMapOverlay data; build 1.60.1.70840). These are the ids
+#   C_MapExplorationInfo.GetExploredAreaIDsAtPosition returns for an explored spot.
+# name: AreaTable of the Forever client, same repository .contrib/.db/forever/.config/.wago/AreaTable.1.60.1.70938.csv.
+# ui_map_id: the zone map the area belongs to. An area listed on several maps is kept on the map of its top-level parent area
+#   (UiMapAssignment.1.60.1.70938.csv in the same folder); areas on maps that are not in zones.csv (cities, the Ironforge area
+#   shown on two zone maps) and the instance copy of Darkwhisper Gorge (16005) are left out. Cities and dungeon wings are not here.
+area_id,name,ui_map_id,release
+9,Northshire Valley,1429,1
+18,Crystal Lake,1429,1
+19,Zul'Gurub,1434,1
+20,Moonbrook,1436,1
+35,Booty Bay,1434,1
+37,Lake Nazferiti,1434,1
+42,Darkshire,1431,1
+43,Wild Shore,1434,1
+54,Jasperlode Mine,1429,1
+57,Fargodeep Mine,1429,1
+60,Forest's Edge,1429,1
+62,Brackwell Pumpkin Patch,1429,1
+63,The Stonefield Farm,1429,1
+64,The Maclure Vineyards,1429,1
+68,Lake Everstill,1433,1
+69,Lakeshire,1433,1
+70,Stonewatch,1433,1
+71,Stonewatch Falls,1433,1
+72,The Dark Portal,1419,1
+73,The Tainted Scar,1419,1
+74,Pool of Tears,1435,1
+75,Stonard,1435,1
+76,Fallow Sanctuary,1435,1
+77,Anvilmar,1426,1
+80,Stormwind Mountains,1429,1
+86,Stone Cairn Lake,1429,1
+87,Goldshire,1429,1
+88,Eastvale Logging Camp,1429,1
+91,Tower of Azora,1429,1
+93,Vul'Gol Ogre Mound,1431,1
+94,Raven Hill,1431,1
+95,Redridge Canyons,1433,1
+96,Tower of Ilgalar,1433,1
+97,Alther's Mill,1433,1
+98,Rethban Caverns,1433,1
+99,Rebel Camp,1434,1
+100,Nesingwary's Expedition,1434,1
+101,Kurzen's Compound,1434,1
+102,Ruins of Zul'Kunda,1434,1
+103,Ruins of Zul'Mamwe,1434,1
+104,The Vile Reef,1434,1
+105,Mosh'Ogg Ogre Mound,1434,1
+107,Saldean's Farm,1436,1
+108,Sentinel Hill,1436,1
+109,Furlbrow's Pumpkin Farm,1436,1
+111,Jangolode Mine,1436,1
+113,Gold Coast Quarry,1436,1
+115,Westfall Lighthouse,1436,1
+116,Misty Valley,1435,1
+117,Grom'gol Base Camp,1434,1
+118,Whelgar's Excavation Site,1437,1
+120,Westbrook Garrison,1429,1
+121,Tranquil Gardens Cemetery,1431,1
+122,Zuuldaia Ruins,1434,1
+123,Bal'lal Ruins,1434,1
+125,Kal'ai Ruins,1434,1
+127,Balia'mah Ruins,1434,1
+128,Ziata'jai Ruins,1434,1
+129,Mizjah Ruins,1434,1
+131,Kharanos,1426,1
+132,Coldridge Valley,1426,1
+133,Gnomeregan,1426,1
+134,Gol'Bolar Quarry,1426,1
+135,Frostmane Hold,1426,1
+136,The Grizzled Den,1426,1
+137,Brewnall Village,1426,1
+138,Misty Pine Refuge,1426,1
+142,Ironband's Excavation Site,1432,1
+143,Mo'grosh Stronghold,1432,1
+144,Thelsamar,1432,1
+146,Stonewrought Dam,1432,1
+147,The Farstrider Lodge,1432,1
+149,Silver Stream Mine,1432,1
+150,Menethil Harbor,1437,1
+152,The Bulwark,1420,1
+153,Ruins of Lordaeron,1420,1
+154,Deathknell,1420,1
+156,Solliden Farmstead,1420,1
+157,Agamand Mills,1420,1
+159,Brill,1420,1
+160,Whispering Gardens,1420,1
+161,Terrace of Repose,1420,1
+162,Brightwater Lake,1420,1
+164,Garren's Haunt,1420,1
+165,Balnir Farmstead,1420,1
+166,Cold Hearth Manor,1420,1
+167,Crusader Outpost,1420,1
+172,Fenris Isle,1421,1
+186,Dolanaar,1438,1
+188,Shadowglen,1438,1
+189,Steelgrill's Depot,1426,1
+190,Hearthglen,1422,1
+192,Northridge Lumber Camp,1422,1
+193,Ruins of Andorhal,1422,1
+197,Sorrow Hill,1422,1
+198,The Weeping Cave,1422,1
+199,Felstone Field,1422,1
+200,Dalson's Tears,1422,1
+201,Gahrron's Withering,1422,1
+202,The Writhing Haunt,1422,1
+204,Pyrewood Village,1421,1
+205,Dun Modr,1437,1
+211,Iceflow Lake,1426,1
+212,Helm's Bed Lake,1426,1
+213,Deep Elem Mine,1421,1
+219,Alexston Farmstead,1436,1
+220,Red Cloud Mesa,1412,1
+222,Bloodhoof Village,1412,1
+224,Ravaged Caravan,1412,1
+225,Red Rocks,1412,1
+226,The Skittering Dark,1421,1
+227,Valgan's Field,1421,1
+228,The Sepulcher,1421,1
+229,Olsen's Farthing,1421,1
+230,The Greymane Wall,1421,1
+231,Beren's Peril,1421,1
+232,The Dawning Isles,1421,1
+233,Ambermill,1421,1
+236,Shadowfang Keep,1421,1
+237,The Decrepit Ferry,1421,1
+238,Malden's Orchard,1421,1
+239,The Ivar Patch,1421,1
+240,The Dead Field,1421,1
+241,The Rotting Orchard,1431,1
+242,Brightwood Grove,1431,1
+243,Forlorn Rowe,1431,1
+245,The Yorgen Farmstead,1431,1
+246,The Cauldron,1427,1
+247,Grimesilt Dig Site,1427,1
+249,Dreadmaul Rock,1428,1
+250,Ruins of Thaurissan,1428,1
+252,Blackrock Stronghold,1428,1
+253,The Pillar of Ash,1428,1
+254,Blackrock Mountain,1428,1
+255,Altar of Storms,1428,1
+259,Lake Al'Ameth,1438,1
+260,Starbreeze Village,1438,1
+261,Gnarlpine Hold,1438,1
+264,The Oracle Glade,1438,1
+265,Wellspring River,1438,1
+266,Wellspring Lake,1438,1
+271,Southshore,1424,1
+272,Tarren Mill,1424,1
+275,Durnholde Keep,1424,1
+278,Lordamere Internment Camp,1416,1
+279,Dalaran,1416,1
+280,Strahnbrad,1416,1
+281,Ruins of Alterac,1416,1
+282,Crushridge Hold,1416,1
+283,Slaughter Hollow,1416,1
+284,The Uplands,1416,1
+285,Southpoint Tower,1424,1
+286,Hillsbrad Fields,1424,1
+288,Azurelode Mine,1424,1
+289,Nethander Stead,1424,1
+290,Dun Garok,1424,1
+294,Eastern Strand,1424,1
+295,Western Strand,1424,1
+297,Jaguero Isle,1434,1
+300,Misty Reed Strand,1435,1
+307,The Overlook Cliffs,1425,1
+309,Ironbeard's Tomb,1437,1
+310,Crystalvein Mine,1434,1
+311,Ruins of Aboraz,1434,1
+312,Janeiro's Point,1434,1
+313,Northfold Manor,1417,1
+314,Go'Shek Farm,1417,1
+315,Dabyrie's Farmstead,1417,1
+316,Boulderfist Hall,1417,1
+317,Witherbark Village,1417,1
+318,Drywhisker Gorge,1417,1
+320,Refuge Pointe,1417,1
+321,Hammerfall,1417,1
+324,Stromgarde Keep,1417,1
+327,Faldir's Cove,1417,1
+333,Circle of East Binding,1417,1
+334,Circle of West Binding,1417,1
+335,Circle of Inner Binding,1417,1
+336,Circle of Outer Binding,1417,1
+337,Apocryphan's Rest,1418,1
+338,Angor Fortress,1418,1
+339,Lethlor Ravine,1418,1
+340,Kargath,1418,1
+341,Camp Kosh,1418,1
+342,Camp Boff,1418,1
+344,Camp Cagg,1418,1
+345,Agmond's End,1418,1
+346,Hammertoe's Digsite,1418,1
+347,Dustbelch Grotto,1418,1
+348,Aerie Peak,1425,1
+350,Quel'Danil Lodge,1425,1
+351,Skulk Rock,1425,1
+353,Shadra'Alor,1425,1
+354,Jintha'Alor,1425,1
+355,The Altar of Zul,1425,1
+356,Seradane,1425,1
+358,Brambleblade Ravine,1412,1
+359,Bael Modan,1413,1
+360,The Venture Co. Mine,1412,1
+362,Razor Hill,1411,1
+363,Valley of Trials,1411,1
+366,Kolkar Crag,1411,1
+367,Sen'jin Village,1411,1
+368,Echo Isles,1411,1
+369,Thunder Ridge,1411,1
+370,Drygulch Ravine,1411,1
+372,Tiragarde Keep,1411,1
+378,Camp Taurajo,1413,1
+379,Far Watch Post,1413,1
+380,The Crossroads,1413,1
+381,Boulder Lode Mine,1413,1
+382,The Sludge Fen,1413,1
+383,The Dry Hills,1413,1
+384,Dreadmist Peak,1413,1
+385,Northwatch Hold,1413,1
+386,The Forgotten Pools,1413,1
+387,Lushwater Oasis,1413,1
+388,The Stagnant Oasis,1413,1
+390,Field of Giants,1413,1
+391,The Merchant Coast,1413,1
+392,Ratchet,1413,1
+396,Winterhoof Water Well,1412,1
+397,Thunderhorn Water Well,1412,1
+398,Wildmane Water Well,1412,1
+404,Bael'dun Digsite,1412,1
+410,Razorwind Canyon,1411,1
+413,Maestra's Post,1440,1
+414,The Zoram Strand,1440,1
+415,Astranaar,1440,1
+416,The Shrine of Aessina,1440,1
+417,Fire Scar Shrine,1440,1
+418,The Ruins of Stardust,1440,1
+419,The Howling Vale,1440,1
+420,Silverwind Refuge,1440,1
+421,Mystral Lake,1440,1
+422,Fallen Sky Lake,1440,1
+424,Iris Lake,1440,1
+426,Raynewood Retreat,1440,1
+428,Night Run,1440,1
+430,Satyrnaar,1440,1
+431,Splintertree Post,1440,1
+432,The Dor'Danil Barrow Den,1440,1
+434,Felfire Hill,1440,1
+437,Warsong Lumber Camp,1440,1
+438,Bough Shadow,1440,1
+439,The Shimmering Flats,1441,1
+441,Lake Falathim,1440,1
+442,Auberdine,1439,1
+443,Ruins of Mathystra,1439,1
+444,Tower of Althalaxx,1439,1
+445,Cliffspring Falls,1439,1
+446,Bashal'Aran,1439,1
+447,Ameth'Aran,1439,1
+448,Grove of the Ancients,1439,1
+449,The Master's Glaive,1439,1
+450,Remtravel's Excavation,1439,1
+456,Cliffspring River,1439,1
+459,Scarlet Watch Post,1420,1
+460,Sun Rock Retreat,1442,1
+461,Windshear Crag,1442,1
+464,Mirkfallon Lake,1442,1
+465,The Charred Vale,1442,1
+467,Stonetalon Peak,1442,1
+477,Ruins of Jubuwal,1434,1
+478,Pools of Arlithrien,1438,1
+480,Camp E'thok,1441,1
+481,Splithoof Crag,1441,1
+482,Highperch,1441,1
+483,The Screeching Canyon,1441,1
+484,Freewind Post,1441,1
+485,The Great Lift,1441,1
+492,Raven Hill Cemetery,1431,1
+493,Moonglade,1450,1
+496,Brackenwall Village,1445,1
+498,Bloodfen Burrow,1445,1
+499,Darkmist Cavern,1445,1
+501,Beezil's Wreck,1445,1
+502,Witch Hill,1445,1
+503,Sentry Point,1445,1
+504,North Point Tower,1445,1
+507,Bluefen,1445,1
+508,Stonemaul Ruins,1445,1
+509,The Den of Flame,1445,1
+510,The Dragonmurk,1445,1
+511,Wyrmbog,1445,1
+513,Theramore Isle,1445,1
+516,Dustwallow Bay,1445,1
+517,Tidefury Cove,1445,1
+518,Dreadmurk Shore,1445,1
+536,Addle's Stead,1431,1
+537,Fire Plume Ridge,1449,1
+538,Lakkari Tar Pits,1449,1
+539,Terror Run,1449,1
+540,The Slithering Scar,1449,1
+543,Golakka Hot Springs,1449,1
+556,The Loch,1432,1
+576,Beggar's Haunt,1431,1
+596,Kodo Graveyard,1443,1
+599,Thunder Axe Fortress,1443,1
+602,Mannoroc Coven,1443,1
+603,Sargeron,1443,1
+604,Magram Village,1443,1
+606,Gelkis Village,1443,1
+607,Valley of Spears,1443,1
+608,Nijel's Point,1443,1
+609,Kolkar Village,1443,1
+656,Lake Elune'ara,1450,1
+657,The Harborage,1435,1
+702,Rut'theran Village,1438,1
+716,Ironband's Compound,1426,1
+736,Ban'ethil Hollow,1438,1
+797,Jerod's Landing,1429,1
+798,Ridgepoint Tower,1429,1
+799,The Darkened Bank,1431,1
+800,Coldridge Pass,1426,1
+801,Chill Breeze Valley,1426,1
+802,Shimmer Ridge,1426,1
+803,Amberstill Ranch,1426,1
+804,The Tundrid Hills,1426,1
+806,South Gate Outpost,1426,1
+808,North Gate Outpost,1426,1
+809,Gates of Ironforge,1426,1
+810,Stillwater Pond,1420,1
+811,Nightmare Vale,1420,1
+812,Venomweb Vale,1420,1
+813,The Bulwark,1422,1
+816,Razormane Grounds,1411,1
+817,Skull Rock,1411,1
+818,Palemane Rock,1412,1
+819,Windfury Ridge,1412,1
+820,The Golden Plains,1412,1
+821,The Rolling Plains,1412,1
+836,Dun Algaz,1437,1
+838,North Gate Pass,1432,1
+856,Twilight Grove,1431,1
+880,Thandol Span,1417,1
+896,Purgation Isle,1424,1
+916,The Jansen Stead,1436,1
+917,The Dead Acre,1436,1
+918,The Molsen Farm,1436,1
+919,Stendel's Pond,1436,1
+920,The Dagger Hills,1436,1
+921,Demont's Place,1436,1
+922,The Dust Plains,1436,1
+923,Stonesplinter Valley,1432,1
+924,Valley of Kings,1432,1
+925,Algaz Station,1432,1
+927,The Shining Strand,1421,1
+928,North Tide's Hollow,1421,1
+936,Grizzlepaw Ridge,1432,1
+976,Gadgetzan,1446,1
+977,Steamwheedle Port,1446,1
+978,Zul'Farrak,1446,1
+979,Sandsorrow Watch,1446,1
+980,Thistleshrub Valley,1446,1
+981,The Gaping Chasm,1446,1
+982,The Noxious Lair,1446,1
+983,Dunemaul Compound,1446,1
+984,Eastmoon Ruins,1446,1
+985,Waterspring Field,1446,1
+986,Zalashji's Den,1446,1
+987,Land's End Beach,1446,1
+990,Valley of the Watchers,1446,1
+992,Southmoon Ruins,1446,1
+996,Render's Camp,1433,1
+997,Render's Valley,1433,1
+998,Render's Rock,1433,1
+999,Stonewatch Tower,1433,1
+1000,Galardell Valley,1433,1
+1001,Lakeridge Highway,1433,1
+1002,Three Corners,1433,1
+1016,Direforge Hill,1437,1
+1017,Raptor Ridge,1437,1
+1018,Black Channel Marsh,1437,1
+1020,Mosshide Fen,1437,1
+1021,Thelgen Rock,1437,1
+1022,Bluegill Marsh,1437,1
+1023,Saltspray Glen,1437,1
+1024,Sundown Marsh,1437,1
+1025,The Green Belt,1437,1
+1036,Angerfang Encampment,1437,1
+1037,Grim Batol,1437,1
+1038,Dragonmaw Gates,1437,1
+1056,Darrow Hill,1424,1
+1076,Webwinder Path,1442,1
+1097,The Hushed Bank,1431,1
+1098,Manor Mistmantle,1431,1
+1099,Camp Mojache,1444,1
+1100,Grimtotem Compound,1444,1
+1101,The Writhing Deep,1444,1
+1103,Gordunni Outpost,1444,1
+1105,Feral Scar Vale,1444,1
+1106,Frayfeather Highlands,1444,1
+1108,The Forgotten Coast,1444,1
+1111,Dream Bough,1444,1
+1113,Oneiros,1444,1
+1114,Ruins of Ravenwind,1444,1
+1119,The Twin Colossals,1444,1
+1120,Sardor Isle,1444,1
+1121,Isle of Dread,1444,1
+1137,Lower Wilds,1444,1
+1216,Blackmaw Hold,1447,1
+1219,Legashi Encampment,1447,1
+1220,Thalassian Base Camp,1447,1
+1221,Ruins of Eldarath,1447,1
+1225,Ursolan,1447,1
+1226,Temple of Arkkoran,1447,1
+1227,Bay of Storms,1447,1
+1228,The Shattered Strand,1447,1
+1229,Tower of Eldara,1447,1
+1230,Jagged Reef,1447,1
+1231,Southridge Beach,1447,1
+1232,Ravencrest Monument,1447,1
+1233,Forlorn Ridge,1447,1
+1234,Lake Mennar,1447,1
+1235,Shadowsong Shrine,1447,1
+1236,Haldarr Encampment,1447,1
+1237,Valormok,1447,1
+1256,The Ruined Reaches,1447,1
+1277,The Talondeep Path,1442,1
+1316,Razorfen Downs,1413,1
+1336,Lost Rigger Cove,1446,1
+1357,Gallows' Corner,1416,1
+1437,Dreadmaul Hold,1419,1
+1438,Nethergarde Keep,1419,1
+1439,Dreadmaul Post,1419,1
+1440,Serpent's Coil,1419,1
+1441,Altar of Storms,1419,1
+1442,Firewatch Ridge,1427,1
+1444,The Sea of Cinders,1427,1
+1457,Garrison Armory,1419,1
+1497,Undercity,1420,1
+1517,Uldaman,1418,1
+1519,Stormwind City,1429,1
+1617,Valley of Heroes,1429,1
+1637,Orgrimmar,1411,1
+1638,Thunder Bluff,1412,1
+1657,Darnassus,1438,1
+1660,Warrior's Terrace,1438,1
+1662,Tradesmen's Terrace,1438,1
+1677,Gavin's Naze,1416,1
+1678,Sofera's Naze,1416,1
+1679,Corrahn's Dagger,1416,1
+1680,The Headland,1416,1
+1681,Misty Shore,1416,1
+1682,Dandred's Fold,1416,1
+1683,Growless Cave,1416,1
+1684,Chillwind Point,1416,1
+1697,Raptor Grounds,1413,1
+1698,Bramblescar,1413,1
+1699,Thorn Hill,1413,1
+1700,Agama'gor,1413,1
+1701,Blackthorn Ridge,1413,1
+1702,Honor's Stand,1413,1
+1703,The Mor'shan Rampart,1413,1
+1704,Grol'dom Farm,1413,1
+1717,Razorfen Kraul,1413,1
+1737,Mistvale Valley,1434,1
+1738,Nek'mani Wellspring,1434,1
+1739,Bloodsail Compound,1434,1
+1740,Venture Co. Base Camp,1434,1
+1741,Gurubashi Arena,1434,1
+1761,Deadwood Village,1448,1
+1762,Felpaw Village,1448,1
+1763,Jaedenar,1448,1
+1765,Bloodvenom Falls,1448,1
+1766,Shatter Scar Vale,1448,1
+1767,Irontree Woods,1448,1
+1769,Timbermaw Hold,1448,1
+1777,Itharius's Cave,1435,1
+1778,Sorrowmurk,1435,1
+1780,Splinterspear Junction,1435,1
+1797,Stagalbog,1435,1
+1798,The Shifting Mire,1435,1
+1857,Thoradin's Wall,1417,1
+1858,Boulder'gor,1417,1
+1877,Valley of Fangs,1418,1
+1878,The Dustbowl,1418,1
+1879,Mirage Flats,1418,1
+1882,Plaguemist Ravine,1425,1
+1883,Valorwind Lake,1425,1
+1884,Agol'watha,1425,1
+1885,Hiri'watha,1425,1
+1886,The Creeping Ruin,1425,1
+1897,The Maker's Terrace,1418,1
+1898,Dustwind Gulch,1418,1
+1917,Shaol'watha,1425,1
+1937,Noonshade Ruins,1446,1
+1938,Broken Pillar,1446,1
+1939,Abyssal Sands,1446,1
+1940,Southbreak Shore,1446,1
+1942,The Marshlands,1449,1
+1943,Ironstone Plateau,1449,1
+1957,Blackchar Cave,1427,1
+1958,Tanner Camp,1427,1
+1959,Dustfire Valley,1427,1
+1978,Misty Reed Post,1435,1
+1998,Talonbranch Glade ,1448,1
+2079,Alcaz Island,1445,1
+2097,Darkcloud Pinnacle,1441,1
+2198,Shadowbreak Ravine,1443,1
+2237,Whitereach Post,1441,1
+2241,Frostsaber Rock,1452,1
+2242,The Hidden Grove,1452,1
+2243,Timbermaw Post,1452,1
+2244,Winterfall Village,1452,1
+2245,Mazthoril,1452,1
+2246,Frostfire Hot Springs,1452,1
+2247,Ice Thistle Hills,1452,1
+2249,Frostwhisper Gorge,1452,1
+2250,Owl Wing Thicket,1452,1
+2251,Lake Kel'Theril,1452,1
+2253,Starfall Village,1452,1
+2255,Everlook,1452,1
+2256,Darkwhisper Gorge,1452,1
+2258,The Fungal Vale,1423,1
+2260,The Marris Stead,1423,1
+2261,The Undercroft,1423,1
+2262,Darrowshire,1423,1
+2263,Crown Guard Tower,1423,1
+2264,Corin's Crossing,1423,1
+2266,Tyr's Hand,1423,1
+2268,Light's Hope Chapel,1423,1
+2270,The Noxious Glade,1423,1
+2271,Eastwall Tower,1423,1
+2272,Northdale,1423,1
+2273,Zul'Mashar,1423,1
+2275,Northpass Tower,1423,1
+2276,Quel'Lithien Lodge,1423,1
+2277,Plaguewood,1423,1
+2279,Stratholme,1423,1
+2297,Darrowmere Lake,1422,1
+2298,Caer Darrow,1422,1
+2300,Caverns of Time,1446,1
+2301,Thistlefur Village,1440,1
+2302,The Quagmire,1445,1
+2303,Windbreak Canyon,1441,1
+2359,Greenpaw Village,1440,1
+2361,Nighthaven,1450,1
+2362,Shrine of Remulos,1450,1
+2404,Tethris Aran,1443,1
+2405,Ethel Rethor,1443,1
+2406,Ranazjar Isle,1443,1
+2407,Kormek's Hut,1443,1
+2408,Shadowprey Village,1443,1
+2417,Blackrock Pass,1428,1
+2418,Morgan's Vigil,1428,1
+2420,Terror Wing Path,1428,1
+2421,Draco'dar,1428,1
+2478,Morlos'Aran,1448,1
+2479,Emerald Sanctuary,1448,1
+2480,Jadefire Glen,1448,1
+2481,Ruins of Constellas,1448,1
+2497,Bitter Reaches,1447,1
+2517,Rise of the Defiler,1419,1
+2519,Woodpaw Hills,1444,1
+2522,Ruins of Isildien,1444,1
+2537,Grimtotem Post,1442,1
+2538,Camp Aparaje,1442,1
+2539,Malaka'jin,1442,1
+2540,Boulderslide Ravine,1442,1
+2541,Sishir Canyon,1442,1
+2561,The Vice,1430,1
+2562,Karazhan,1430,1
+2577,Dire Maul,1444,1
+2618,Jadefire Run,1448,1
+2619,Thondroril River,1423,1
+2620,Thondroril River,1422,1
+2621,Lake Mereldar,1423,1
+2622,Pestilent Scar,1423,1
+2623,The Infectis Scar,1423,1
+2624,Blackwood Lake,1423,1
+2627,Terrordale,1423,1
+2697,Deadman's Crossing,1430,1
+2737,The Scarab Wall,1451,1
+2738,Southwind Village,1451,1
+2739,Twilight Base Camp,1451,1
+2740,The Crystal Vale,1451,1
+2741,The Scarab Dais,1451,1
+2742,Hive'Ashi,1451,1
+2743,Hive'Zora,1451,1
+2744,Hive'Regal,1451,1
+2938,Sleeping Gorge,1430,1
+3077,Valor's Rest,1451,1
+3097,The Swarming Pillar,1451,1
+3425,Cenarion Hold,1451,1
+3426,Staghelm Point,1451,1
+3427,Bronzebeard Encampment,1451,1
+3486,Ravenholdt Manor,1416,1
+16335,New Avalon,1423,1
+16616,Whispering Forest,1420,1
+16622,Thendal Grove,2521,1
+16623,Shen'dar Highlands,2521,1
+16624,Shen'dar Village,2521,1
+16625,Windsong Lake,2521,1
+16626,Gustberry Lowlands,2521,1
+16628,Valanaar Skydocks,2521,1
+16629,Shrine of Akir,2521,1
+16630,Rohashi Spires,2521,1
+16631,Shadowgale Forest,2521,1
+16635,Thendal Village,2521,1
+16636,Falaath Village,2521,1
+16638,Valanaar,2521,1
+16663,Windfield Orchard,2521,1
+16685,Twilight's Shroud,1428,1
+16737,Bristle Hills,1428,1
+16833,Ruins of Ban'aethal,2521,1
+17045,Skywatcher Plateau,1412,1
+17674,West Pylon Watchtower,2521,1
+17675,East Pylon Watchtower,2521,1
+17676,Windsong Standing Stones,2521,1
+17677,Overlook Standing Stones,2521,1
+17678,Thendal Standing Stones,2521,1
+17684,Fairweather Stables,2521,1
+17780,Krol'dok Stronghold,1418,1

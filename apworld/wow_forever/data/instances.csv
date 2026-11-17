@@ -1,0 +1,27 @@
+# PROVISIONAL - Classic Era dungeons only; confirm in the live Forever client (plan 004, plan 001 D2). Raids are left out
+#   until their release date is confirmed (single source: 9 Dec 2026); the loader already accepts kind raid.
+# instance_id and name: Classic client Map table, github.com/Hoizame/WoW_ClassicUIResources RawData/Map.lua (client 1.13.3.32790);
+#   instance_id is the map id GetInstanceInfo() returns. 'The Deadmines' and 'The Temple of Atal'Hakkar' keep the in-game
+#   names used by the Forever data of github.com/ATTWoWAddon/AllTheThings (.contrib/.db/forever/dungeons & raids/*.lua).
+# entrance_ui_map_id and min_level: the same ATT files (entrance `coord`/`coords` on a zone map, `lvl` of the instance root);
+#   Dire Maul: its lore text places it in north-central Feralas. min_level is ATT's recommended entry level, not a hard lock.
+#   An instance belongs to the zone with its entrance (plan 004, D1 a): it needs that zone's unlock item.
+# group_size 5 for every row (party dungeons); faction both: the entrance zone's faction already limits who can reach it.
+# Left out because the entrance is not in zones.csv: Ragefire Chasm (Orgrimmar), The Stockade (Stormwind City), Blackrock
+#   Depths and Blackrock Spire (Blackrock Mountain), Stratholme (no entrance coordinate in the ATT file), and the new
+#   Forever instances (levels and zones unknown).
+instance_id,name,kind,entrance_ui_map_id,min_level,group_size,faction,release
+33,Shadowfang Keep,dungeon,1421,14,5,both,1
+36,The Deadmines,dungeon,1436,10,5,both,1
+43,Wailing Caverns,dungeon,1413,10,5,both,1
+47,Razorfen Kraul,dungeon,1413,17,5,both,1
+48,Blackfathom Deeps,dungeon,1440,19,5,both,1
+70,Uldaman,dungeon,1418,35,5,both,1
+90,Gnomeregan,dungeon,1426,19,5,both,1
+109,The Temple of Atal'Hakkar,dungeon,1435,45,5,both,1
+129,Razorfen Downs,dungeon,1413,35,5,both,1
+189,Scarlet Monastery,dungeon,1420,25,5,both,1
+209,Zul'Farrak,dungeon,1446,39,5,both,1
+289,Scholomance,dungeon,1422,55,5,both,1
+349,Maraudon,dungeon,1443,41,5,both,1
+429,Dire Maul,dungeon,1444,44,5,both,1
