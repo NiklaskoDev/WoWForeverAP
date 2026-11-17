@@ -252,3 +252,18 @@ class TestContentRelease(WoWTestBase):
         zones = frozenset(zone.ui_map_id for zone in fixture.zones) - {1426}
         specs = locations.select_locations(1, "alliance", zones, frozenset(), 1, 25, fixture)
         self.assertNotIn("Dun Morogh: Dwarven Outfitters", {spec.name for spec in specs})
+
+
+class TestWithoutEarlyZoneCandidate(WoWTestBase):
+    def test_generation_succeeds_and_skips_the_early_item_when_no_zone_covers_level_11(self):
+        files = read_shipped_files()
+        for old, new in (("1436,Westfall,10,20", "1436,Westfall,15,20"),
+                         ("1439,Darkshore,10,20", "1439,Darkshore,15,20"),
+                         ("1432,Loch Modan,10,20", "1432,Loch Modan,15,20"),
+                         ("2521,Zephra's Isle,1,12", "2521,Zephra's Isle,1,10")):
+            assert old in files["zones.csv"], f"fixture drift: {old}"
+            files["zones.csv"] = files["zones.csv"].replace(old, new)
+        with mock.patch.object(wow_world, "load_game_data", return_value=parse_game_data(files)):
+            self.generate(faction="alliance", start_zone="elwynn_forest")
+        self.assertEqual(dict(self.multiworld.early_items[self.player]), {})
+        self.assertEqual(len(self.multiworld.itempool), len(self.location_names()))

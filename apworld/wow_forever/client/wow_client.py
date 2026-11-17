@@ -181,7 +181,6 @@ class WoWForeverContext(CommonContext):
         new_checks = pending_checks(self.saved_state.outbox_ids(slot_key), self.checked_locations,
                                     self.server_locations)
         if new_checks:
-            self.locations_checked |= new_checks  # replayed by CommonClient after a reconnect
             await self.check_locations(new_checks)
             LOGGER.info("Sent %d new checks.", len(new_checks))
         if goal_to_send(self.saved_state.goal_reached(slot_key), self.finished_game):
@@ -245,6 +244,8 @@ async def sv_watch_loop(ctx: WoWForeverContext) -> None:
             await ctx.sync_from_savedvars()
         except OSError as error:
             LOGGER.warning("Could not sync with the addon files: %s", error)
+        except Exception:  # noqa: BLE001 - the watcher must outlive any single failed round
+            LOGGER.exception("Unexpected error while syncing with the addon files")
         last_signature = signature
 
 

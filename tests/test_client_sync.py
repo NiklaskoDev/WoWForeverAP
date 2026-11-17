@@ -100,7 +100,6 @@ def test_sync_sends_pending_checks_and_the_goal(tmp_path):
     assert set(check_messages[0]["locations"]) == {5110000783, 5120000002}  # 5110000007 is not in the outbox
     assert {"cmd": "StatusUpdate", "status": 30} in ctx.sent  # ClientStatus.CLIENT_GOAL
     assert ctx.finished_game is True
-    assert ctx.locations_checked == {5110000783, 5120000002}
 
 
 def test_second_sync_sends_nothing_new_and_goal_only_once(tmp_path):
@@ -230,3 +229,27 @@ def test_sync_command_requests_a_resync(tmp_path, monkeypatch):
         assert ctx.inbox_dirty.is_set()
 
     run_with_context(tmp_path, scenario)
+
+
+# --- watcher loop --------------------------------------------------------------------------
+
+def test_watch_loop_survives_an_unexpected_error_and_keeps_syncing(tmp_path, monkeypatch, caplog):
+    wow = make_wow(tmp_path)
+    monkeypatch.setattr(wow_client, "POLL_SECONDS", 0.01)
+    calls = []
+
+    async def scenario(ctx):
+        async def flaky_sync():
+            calls.append(len(calls) + 1)
+            if len(calls) == 1:
+                ctx.sync_requested = True  # force another round without touching the files
+                raise RuntimeError("boom")
+            ctx.exit_event.set()
+
+        ctx.sync_from_savedvars = flaky_sync
+        await asyncio.wait_for(wow_client.sv_watch_loop(ctx), timeout=5)
+
+    with caplog.at_level("ERROR", logger="Client"):
+        run_with_context(wow, scenario)
+    assert calls == [1, 2]
+    assert any("Unexpected error while syncing" in r.getMessage() and r.exc_info for r in caplog.records)
