@@ -121,6 +121,7 @@ Resolved 2026-11-17: the programmer accepted every recommendation below (D1 work
 - D5 Template Docker step — (a) delete it with `packages: write` (no Dockerfile; an image does not fit an apworld + addon) (b) keep it dormant behind `hashFiles('Dockerfile')`, which keeps `packages: write`. Recommendation: (a). Asked because it deletes template content.
 
 ## Risks / follow-ups
+- Amended 2026-11-17 (main session): use the current majors `actions/upload-artifact@v7` and `actions/download-artifact@v8` instead of v4, matching the Dependabot-updated actions (checkout@v7, setup-python@v7, gitleaks-action@v3, dependency-review-action@v5).
 - `CHANGELOG.md` still has the template stub `## [0.1.0] - YYYY-MM-DD` while `VERSION` is `0.0.0`; the first release must resolve that (programmer's call at release time). With D4 = a, a tag without its section fails safely before publishing.
 - `docs/ai/versioning.md` CI table says `release.yml` pushes a Docker image "if there is a Dockerfile"; with D5 = a that stops being true. `docs/ai/*` is the shared guideline set, so this plan leaves it; adding a Dockerfile later would need the step back.
 - The workflow does not check that the tagged commit is on `main` (`versioning.md` §Release step 6); possible later with `fetch-depth: 0` and `git merge-base --is-ancestor`. Not requested.
