@@ -109,6 +109,49 @@ def test_timeline_exclusion(markers, expected):
     assert tool.timeline_exclusion(nodes, (1, 60, 1)) == expected
 
 
+def add_westfall_quest(root: Path, text: str) -> None:
+    path = root / "zones" / "eastern kingdoms" / "westfall.lua"
+    content = path.read_text(encoding="utf-8")
+    path.write_text(content.replace("\t\t\tq(143,", f"{text}\n\t\t\tq(143,"), encoding="utf-8")
+
+
+def quest_block(quest_id: int, name: str, body: str = "lvl = 12,") -> str:
+    return f"\t\t\tq({quest_id}, {{\t-- {name}\n\t\t\t\t{body}\n\t\t\t}}),"
+
+
+def test_an_excluded_first_occurrence_does_not_hide_a_later_valid_one(att_copy):
+    add_quest(att_copy, quest_block(400, "Excluded First", "u = 1,"))
+    add_westfall_quest(att_copy, quest_block(400, "Valid Later"))
+    result = tool.run_import(att_copy, tool.shipped_data_files(), SHA)[0]
+    kept = {row.quest_id: row for row in result.rows}
+    assert (kept[400].name, kept[400].zone_id) == ("Valid Later", 1436)
+    assert [item.reason for item in result.exclusions if item.quest_id == 400] == ["unobtainable"]
+
+
+def test_of_two_valid_occurrences_the_first_wins_and_the_later_is_a_duplicate(att_copy):
+    add_quest(att_copy, quest_block(401, "First One"))
+    add_westfall_quest(att_copy, quest_block(401, "Second One"))
+    result = tool.run_import(att_copy, tool.shipped_data_files(), SHA)[0]
+    assert {row.quest_id: row.name for row in result.rows}[401] == "First One"
+    assert [(item.reason, item.name) for item in result.exclusions if item.quest_id == 401] == [
+        ("duplicate", "Second One")]
+
+
+def test_a_duplicate_does_not_count_as_an_unresolved_map(att_copy):
+    add_quest(att_copy, quest_block(402, "Kept Here"))
+    add_westfall_quest(att_copy, quest_block(402, "Copy In The City", "coord = { 1.0, 2.0, MAP.STORMWIND_CITY },"))
+    result = tool.run_import(att_copy, tool.shipped_data_files(), SHA)[0]
+    assert dict(result.unresolved) == {1453: 1}  # only quest 103
+    assert [item.reason for item in result.exclusions if item.quest_id == 402] == ["duplicate"]
+
+
+def test_an_occurrence_that_is_excluded_for_its_map_does_not_make_a_later_one_a_duplicate(att_copy):
+    add_quest(att_copy, quest_block(403, "City First", "coord = { 1.0, 2.0, MAP.STORMWIND_CITY },"))
+    add_westfall_quest(att_copy, quest_block(403, "Westfall Later"))
+    result = tool.run_import(att_copy, tool.shipped_data_files(), SHA)[0]
+    assert {row.quest_id: row.name for row in result.rows}[403] == "Westfall Later"
+
+
 # --- zones, maps, levels --------------------------------------------------------------------------------------
 
 def test_a_sub_zone_map_resolves_to_the_root_zone(rows):
@@ -199,6 +242,20 @@ def test_faction_narrowing_follows_a_chain():
     kept, dropped = tool.resolve_prereqs([row(1, "horde"), row(2, "both", [1]), row(3, "both", [2])], [])
     assert {item.quest_id: item.faction for item in kept} == {1: "horde", 2: "horde", 3: "horde"}
     assert dropped == []
+
+
+@pytest.mark.parametrize("reasons, kept", [
+    (["breadcrumb", "repeatable"], True),
+    (["repeatable", "breadcrumb"], True),
+    (["breadcrumb", "class-restricted"], False),
+    (["class-restricted", "breadcrumb"], False),  # the order of the records must not matter
+    (["repeatable", "zone-not-in-data", "breadcrumb"], False),
+])
+def test_a_prerequisite_id_only_loses_its_edge_when_every_exclusion_of_it_allows_that(reasons, kept):
+    gone = [Exclusion(9, "Gone", reason, 1429) for reason in reasons]
+    rows, dropped = tool.resolve_prereqs([row(1, prereqs=[9])], gone)
+    assert [item.quest_id for item in rows] == ([1] if kept else [])
+    assert [item.reason for item in dropped] == ([] if kept else ["prereq-excluded:9"])
 
 
 def test_exclusions_cascade_in_any_order():

@@ -371,12 +371,15 @@ def _quest_faction(raw: RawAttQuest) -> str | None:
 
 
 def classify(raw: RawAttQuest, ctx: Context) -> AttQuestRow | Exclusion:
-    """The row a quest becomes, or the reason it is left out. Prerequisites are resolved later."""
+    """The row a quest becomes, or the reason it is left out. Prerequisites are resolved later.
+
+    The first reason that applies is the one reported, in this order: outside-maproot, zone-not-in-data, no-name
+    (these three decide first because the later checks need a zone and a name), then nyi, unobtainable, the
+    timeline, repeatable, breadcrumb, class, race, profession, reputation, lockable, duplicate, map, faction
+    and id-out-of-range. Only a kept quest makes later quests with its id duplicates."""
     def excluded(reason: str) -> Exclusion:
         return Exclusion(raw.quest_id, raw.name or "", reason, raw.zone_id)
 
-    duplicate = raw.quest_id in ctx.seen
-    ctx.seen.add(raw.quest_id)
     if raw.zone_id is None:
         return excluded("outside-maproot")
     zone = ctx.zones.get(raw.zone_id)
@@ -397,6 +400,8 @@ def classify(raw: RawAttQuest, ctx: Context) -> AttQuestRow | Exclusion:
         return excluded("reputation")
     if "lockCriteria" in fields or "altQuests" in fields:
         return excluded("lockable")
+    if raw.quest_id in ctx.seen:
+        return excluded("duplicate")  # before the maps, so a duplicate does not count as an unresolved map
     extra: set[int] = set()
     for ref in _quest_map_refs(fields, ctx.maps):
         resolved = resolve_zone(ref, raw.zone_id, raw.local_maps, ctx)
@@ -413,8 +418,7 @@ def classify(raw: RawAttQuest, ctx: Context) -> AttQuestRow | Exclusion:
     faction = wanted.pop() if wanted else "both"
     if raw.quest_id >= data_loader.ids.CATEGORY_SIZE:
         return excluded("id-out-of-range")
-    if duplicate:
-        return excluded("duplicate")
+    ctx.seen.add(raw.quest_id)
     att_level = _level(fields)
     prereqs = {value for key in ("sourceQuest", "sourceQuests")
                for value in (fields[key] if isinstance(fields.get(key), list) else [fields.get(key)])
@@ -430,7 +434,12 @@ def resolve_prereqs(rows: list[AttQuestRow], exclusions: list[Exclusion]) -> tup
     belongs to one faction becomes that faction's quest; two different factions exclude the quest.
     """
     kept = {row.quest_id: row for row in rows}
-    reasons = {item.quest_id: item.category for item in exclusions if item.reason != "duplicate"}
+    # An id may have several excluded occurrences. Its edges are only dropped when every one of them is a
+    # repeatable or breadcrumb quest; any other reason makes its dependents unobtainable.
+    edge_only: dict[int, bool] = {}
+    for item in exclusions:
+        if item.reason != "duplicate":
+            edge_only[item.quest_id] = edge_only.get(item.quest_id, True) and item.category in DROPPED_EDGE_REASONS
     added: list[Exclusion] = []
     changed = True
     while changed:
@@ -447,11 +456,11 @@ def resolve_prereqs(rows: list[AttQuestRow], exclusions: list[Exclusion]) -> tup
                         elif faction != prereq_faction:
                             problem = problem or f"prereq-faction:{prereq}"
                     prereqs.append(prereq)
-                elif reasons.get(prereq) not in DROPPED_EDGE_REASONS:
+                elif not edge_only.get(prereq, False):
                     problem = problem or f"prereq-excluded:{prereq}"
             if problem:
                 del kept[quest_id]
-                reasons[quest_id] = problem.split(":", 1)[0]
+                edge_only[quest_id] = False
                 added.append(Exclusion(quest_id, row.name, problem, row.zone_id))
                 changed = True
             elif tuple(prereqs) != row.prereq_ids or faction != row.faction:

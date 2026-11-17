@@ -97,15 +97,17 @@ def test_shipped_quests_only_need_zones_of_their_own_faction():
             assert data.zones_by_id[zone_id].faction in (quest.faction, "both"), quest.location_name
 
 
-def test_every_start_zone_has_quests_for_its_factions():
+def test_every_start_zone_has_quests_for_each_faction_that_starts_there():
     data = load_game_data()
-    for zone in data.zones:
-        if not zone.is_start:
-            continue
-        factions = {quest.faction for quest in data.quests if quest.zone_ui_map_id == zone.ui_map_id}
-        wanted = {"alliance", "horde"} if zone.faction == "both" else {zone.faction}
-        assert wanted <= factions | {"both"}, zone.name
-        assert factions, zone.name
+    start_zones = [zone for zone in data.zones if zone.is_start]
+    assert {zone.faction for zone in start_zones} == {"alliance", "horde", "both"}
+    for zone in start_zones:
+        for faction in ("alliance", "horde") if zone.faction == "both" else (zone.faction,):
+            own = [quest for quest in data.quests
+                   if quest.zone_ui_map_id == zone.ui_map_id and quest.faction in (faction, "both")]
+            assert own, f"no {faction} quest in {zone.name}"
+            if zone.faction == "both":  # a shared start zone needs quests that are really that faction's
+                assert any(quest.faction == faction for quest in own), f"no {faction}-only quest in {zone.name}"
 
 
 # --- derived fields on fixtures --------------------------------------------------------------
