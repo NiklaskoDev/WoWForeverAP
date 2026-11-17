@@ -18,7 +18,7 @@ folder of your Archipelago installation. Restart the Launcher.
 
 1. Unzip `WoWForeverAP-<version>.zip`. It contains two folders: `WoWForeverAP` and `WoWForeverAP_Inbox`.
 2. Copy **both** into the AddOns folder of your Forever installation: the game folder is the one that contains
-   `Interface` and `WTF` (for example a subfolder such as `_forever_` of your World of Warcraft folder), so the
+   `Interface` and `WTF`: the `_forever_` subfolder of your World of Warcraft folder, so the
    result is `<game folder>/Interface/AddOns/WoWForeverAP` and `.../WoWForeverAP_Inbox`.
 3. **Restart the game completely.** The game only discovers new addon folders at startup, a `/reload` is not
    enough. Check the addon list on the character selection screen: both addons must be enabled.
@@ -26,7 +26,8 @@ folder of your Archipelago installation. Restart the Launcher.
 ### The client
 
 1. Open the Archipelago Launcher and start **World of Warcraft Forever Client**.
-2. Tell it where the game is: `/wowpath <game folder>`. The path is saved in `host.yaml`.
+2. Tell it where the game is: `/wowpath <game folder>`, for example
+   `/wowpath C:\Program Files (x86)\World of Warcraft\_forever_`. The path is saved in `host.yaml`.
 3. Connect to the server with your slot name, as in any other Archipelago game.
 
 ## Playing

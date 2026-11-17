@@ -67,11 +67,11 @@ data file that may turn out wrong.
 
 Client facts (D2):
 
+- Confirmed 2026-11-17 by the programmer: the Forever game folder is `_forever_` inside the World of Warcraft
+  install (for example `D:\World of Warcraft\_forever_`). No code depends on it; the client uses the folder set with `/wowpath`.
 - **Interface numbers** `## Interface: 16001, 120105` in `addon/WoWForeverAP/WoWForeverAP.toc` and
   `addon/WoWForeverAP_Inbox/WoWForeverAP_Inbox.toc`. Both values were reported, neither is confirmed. Check
   with `/dump GetBuildInfo()` (the fourth value is the interface number).
-- **Game folder name** of Forever under the WoW install (for example `_forever_`). Only mentioned as an example
-  in the setup guide and the `/wowpath` hint; no code depends on it.
 - **Mainline 12.x API.** The addon assumes the Mainline API (checked against the 12.1.5 UI source). Unconfirmed
   for the Forever client: `GetProfessions` / `GetProfessionInfo` (used for profession skill, fallback
   `C_TradeSkillUI.GetProfessionInfoBySkillLineID`), `C_TradeSkillUI.GetProfessionInfoBySkillLineID` and
