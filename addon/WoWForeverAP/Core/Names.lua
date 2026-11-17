@@ -9,14 +9,7 @@ local function present(value)
     return type(value) == "string" and value ~= "" and value or nil
 end
 
---- Calls `fn` when it exists; an error (for example from restricted values) counts as "no answer".
-local function tryCall(fn, ...)
-    if type(fn) ~= "function" then
-        return nil
-    end
-    local ok, result = pcall(fn, ...)
-    return ok and result or nil
-end
+local tryCall = ns.tryCall
 
 function Names.zone(uiMapId)
     local info = C_Map and tryCall(C_Map.GetMapInfo, uiMapId)

@@ -79,6 +79,11 @@ def merge_zones(captures: Iterable[Mapping]) -> dict[int, dict]:
     return zones
 
 
+def _faction(value: Any) -> str:
+    """Faction cell of a quest; anything that is not a known faction name (including a table) means 'both'."""
+    return FACTIONS.get(value, "both") if isinstance(value, str) else "both"
+
+
 def _is_lower(level: int | None, known: int | None) -> bool:
     return level is not None and (known is None or level < known)
 
@@ -92,7 +97,7 @@ def merge_quests(captures: Iterable[Mapping]) -> dict[int, dict]:
                 continue
             entry = _table(entry)
             row = {"title": _text(entry.get("title")), "zone": _number(entry.get("uiMapId")),
-                   "level": _number(entry.get("level")), "faction": FACTIONS.get(entry.get("faction"), "both")}
+                   "level": _number(entry.get("level")), "faction": _faction(entry.get("faction"))}
             known = quests.get(quest_id)
             if known is None or _is_lower(row["level"], known["level"]):
                 quests[quest_id] = row

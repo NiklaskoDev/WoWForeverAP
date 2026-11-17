@@ -4,6 +4,19 @@ local addonName, ns = ...
 ns.name = addonName
 ns.SCHEMA = 1 -- version of the SavedVariables and inbox layouts; the client writes the same number
 
+--- Calls `fn` when it exists and returns its results; a missing function or an error (for example from
+--- restricted values) counts as "no answer" and returns nothing.
+function ns.tryCall(fn, ...)
+    if type(fn) ~= "function" then
+        return
+    end
+    local results = { pcall(fn, ...) }
+    if not results[1] then
+        return
+    end
+    return unpack(results, 2)
+end
+
 local Events = {}
 ns.Events = Events
 

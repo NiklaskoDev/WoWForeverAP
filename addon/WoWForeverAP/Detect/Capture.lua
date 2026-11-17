@@ -23,9 +23,11 @@ function Capture.setEnabled(db, enabled)
     local capture = Capture.table(db)
     capture.enabled = enabled
     if enabled then
-        local version, build, buildDate, toc = GetBuildInfo()
-        capture.build = { version = version, build = build, date = buildDate, toc = toc }
-        capture.locale = GetLocale()
+        local version, build, buildDate, toc = ns.tryCall(GetBuildInfo)
+        if version then
+            capture.build = { version = version, build = build, date = buildDate, toc = toc }
+        end
+        capture.locale = ns.tryCall(GetLocale)
     end
 end
 
@@ -37,9 +39,10 @@ function Capture.recordQuest(capture, questId, title, uiMapId, level, faction, n
     capture.quests[questId] = { title = title, uiMapId = uiMapId, level = level, faction = faction, seen = now }
 end
 
+-- The map APIs are optional: a missing or failing call leaves its field out instead of raising.
 local function currentMap()
-    local uiMapId = C_Map and C_Map.GetBestMapForUnit("player")
-    local info = uiMapId and C_Map.GetMapInfo(uiMapId)
+    local uiMapId = C_Map and ns.tryCall(C_Map.GetBestMapForUnit, "player")
+    local info = uiMapId and ns.tryCall(C_Map.GetMapInfo, uiMapId)
     return uiMapId, info
 end
 
@@ -48,10 +51,13 @@ function Capture.onZoneChanged()
         return
     end
     local uiMapId, info = currentMap()
-    if not (uiMapId and info) then
+    if not (uiMapId and type(info) == "table") then
         return
     end
-    local minLevel, maxLevel = C_Map.GetMapLevels(uiMapId)
+    local minLevel, maxLevel
+    if C_Map then
+        minLevel, maxLevel = ns.tryCall(C_Map.GetMapLevels, uiMapId)
+    end
     Capture.recordZone(Capture.table(ns.db), uiMapId, info.name, minLevel, maxLevel, time())
 end
 
@@ -60,8 +66,9 @@ function Capture.onQuestTurnedIn(questId)
         return
     end
     local uiMapId = currentMap()
-    Capture.recordQuest(Capture.table(ns.db), questId, C_QuestLog.GetTitleForQuestID(questId), uiMapId,
-        UnitLevel("player"), UnitFactionGroup("player"), time())
+    local title = C_QuestLog and ns.tryCall(C_QuestLog.GetTitleForQuestID, questId)
+    Capture.recordQuest(Capture.table(ns.db), questId, title, uiMapId, UnitLevel("player"),
+        UnitFactionGroup("player"), time())
 end
 
 ns.Events.register("QUEST_TURNED_IN", Capture.onQuestTurnedIn)

@@ -105,3 +105,14 @@ def test_fails_with_a_message_on_a_malformed_file(tmp_path, capsys):
     broken.write_text("WoWForeverAP_DB = { schema = ", encoding="utf-8")
     assert tool.main([str(broken), "--out", str(tmp_path / "out")]) == 1
     assert str(broken) in capsys.readouterr().err
+
+
+def test_a_faction_that_is_not_a_string_counts_as_unknown():
+    capture = {"quests": {
+        1: {"title": "A", "faction": {"unexpected": "table"}},
+        2: {"title": "B", "faction": 7},
+        3: {"title": "C", "faction": "Horde"},
+        4: {"title": "D"},
+    }}
+    quests = tool.merge_quests([capture])
+    assert [quests[quest_id]["faction"] for quest_id in (1, 2, 3, 4)] == ["both", "both", "horde", "both"]
