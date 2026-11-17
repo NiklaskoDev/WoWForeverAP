@@ -96,8 +96,13 @@ def build_inbox_fixture() -> str:
         SimpleNamespace(item=ids.item_id(ids.ItemCat.ZONE, 1436), location=quest, player=1),
         SimpleNamespace(item=ids.item_id(ids.ItemCat.PROFESSION_TIER, 171), location=levels[0], player=2),
     ]
+    hints = [
+        inbox.hint_entry("Progressive Alchemy", ids.item_id(ids.ItemCat.PROFESSION_TIER, 171), 'Chest "A"',
+                         "Ben", 'Anna "The Tank"', False, True),
+        inbox.hint_entry("Sword", 900, "Quest 7", 'Anna "The Tank"', "Ben", True, False),
+    ]
     slot_dict = inbox.build("AP_1234:Wow", "AP_1234", "Wow", slot_data, [quest, *levels, skill], [levels[0]],
-                            received, {1: 'Anna "The Tank"', 2: "Ben"})
+                            received, {1: 'Anna "The Tank"', 2: "Ben"}, hints)
     with tempfile.TemporaryDirectory() as folder:
         (Path(folder) / inbox.INBOX_ADDON_FOLDER).mkdir(parents=True)
         written = inbox.write(Path(folder), "AP_1234:Wow", slot_dict, now=lambda: 1763380000)

@@ -5,6 +5,26 @@ WoWForeverAP_Inbox = {
 			["checked"] = {
 				[5120000002] = true,
 			},
+			["hints"] = {
+				{
+					["finder"] = "Ben",
+					["found"] = false,
+					["item"] = "Progressive Alchemy",
+					["itemId"] = 5120000171,
+					["location"] = "Chest \"A\"",
+					["ourItem"] = true,
+					["receiver"] = "Anna \"The Tank\"",
+				},
+				{
+					["finder"] = "Anna \"The Tank\"",
+					["found"] = true,
+					["item"] = "Sword",
+					["itemId"] = 900,
+					["location"] = "Quest 7",
+					["ourItem"] = false,
+					["receiver"] = "Ben",
+				},
+			},
 			["items"] = {
 				{
 					["id"] = 5110001436,

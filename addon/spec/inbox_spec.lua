@@ -100,6 +100,17 @@ describe("Inbox written by the Python client", function()
         assert.is_table(slot)
     end)
 
+    it("reads the hints with the fields the panel shows", function()
+        local hints = ns.Inbox.hints(slot)
+        assert.equals(2, #hints)
+        assert.same({ item = "Progressive Alchemy", itemId = ns.Ids.itemId(ns.Ids.ItemCat.PROFESSION_TIER, 171),
+                      location = 'Chest "A"', finder = "Ben", receiver = 'Anna "The Tank"', found = false,
+                      ourItem = true }, hints[1])
+        assert.is_true(hints[2].found)
+        assert.is_false(hints[2].ourItem)
+        assert.equals(1763380000, ns.Inbox.written(ns.Inbox.current()))
+    end)
+
     it("answers location, checked and count questions with the ids the addon builds", function()
         local quest = ns.Ids.locationId(ns.Ids.LocCat.QUEST, 783)
         local level2 = ns.Ids.locationId(ns.Ids.LocCat.LEVEL, 2)
