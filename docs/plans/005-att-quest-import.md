@@ -1,6 +1,6 @@
 # 005 — Quest data from the AllTheThings Forever database (dev-time import)
 
-Status: approved
+Status: implemented (data unconfirmed until the live-client check)
 Type: feature
 Version impact: none — nothing is released yet; entries go under `[Unreleased]` and ship with the first release (001–005).
 
