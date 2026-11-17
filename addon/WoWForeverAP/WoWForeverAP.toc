@@ -1,0 +1,28 @@
+## Interface: 16001, 120105
+## Title: WoWForeverAP
+## Notes: Archipelago multiworld for World of Warcraft: Forever. Records quest, level and profession checks for the Archipelago client.
+## Notes-deDE: Archipelago-Multiworld für World of Warcraft: Forever. Erfasst Quest-, Stufen- und Berufs-Checks für den Archipelago-Client.
+## Author: WoWForeverAP contributors
+## Version: @version@
+## SavedVariables: WoWForeverAP_DB
+## Dependencies: WoWForeverAP_Inbox
+## AddonCompartmentFunc: WoWForeverAP_OnCompartmentClick
+
+Core\Namespace.lua
+Core\Locale.lua
+Locales\enUS.lua
+Locales\deDE.lua
+Data\Generated.lua
+Core\Ids.lua
+Core\DB.lua
+Core\Inbox.lua
+Core\Names.lua
+UI\Notify.lua
+Core\Tracker.lua
+Core\Link.lua
+Detect\Quests.lua
+Detect\Level.lua
+Detect\Professions.lua
+Detect\Capture.lua
+Commands.lua
+Main.lua

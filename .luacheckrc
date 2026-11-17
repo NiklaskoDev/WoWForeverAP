@@ -18,18 +18,24 @@ read_globals = {
     "C_QuestLog",
     "C_TradeSkillUI",
     "CreateFrame",
+    "GetBuildInfo",
     "GetLocale",
     "GetProfessionInfo",
     "GetProfessions",
     "StaticPopup_Show",
+    "UnitClass",
     "UnitFactionGroup",
     "UnitGUID",
     "UnitLevel",
     "UnitName",
+    "geterrorhandler",
     "time",
 }
 
--- busted provides its own globals in specs.
+-- Locale files hold long sentences; the generated data file is not hand-formatted.
+files["addon/WoWForeverAP/Locales"] = { max_line_length = false }
+
+-- busted provides its own globals in specs, and specs install fake game APIs into _G.
 files["addon/spec"] = {
     std = "+busted",
 }

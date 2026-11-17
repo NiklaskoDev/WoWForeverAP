@@ -1,0 +1,6 @@
+-- Run with: busted addon/spec   (from the repository root)
+return {
+    default = {
+        lpath = "./addon/spec/?.lua",
+    },
+}

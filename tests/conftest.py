@@ -1,4 +1,4 @@
-"""Puts the pinned Archipelago checkout on sys.path before any test imports the world."""
+"""Puts the pinned Archipelago checkout (and the repo's tools/) on sys.path before any test imports them."""
 import os
 import sys
 from pathlib import Path
@@ -12,3 +12,4 @@ if not (AP_DIR / "worlds" / "wow_forever").exists():
 # Archipelago's ModuleUpdate would otherwise pip-install all world requirements on import.
 os.environ.setdefault("SKIP_REQUIREMENTS_UPDATE", "1")
 sys.path.insert(0, str(AP_DIR))
+sys.path.insert(0, str(REPO_ROOT / "tools"))

@@ -179,6 +179,31 @@ def test_tier_gap_and_bracket_coverage():
         parse_game_data(shipped(material_brackets=brackets))
 
 
+def test_largest_bracket_must_reach_the_highest_profession_tier():
+    # shipped data: tiers end at 300; a bracket table ending exactly at 300 is the boundary that is allowed
+    exact = "max_skill,required_level\n150,15\n300,45\n"
+    assert parse_game_data(shipped(material_brackets=exact)).material_brackets[-1].max_skill == 300
+    short = "max_skill,required_level\n150,15\n299,45\n"
+    with pytest.raises(DataError) as error:
+        parse_game_data(shipped(material_brackets=short))
+    assert error.value.file == "material_brackets.csv"
+    assert "material_brackets.csv" in str(error.value)
+    assert "up to 300" in str(error.value)
+    assert "largest max_skill is 299" in str(error.value)
+
+
+def test_a_higher_tier_than_any_bracket_fails_even_when_the_bracket_file_is_unchanged():
+    tiers = "tier,name,max_skill,required_level,release\n1,A,75,1,1\n2,B,150,1,1\n3,C,400,1,1\n"
+    with pytest.raises(DataError, match="largest max_skill is 300") as error:
+        parse_game_data(shipped(profession_tiers=tiers))
+    assert error.value.file == "material_brackets.csv"
+
+
+def test_empty_bracket_table_fails_with_the_same_check():
+    with pytest.raises(DataError, match="largest max_skill is 0"):
+        parse_game_data(shipped(material_brackets="max_skill,required_level\n"))
+
+
 def test_missing_filler_and_missing_header():
     with pytest.raises(DataError, match="filler"):
         parse_game_data(shipped(misc_items="native_id,kind,name,release\n"))

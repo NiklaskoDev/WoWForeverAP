@@ -18,6 +18,7 @@ MISC_KINDS = ("filler",)
 LIST_SEPARATOR = ";"
 RESERVED_LOCATION_NAMES = frozenset({"Goal"})
 MAX_SKILL_VALUE = ids.PROFESSION_SKILL_FACTOR - 1
+GOAL_LEVEL = 60  # the level that wins the game; here (not in locations.py) so the addon generator needs no Archipelago
 
 DATA_FILES = (
     "releases.csv",
@@ -307,8 +308,10 @@ def _parse_brackets(text: str, tiers: tuple[ProfessionTier, ...]) -> tuple[Mater
         brackets.append(bracket)
     brackets.sort(key=lambda b: b.max_skill)
     top_skill = max(tier.max_skill for tier in tiers)
-    if not brackets or brackets[-1].max_skill < top_skill:
-        raise DataError(file, None, f"brackets must cover every skill up to {top_skill}")
+    largest = brackets[-1].max_skill if brackets else 0
+    if largest < top_skill:
+        raise DataError(file, None, f"brackets must cover every skill up to {top_skill} (the highest profession "
+                                    f"tier), but the largest max_skill is {largest}")
     return tuple(brackets)
 
 

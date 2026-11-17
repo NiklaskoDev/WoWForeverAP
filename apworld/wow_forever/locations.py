@@ -5,10 +5,9 @@ from enum import Enum
 from BaseClasses import Location
 
 from . import ids
-from .data_loader import GameData, load_game_data
+from .data_loader import GOAL_LEVEL, GameData, load_game_data
 from .items import GAME_NAME
 
-GOAL_LEVEL = 60
 CHARACTER_REGION = "Character"
 GOAL_LOCATION_NAME = "Goal"
 VICTORY_ITEM_NAME = "Victory"

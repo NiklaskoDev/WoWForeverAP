@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 # Non-Python CI checks: Lua lint and tests, generated-data check, packaging.
-# Steps whose target does not exist yet are skipped with a note (addon and build tooling
-# arrive in later phases of plan 001); once they exist they always run.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -16,18 +14,10 @@ ensure_lua_tool() {
     as_root luarocks install "$1"
 }
 
-if [ -d addon ]; then
-    ensure_lua_tool luacheck
-    luacheck addon
-    if [ -d addon/spec ]; then
-        ensure_lua_tool busted
-        busted addon/spec
-    else
-        echo "skip: busted (no addon/spec yet)"
-    fi
-else
-    echo "skip: luacheck, busted (no addon yet)"
-fi
+ensure_lua_tool luacheck
+luacheck addon
+ensure_lua_tool busted
+busted addon/spec
 
-if [ -f tools/gen_addon_data.py ]; then python tools/gen_addon_data.py --check; else echo "skip: gen_addon_data (not written yet)"; fi
+python tools/gen_addon_data.py --check
 if [ -f tools/build.py ]; then python tools/build.py; else echo "skip: build (not written yet)"; fi
