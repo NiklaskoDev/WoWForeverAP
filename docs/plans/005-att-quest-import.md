@@ -1,6 +1,6 @@
 # 005 — Quest data from the AllTheThings Forever database (dev-time import)
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: none — nothing is released yet; entries go under `[Unreleased]` and ship with the first release (001–005).
 
@@ -225,6 +225,7 @@ Run `ruff check .`, `pytest`, `bash scripts/ci.sh` green after each step.
   - the default seed generates and is beatable for both factions.
 
 ## Decisions for the programmer
+Resolved 2026-11-17: the programmer accepted every recommendation below (D1 drop the WoW-Pro rows and credit; D2 quests + report-only zone/profession check; D3 `quest_weight` option, default 25; D4 exclude class, narrower-race and lockable quests, city/dungeon quests stay out; D5 pin ATT commit 8352616d2359e8595d4c1ac26769a067020826a7 and update by hand).
 - **D1 WoW-Pro rows and credit.**
   - (a) Drop all 34 WoW-Pro rows and remove the WoW-Pro credit from `quests.csv`, README, THIRD_PARTY_NOTICES and the CHANGELOG line. ATT holds these ids (e.g. 783 and the Zephra's Isle 924xx ids). The Zephra's Isle 1–12 range in `zones.csv` then cites the ATT quest levels from the report instead. If ATT does not support 1–12, the range is set from the report.
   - (b) Keep WoW-Pro rows that ATT lacks, and keep the credit and the CC BY-NC-ND note.
