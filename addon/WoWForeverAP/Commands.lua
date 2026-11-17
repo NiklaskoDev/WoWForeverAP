@@ -140,6 +140,16 @@ function handlers.care(argument)
     end
 end
 
+function handlers.panel()
+    ns.Panel.toggle()
+end
+
+function handlers.options()
+    if not ns.UISettings.open() then
+        ns.Notify.say("OPTIONS_UNAVAILABLE")
+    end
+end
+
 function handlers.capture(argument)
     local choice = argument:lower()
     if (choice ~= "on" and choice ~= "off") or not ns.ready then
@@ -152,23 +162,26 @@ end
 
 function handlers.help()
     ns.Notify.say("HELP_HEADER")
-    local keys = { "HELP_STATUS", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS", "HELP_RULES", "HELP_CARE", "HELP_CAPTURE" }
+    local keys = {
+        "HELP_PANEL", "HELP_STATUS", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS", "HELP_RULES", "HELP_CARE",
+        "HELP_OPTIONS", "HELP_CAPTURE",
+    }
     for _, key in ipairs(keys) do
         ns.Notify.print(ns.L[key])
     end
 end
 
---- Runs one /wfap command line; anything unknown shows the help.
+--- Runs one /wfap command line: no command opens the window, anything unknown shows the help.
 function Commands.run(message)
     local word, rest = Commands.parse(message)
-    local handler = handlers[word] or handlers.help
+    local handler = handlers[word] or (word == "" and handlers.panel) or handlers.help
     handler(rest)
 end
 
 SLASH_WFAP1 = "/wfap"
 SlashCmdList["WFAP"] = Commands.run
 
---- Addon compartment (minimap addon menu) click: show the status.
+--- Addon compartment (minimap addon menu) click: open or close the window.
 function WoWForeverAP_OnCompartmentClick()
-    Commands.run("status")
+    Commands.run("")
 end

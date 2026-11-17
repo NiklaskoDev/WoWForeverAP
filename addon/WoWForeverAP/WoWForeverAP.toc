@@ -18,6 +18,7 @@ Core\DB.lua
 Core\Inbox.lua
 Core\Names.lua
 Core\Checks.lua
+UI\Style.lua
 UI\Notify.lua
 Core\Tracker.lua
 Core\Link.lua
@@ -27,5 +28,7 @@ Detect\Professions.lua
 Detect\Capture.lua
 Rules\Economy.lua
 Rules\Warnings.lua
+UI\Panel.lua
+UI\Settings.lua
 Commands.lua
 Main.lua

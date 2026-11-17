@@ -153,17 +153,31 @@ function Economy.register()
     return registered
 end
 
---- Prints the economy rules of the slot and the Care Package terms.
-function Economy.printRules(slot)
+--- The economy rules of the slot as display lines ("Mail: not allowed"), in /wfap rules order, plus the rules
+--- table; nil when the slot has no economy rules (made by an older apworld).
+function Economy.ruleLines(slot)
     local economy = Economy.rules(slot)
     if not economy then
+        return nil
+    end
+    local lines = {}
+    for _, ruleKey in ipairs(Economy.RULES) do
+        local state = economy[ruleKey] == false and ns.L.RULES_FORBIDDEN or ns.L.RULES_ALLOWED
+        lines[#lines + 1] = ns.L.RULES_LINE:format(ns.L[RULE_NAME_KEYS[ruleKey]], state)
+    end
+    return lines, economy
+end
+
+--- Prints the economy rules of the slot and the Care Package terms.
+function Economy.printRules(slot)
+    local lines, economy = Economy.ruleLines(slot)
+    if not lines then
         ns.Notify.say("RULES_MISSING")
         return
     end
     ns.Notify.say("RULES_HEADER")
-    for _, ruleKey in ipairs(Economy.RULES) do
-        local state = economy[ruleKey] == false and ns.L.RULES_FORBIDDEN or ns.L.RULES_ALLOWED
-        ns.Notify.say("RULES_LINE", ns.L[RULE_NAME_KEYS[ruleKey]], state)
+    for _, line in ipairs(lines) do
+        ns.Notify.print(line)
     end
     ns.Notify.say("RULES_CARE", economy.carePackageGold or 0, economy.carePackageStacks or 0)
 end

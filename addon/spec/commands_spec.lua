@@ -60,22 +60,40 @@ describe("Commands", function()
     end)
 
     describe("/wfap", function()
-        it("shows the help for no command and for unknown commands", function()
-            ns.Commands.run("")
+        it("shows the help for unknown commands and for help", function()
             ns.Commands.run("frobnicate")
+            ns.Commands.run("help")
             assert.equals(ns.L.HELP_HEADER, chat()[1])
-            assert.equals(ns.L.HELP_HEADER, chat()[9]) -- the header plus seven command lines come first
-            assert.equals(ns.L.HELP_STATUS, chat()[2])
-            assert.equals(ns.L.HELP_RULES, chat()[6])
-            assert.equals(ns.L.HELP_CARE, chat()[7])
+            assert.equals(ns.L.HELP_HEADER, chat()[11]) -- the header plus nine command lines come first
+            local expected = { "HELP_PANEL", "HELP_STATUS", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS", "HELP_RULES",
+                               "HELP_CARE", "HELP_OPTIONS", "HELP_CAPTURE" }
+            for index, key in ipairs(expected) do
+                assert.equals(ns.L[key], chat()[index + 1], key)
+            end
         end)
 
-        it("is registered as the slash command and the compartment click shows the status", function()
+        it("opens the window for no command, and again closes it", function()
+            local calls = 0
+            ns.Panel.toggle = function() calls = calls + 1 end
+            ns.Commands.run("")
+            ns.Commands.run("   ")
+            assert.equals(2, calls)
+            assert.same({}, chat())
+        end)
+
+        it("opens the options with /wfap options and says so when the client has none", function()
+            ns.Commands.run("options")
+            assert.same({ ns.L.OPTIONS_UNAVAILABLE }, chat())
+        end)
+
+        it("is registered as the slash command and the compartment click toggles the window", function()
             assert.equals("/wfap", SLASH_WFAP1)
             SlashCmdList["WFAP"]("help")
             assert.equals(ns.L.HELP_HEADER, chat()[1])
+            local toggled = 0
+            ns.Panel.toggle = function() toggled = toggled + 1 end
             WoWForeverAP_OnCompartmentClick("WoWForeverAP", "LeftButton")
-            assert.equals(ns.L.NOT_LINKED, chat()[9])
+            assert.equals(1, toggled)
         end)
 
         it("status of an unlinked character names the slots in the inbox", function()
