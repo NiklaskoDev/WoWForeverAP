@@ -74,8 +74,9 @@ Client facts (D2):
   exists and returned 5 slot indices (the addon reads up to 6 positions).
 - Confirmed 2026-11-17 by the programmer in the live Forever client: `GetProfessionInfo(index)` returns the rank as
   3rd and the skill line id as 7th value (e.g. Tailoring: rank 135, skill line 197), as the addon reads them.
-- **Mainline 12.x API.** The addon assumes the Mainline API (checked against the 12.1.5 UI source). Unconfirmed
-  for the Forever client: `C_TradeSkillUI.GetProfessionInfoBySkillLineID` (profession fallback and localised
+- **Rest of the API.** Forever (build 1.60.1, interface 16001) shares the Mainline API shape; every call was checked
+  against Blizzard's 12.1.5 UI source. `GetProfessions` and `GetProfessionInfo` are confirmed in the live client (above);
+  still unconfirmed there: `C_TradeSkillUI.GetProfessionInfoBySkillLineID` (profession fallback and localised
   profession names), `C_Map.GetMapInfo` (localised zone names), `C_QuestLog.GetTitleForQuestID`, `C_Map.GetMapLevels` and
   `C_Map.GetBestMapForUnit` (capture mode), and the events `QUEST_TURNED_IN`, `PLAYER_LEVEL_UP`,
   `SKILL_LINES_CHANGED`. A missing profession API shows one chat warning; if the client is Classic-style, the
