@@ -163,4 +163,5 @@ Python 3.12 is what CI uses; Archipelago supports 3.11 to 3.13.
 
 ## License
 
-MIT, see `LICENSE`.
+MIT, see `LICENSE`. Data derived from AllTheThings (MIT) and other sources is covered by
+[`apworld/wow_forever/THIRD_PARTY_NOTICES.md`](apworld/wow_forever/THIRD_PARTY_NOTICES.md), which is packed into the apworld.

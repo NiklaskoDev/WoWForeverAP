@@ -42,6 +42,14 @@ def test_apworld_has_a_single_root_folder_with_the_world_files(built):
     assert not [entry for entry in entries if "__pycache__" in entry or entry.endswith(".pyc")]
 
 
+def test_apworld_carries_the_third_party_notices_with_the_full_mit_text(built):
+    packed = read(built[0], "wow_forever/THIRD_PARTY_NOTICES.md").decode("utf-8")
+    assert packed == (build.APWORLD_DIR / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    assert "Copyright (c) 2026 AllTheThings WoW Addon" in packed
+    assert "Permission is hereby granted, free of charge" in packed
+    assert 'THE SOFTWARE IS PROVIDED "AS IS"' in packed
+
+
 def test_apworld_data_files_are_the_shipped_data(built):
     from worlds.wow_forever.data_loader import DATA_FILES
 
