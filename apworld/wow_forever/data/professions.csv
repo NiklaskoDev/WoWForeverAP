@@ -1,0 +1,15 @@
+# skill_line_id and name: Classic client SkillLine table, github.com/Hoizame/WoW_ClassicUIResources RawData/SkillLine.lua
+#   (category 11 = primary, 9 = secondary). PROVISIONAL: confirm the set and ids in the live Forever client (plan 001, D2).
+skill_line_id,key,name,kind,release
+171,alchemy,Alchemy,primary,1
+164,blacksmithing,Blacksmithing,primary,1
+333,enchanting,Enchanting,primary,1
+202,engineering,Engineering,primary,1
+182,herbalism,Herbalism,primary,1
+165,leatherworking,Leatherworking,primary,1
+186,mining,Mining,primary,1
+393,skinning,Skinning,primary,1
+197,tailoring,Tailoring,primary,1
+185,cooking,Cooking,secondary,1
+129,first_aid,First Aid,secondary,1
+356,fishing,Fishing,secondary,1

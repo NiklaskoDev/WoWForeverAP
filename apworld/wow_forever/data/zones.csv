@@ -1,0 +1,49 @@
+# PROVISIONAL - confirm in the live Forever client before the first release (plan 001, decision D2).
+# ui_map_id and name: Classic client UiMap table, github.com/Hoizame/WoW_ClassicUIResources RawData/UiMap.lua (client 1.13.3.32790);
+#   the same ids appear in the Forever data of github.com/ATTWoWAddon/AllTheThings (.contrib/.db/forever/.config/constants/maps.lua).
+# Zephra's Isle 2521: id from the same AllTheThings Forever file; 1-12 range and both-faction start from the WoW-Pro Forever guides
+#   (github.com/Ludovicus-Maior/WoW-Pro-Guides, WoWPro_Leveling/Forever/*/01_12_Zephras_Isle_*.lua).
+# min_level/max_level/faction: commonly published Classic Era zone level ranges, NOT machine-verified; the logic only needs rough brackets.
+# Cities, battlegrounds, dungeons and the other new Forever zones (Mount Hyjal 2482, Rivergladss 2548, Shendralas 2652) are left out until their levels and faction are known.
+ui_map_id,name,min_level,max_level,faction,is_start,release
+1429,Elwynn Forest,1,10,alliance,1,1
+1426,Dun Morogh,1,10,alliance,1,1
+1438,Teldrassil,1,10,alliance,1,1
+1411,Durotar,1,10,horde,1,1
+1412,Mulgore,1,10,horde,1,1
+1420,Tirisfal Glades,1,10,horde,1,1
+2521,Zephra's Isle,1,12,both,1,1
+1436,Westfall,10,20,alliance,0,1
+1439,Darkshore,10,20,alliance,0,1
+1432,Loch Modan,10,20,alliance,0,1
+1433,Redridge Mountains,15,25,alliance,0,1
+1431,Duskwood,18,30,alliance,0,1
+1437,Wetlands,20,30,alliance,0,1
+1421,Silverpine Forest,10,20,horde,0,1
+1413,The Barrens,10,25,horde,0,1
+1440,Ashenvale,18,30,both,0,1
+1442,Stonetalon Mountains,15,27,both,0,1
+1424,Hillsbrad Foothills,20,30,both,0,1
+1441,Thousand Needles,25,35,both,0,1
+1417,Arathi Highlands,30,40,both,0,1
+1416,Alterac Mountains,30,40,both,0,1
+1443,Desolace,30,40,both,0,1
+1434,Stranglethorn Vale,30,45,both,0,1
+1418,Badlands,35,45,both,0,1
+1435,Swamp of Sorrows,35,45,both,0,1
+1445,Dustwallow Marsh,35,45,both,0,1
+1425,The Hinterlands,40,50,both,0,1
+1446,Tanaris,40,50,both,0,1
+1444,Feralas,40,50,both,0,1
+1427,Searing Gorge,43,50,both,0,1
+1447,Azshara,45,55,both,0,1
+1419,Blasted Lands,45,55,both,0,1
+1449,Un'Goro Crater,48,55,both,0,1
+1448,Felwood,48,55,both,0,1
+1428,Burning Steppes,50,58,both,0,1
+1422,Western Plaguelands,51,58,both,0,1
+1452,Winterspring,53,60,both,0,1
+1423,Eastern Plaguelands,53,60,both,0,1
+1451,Silithus,55,60,both,0,1
+1450,Moonglade,55,60,both,0,1
+1430,Deadwind Pass,55,60,both,0,1

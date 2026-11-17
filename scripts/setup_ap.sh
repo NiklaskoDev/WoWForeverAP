@@ -23,7 +23,7 @@ fi
 # generate seeds or run the tests, and kivymd is installed from git: skip them.
 filtered="$(mktemp)"
 trap 'rm -f "$filtered"' EXIT
-grep -viE '^(kivy|kivymd|cython|pymem|bsdiff4|pyshortcuts)\b' "$ap_dir/requirements.txt" > "$filtered"
+grep -viE '^(kivy|kivymd|cython|pymem|pyshortcuts)\b' "$ap_dir/requirements.txt" > "$filtered"
 python -m pip install -r "$filtered"
 
 link="$ap_dir/worlds/wow_forever"

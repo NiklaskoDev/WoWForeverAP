@@ -1,0 +1,42 @@
+# PROVISIONAL - small start-zone set; confirm in the live Forever client before the first release (plan 001, D1/D2).
+# quest_id, name and prerequisite chain: lookup of in-game quest ids and titles in the WoW-Pro Forever leveling guides
+#   (github.com/Ludovicus-Maior/WoW-Pro-Guides, WoWPro_Leveling/Forever/<faction>/01_12_*.lua; CC BY-NC-ND 3.0, used only as an id lookup, no guide text copied).
+#   Every row below is a quest turn-in step ("T" line) in those guides; prerequisites are the guides' PRE tags.
+# req_level: PROVISIONAL, set to 1 for all start-zone rows (the logic cannot distinguish levels 1-10 anyway); refine from the live client.
+# name_suffix disambiguates quests that share a title within a zone.
+quest_id,name,zone_ui_map_id,req_level,faction,release,prereq_quest_ids,extra_zone_ids,name_suffix
+783,A Threat Within,1429,1,alliance,1,,,
+7,Kobold Camp Cleanup,1429,1,alliance,1,783,,
+5261,Eagan Peltskinner,1429,1,alliance,1,783,,
+33,Wolves Across the Border,1429,1,alliance,1,5261,,
+18,Brotherhood of Thieves,1429,1,alliance,1,783,,
+15,Investigate Echo Ridge,1429,1,alliance,1,7,,
+179,Dwarven Outfitters,1426,1,alliance,1,,,
+170,A New Threat,1426,1,alliance,1,179,,
+233,Coldridge Valley Mail Delivery,1426,1,alliance,1,179,,
+456,The Balance of Nature,1438,1,alliance,1,,,
+457,The Balance of Nature,1438,1,alliance,1,456,,(2)
+458,The Woodland Protector,1438,1,alliance,1,,,
+459,The Woodland Protector,1438,1,alliance,1,458,,(2)
+916,Webwood Venom,1438,1,alliance,1,,,
+4641,Your Place in the World,1411,1,horde,1,,,
+1485,Vile Familiars,1411,1,horde,1,,,
+1499,Vile Familiars,1411,1,horde,1,1485,,(2)
+794,Burning Blade Medallion,1411,1,horde,1,1499,,
+788,Cutting Teeth,1411,1,horde,1,,,
+789,Sting of the Scorpid,1411,1,horde,1,788,,
+747,The Hunt Begins,1412,1,horde,1,,,
+750,The Hunt Continues,1412,1,horde,1,747,,
+752,A Humble Task,1412,1,horde,1,,,
+753,A Humble Task,1412,1,horde,1,752,,(2)
+755,Rites of the Earthmother,1412,1,horde,1,753,,
+757,Rite of Strength,1412,1,horde,1,755,,
+363,Rude Awakening,1420,1,horde,1,,,
+364,The Mindless Ones,1420,1,horde,1,363,,
+376,The Damned,1420,1,horde,1,,,
+6395,Marla's Last Wish,1420,1,horde,1,376,,
+1470,Piercing the Veil,1420,1,horde,1,,,
+92460,Coming of Age,2521,1,both,1,,,
+92461,Harmony in Balance,2521,1,both,1,,,
+92462,Infestation Investigation,2521,1,both,1,92460,,
+92463,The Cirrusfly Queen,2521,1,both,1,92462,,
