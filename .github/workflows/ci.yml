@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Fail if no known stack is present
         if: hashFiles('pyproject.toml', 'requirements.txt', 'scripts/ci.sh') == ''
