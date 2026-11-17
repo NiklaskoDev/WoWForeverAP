@@ -1,6 +1,6 @@
 # 001 — Playable core: apworld, AP client, WoW addon (multi-character, release-tagged, ID-based)
 
-Status: approved
+Status: implemented (step 16 live-client check and D2 confirmation pending)
 Type: new project
 Version impact: none until release — nothing is released yet; all entries go under `[Unreleased]`. Plans 001–004 together form the first release (expected `0.1.0`), which happens only when the programmer says so.
 
