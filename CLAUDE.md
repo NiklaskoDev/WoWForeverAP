@@ -6,7 +6,7 @@ Guideline version: 1.4.0
 
 ## Project (fill in once, keep current)
 - Purpose: Archipelago multiworld apworld for World of Warcraft: Forever (Blizzard, live since 2026-11-04) that doubles as a guided way to level alts and professions. Must stay within Blizzard's EULA/ToS: official in-game addon API only, no automation, memory reading, packet tampering or input injection; addon ↔ outside world only via SavedVariables / addon files on `/reload` or logout.
-- Stack: Python 3.12 (apworld + AP client, inside the Archipelago launcher; pinned Archipelago in `tools/ap_version.txt`) · Lua 5.1 (WoW addon) · no database.
+- Stack: Python, code compatible with 3.11–3.13 like Archipelago 0.6.8 (ruff target py311; CI runs 3.12) — apworld + AP client inside the Archipelago launcher; pinned Archipelago in `tools/ap_version.txt` · Lua 5.1 (WoW addon) · no database.
 - Commands: setup `bash scripts/setup_ap.sh` · test `pytest` and `bash scripts/ci.sh` · lint `ruff check .` and `luacheck addon` · build `python tools/build.py` → `dist/wow_forever.apworld`, `dist/WoWForeverAP-<version>.zip`
 - Version source of truth: `VERSION`
 - Layout: `apworld/wow_forever/` apworld (world + `client/` + `data/*.csv`) · `addon/WoWForeverAP/` main addon · `addon/WoWForeverAP_Inbox/` client-written data addon · `tools/` build/generators · `scripts/` setup/CI · `tests/` Python tests (run against a pinned Archipelago checkout in `.ap/`) · `addon/spec/` Lua tests · `docs/plans/` plans
