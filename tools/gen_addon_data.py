@@ -99,7 +99,7 @@ def build_inbox_fixture() -> str:
         return written.read_text(encoding="utf-8")
 
 
-def _display(path: Path) -> str:
+def display_path(path: Path) -> str:
     return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
 
 
@@ -125,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.check:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8", newline="\n")
-    names = ", ".join(_display(path) for path in stale)
+    names = ", ".join(display_path(path) for path in stale)
     if args.check and stale:
         print(f"out of date: {names}\nrun: python tools/gen_addon_data.py", file=sys.stderr)
         return 1

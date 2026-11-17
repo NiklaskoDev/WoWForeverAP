@@ -1,7 +1,7 @@
 name: CI
 
 # Lint, test, build. Stacks in this project: Python (apworld + AP client), Lua (WoW addon).
-# Lua checks and apworld packaging go into scripts/ci.sh once plan 001 defines them.
+# Lua checks, generated-data check and apworld packaging run from scripts/ci.sh.
 
 on:
   push:

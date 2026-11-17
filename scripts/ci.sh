@@ -20,4 +20,4 @@ ensure_lua_tool busted
 busted addon/spec
 
 python tools/gen_addon_data.py --check
-if [ -f tools/build.py ]; then python tools/build.py; else echo "skip: build (not written yet)"; fi
+python tools/build.py
