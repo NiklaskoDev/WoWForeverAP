@@ -50,8 +50,9 @@ before linking does not count. Link as many characters as you like to the same s
 
 ### The play loop
 
-1. **Play.** Quests you turn in, levels you reach and profession skill you raise become checks. The addon tells
-   you in chat when one is recorded.
+1. **Play.** Quests you turn in, levels you reach and profession skill you raise become checks, and so do the
+   bosses you kill, the map areas you explore, the reputation you earn and your PvP, when your seed has those
+   categories. The addon tells you in chat when one is recorded.
 2. **`/reload`** (or log out) when you want to send checks. The game writes its saved data now.
 3. The client notices the new file within seconds and sends the checks. Look at the client window.
 4. **`/reload` again** to receive what came back: the client has written the new unlocks, and the game reads

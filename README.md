@@ -2,7 +2,8 @@
 
 An [Archipelago](https://archipelago.gg) multiworld game for World of Warcraft: Forever. Zones and
 profession tiers are shuffled into the item pool; quest turn-ins, character levels and profession
-skill milestones are the checks. It doubles as a guided way to level alts and professions.
+skill milestones are the checks, plus optional dungeon bosses, map-area discoveries, reputation standings and
+PvP milestones. It doubles as a guided way to level alts and professions.
 
 Several characters (one account or many players) can link to one slot; their checks are merged by the
 Archipelago server and unlocks apply to every linked character.
@@ -44,6 +45,12 @@ Game data lives in `apworld/wow_forever/data/*.csv`; each file names its sources
   Classic client UiMap and SkillLine tables, the source of zone and profession ids and names.
 - **AllTheThings** ([ATTWoWAddon/AllTheThings](https://github.com/ATTWoWAddon/AllTheThings)): Forever map ids
   (used to cross-check zone ids, and for Zephra's Isle).
+- **Extra check categories (plan 004).** `instances.csv`: instance ids and names from the Classic Map table
+  (Hoizame), entrance zone and entry level from the Forever dungeon files of AllTheThings (`.contrib/.db/forever/dungeons & raids`).
+  `discoveries.csv`: the exploration areas of the AllTheThings Forever database (`.config/exploration/*` and the
+  `.config/.wago` AreaTable and UiMapAssignment exports). `reputations.csv`: Classic Faction table (Hoizame).
+  `pvp.csv`: battleground map ids and minimum levels from the Classic Map and BattlemasterList tables (Hoizame).
+  `encounters.csv` has no rows: no public source lists the encounter ids of the Classic dungeon bosses.
 - Zone level ranges and profession tier limits are commonly published Classic Era values.
 
 `addon/WoWForeverAP/Data/Generated.lua` is generated from these CSVs by `tools/gen_addon_data.py`; never edit
@@ -88,6 +95,20 @@ Client facts (D2):
   defaults); the events `ZONE_CHANGED_NEW_AREA` and `PLAYER_ENTERING_WORLD`. Also unconfirmed: how the map
   tints look (zone rectangles overlap at borders, frame level above the map art and below pins) and that the
   window may open in combat (it has no protected frames).
+- **Extra check categories (plan 004).** Checked against the Gethe/wow-ui-source mirror (live branch, 12.1.5),
+  unconfirmed for the Forever client: the event `ENCOUNTER_END` (payload encounterID, encounterName,
+  difficultyID, groupSize, success; the addon reads encounterID and success and ignores anything that is not a
+  kill); `C_MapExplorationInfo.GetExploredAreaIDsAtPosition(uiMapID, position)` (read with the position from
+  `C_Map.GetPlayerMapPosition`, as Blizzard's `MapUtil` does) and `C_Map.GetAreaInfo` for the events
+  `ZONE_CHANGED`, `ZONE_CHANGED_INDOORS` and `ZONE_CHANGED_NEW_AREA`; the event `UPDATE_FACTION` and
+  `C_Reputation.GetFactionDataByID(id).reaction` (4 neutral, 5 friendly ... 8 exalted); `GetPVPLifetimeStats()`
+  (first return: lifetime honorable kills) and the event `PLAYER_PVP_KILLS_CHANGED`; the battleground winner from
+  `PVP_MATCH_COMPLETE(winner)` (0 Horde, 1 Alliance; documented in 12.x) and from `UPDATE_BATTLEFIELD_STATUS` plus
+  `GetBattlefieldWinner()` (used by Blizzard's UI but not in the generated API documentation); the battleground
+  is the instance id `GetInstanceInfo()` returns. Every one of them is guarded: a missing or failing API means no
+  check, never an error. An event the client does not know is skipped (`C_EventUtils.IsEventValid`). Also
+  unconfirmed: that `ENCOUNTER_END` fires for the Classic dungeon bosses of Forever at all, and that the 12.x
+  "secret value" restrictions leave its payload readable.
 - **`## AddonCompartmentFunc`** and the `StaticPopup` link prompt (button3 / `OnAlt`) are Mainline features.
 
 Provisional data files:
@@ -101,6 +122,23 @@ Provisional data files:
 - `material_brackets.csv`: a game-design approximation, not game data; tune freely.
 - `releases.csv`: only the launch release (2026-11-04) is confirmed. Later releases are added once their date
   is confirmed.
+- `instances.csv`: Classic Era dungeons with an entrance in a zone of `zones.csv` (14 rows); entry levels are
+  ATT's recommended levels. Left out: Ragefire Chasm and The Stockade (city entrances), Blackrock Depths and
+  Spire, Stratholme, the new Forever instances and **all raids** (their release date, 9 Dec 2026, has a single
+  source and is unconfirmed; `releases.csv` has no later release yet).
+- `encounters.csv`: **empty**. The `ENCOUNTER_END` ids of the Classic dungeon bosses are not in any public
+  source (the Classic DungeonEncounter table holds raid bosses only; ATT's encounter ids are Encounter Journal
+  ids). Capture them in the live client with `/wfap capture on`, kill the bosses, then
+  `python tools/import_capture.py <WoW folder>` writes `data_capture/encounters.csv` for review. Until then the
+  boss category adds no checks.
+- `discoveries.csv`: 615 exploration areas taken from the ATT Forever exploration data (a mix of points harvested
+  in the game and positions estimated from the WorldMapOverlay table); each area is on the zone map of its
+  top-level parent area. Whether every one of them can be discovered by walking is unconfirmed.
+- `reputations.csv`: twelve Classic factions (the capital cities, Gnomeregan Exiles, Darkspear Trolls and the four
+  Steamwheedle Cartel towns); the home zone and the level per standing are a game-design approximation, not game
+  data. Whether Forever has the same faction set is unconfirmed.
+- `pvp.csv`: game-design milestones (honorable kills) and the three Classic battlegrounds; whether battlegrounds
+  are open at launch is unconfirmed (the category is off by default).
 - `profession_materials.csv`: a game-design approximation (which source supplies the main material of each
   crafting profession per skill bracket, and the gathering skill it needs), not game data; tune freely.
 - `misc_items.csv`: our own filler and care package ids; permanent once released.

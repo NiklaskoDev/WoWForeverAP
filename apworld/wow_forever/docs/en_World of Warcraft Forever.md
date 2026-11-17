@@ -16,12 +16,40 @@ unlocks it arrives. What you do in the game sends out checks.
 - **Locations (checks):**
   - turning in a quest (see the quest list of your seed),
   - reaching a character level (every `level_milestone_step` levels, and always level 60),
-  - reaching a profession skill (every `profession_milestone_step` points, up to the top tier of your content release).
+  - reaching a profession skill (every `profession_milestone_step` points, up to the top tier of your content release),
+  - the optional categories below (bosses, area discoveries, reputation, PvP).
 - **Goal:** any linked character reaches level 60.
 
 Your start zone is unlocked from the beginning (`start_zone`), and one more zone of your faction that covers
 level 11 is sent early so you are never stuck. The logic assumes a character needs a zone that covers every five levels
 on the way up (levels 1-5, 6-10, 11-15, and so on), so a gap in the zones you own blocks the levels above it.
+
+## Extra check categories
+
+Four optional categories add more checks. Each has an on/off option and a weight (1-100, default 100): the
+weight is the percentage of the category's eligible checks that are put into your seed, drawn with the seed's
+random generator (at least one when any are eligible). Rows of a later content release and rows of the other
+faction are never eligible.
+
+| Category | Options (default) | A check is... |
+|---|---|---|
+| Boss | `boss_checks` (on), `boss_weight` | killing a dungeon boss (`ENCOUNTER_END` with a kill) |
+| Discovery | `discovery_checks` (on), `discovery_weight` | exploring a map area of a zone, for example "Discover Elwynn Forest: Crystal Lake" |
+| Reputation | `reputation_checks` (off), `reputation_weight` | reaching Friendly, Honored, Revered or Exalted with a city or Steamwheedle Cartel faction |
+| PvP | `pvp_checks` (off), `pvp_weight` | 100, 250, 500 and 1000 honorable kills, and a first win in Warsong Gulch, Arathi Basin and Alterac Valley |
+
+- **Discoveries are many** (about 500 for a seed with every zone of your faction). Lower `discovery_weight` for a
+  shorter seed. An area you explored before linking counts the next time you stand in it, because the game does
+  not say when an area was discovered.
+- **Bosses:** a dungeon belongs to the zone with its entrance, so its bosses need that zone's unlock item and the
+  dungeon's level; there are no separate dungeon unlock items. Raids (not part of the first release) would also
+  need level 60 in the logic. Boss checks only exist for bosses whose encounter id is in the game data; the first
+  data has none yet (see the README, "Unconfirmed"), so the category adds nothing until they are confirmed.
+- **Reputation and PvP** only count progress made after the character was linked: the addon stores the standings
+  and the honorable-kill total when you link, and a check needs a standing above that or kills beyond that total.
+  A battleground win is counted when you win a match as the winning faction after linking.
+- Group finder teleports into a dungeon are allowed only if the zone with the dungeon's entrance is unlocked.
+- The Legacy System is not a check category.
 
 ## Economy and self-found rules
 
@@ -69,7 +97,8 @@ The tool never moves gold or items. The count is only a reminder of what you agr
 Any number of characters can be linked to the same slot, on one account or on several accounts and PCs.
 Checks from all of them are merged by the Archipelago server, and every unlock applies to every linked
 character. A character only earns checks for what it does **after** it was linked: quests turned in, levels
-gained and profession skill raised from the moment of linking.
+gained, profession skill raised, reputation standings reached and honorable kills made from the moment of
+linking.
 
 ## The honor system
 
