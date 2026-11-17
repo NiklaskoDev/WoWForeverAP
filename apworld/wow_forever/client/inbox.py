@@ -15,6 +15,7 @@ INBOX_SCHEMA = 1
 INBOX_ADDON_FOLDER = Path("Interface") / "AddOns" / "WoWForeverAP_Inbox"
 INBOX_FILE = "Inbox.lua"
 UNKNOWN_SENDER = "?"
+MAX_HINTS = 200
 
 # slot_data key -> inbox option key
 _OPTION_KEYS = {
@@ -42,8 +43,12 @@ def build(
     checked: Iterable[int],
     received_items: Sequence[Any],
     names: Mapping[int, str],
+    hints: Iterable[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
-    """The inbox table of one slot. ``received_items`` are NetworkItem-like (item, location, player), in order."""
+    """The inbox table of one slot. ``received_items`` are NetworkItem-like (item, location, player), in order.
+
+    ``hints`` are already resolved to names (see ``hint_entry``); malformed ones are dropped, at most
+    ``MAX_HINTS`` are kept, open hints before found ones."""
     del slot_key  # the key is where the table is stored, not part of it
     missing = [key for key in (*_OPTION_KEYS, "world_version") if key not in slot_data]
     if missing:
@@ -59,7 +64,31 @@ def build(
             {"id": item.item, "sender": names.get(item.player, UNKNOWN_SENDER), "loc": item.location}
             for item in received_items
         ],
+        "hints": _capped_hints(hints),
     }
+
+
+def hint_entry(
+    item: str, item_id: int, location: str, finder: str, receiver: str, found: bool, our_item: bool
+) -> dict[str, Any]:
+    """One hint as the addon reads it. Names come from other players' data: they are only ever rendered as
+    escaped Lua strings and shown with SetText, never evaluated."""
+    return {"item": item, "itemId": item_id, "location": location, "finder": finder, "receiver": receiver,
+            "found": found, "ourItem": our_item}
+
+
+def _valid_hint(hint: Mapping[str, Any]) -> bool:
+    texts = all(isinstance(hint.get(key), str) for key in ("item", "location", "finder", "receiver"))
+    flags = all(isinstance(hint.get(key), bool) for key in ("found", "ourItem"))
+    item_id = hint.get("itemId")
+    return texts and flags and isinstance(item_id, int) and not isinstance(item_id, bool)
+
+
+def _capped_hints(hints: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Valid hints only, open before found, a stable order (hints carry no timestamp), at most MAX_HINTS."""
+    valid = [dict(hint) for hint in hints if isinstance(hint, Mapping) and _valid_hint(hint)]
+    valid.sort(key=lambda hint: (hint["found"], hint["location"], hint["item"], hint["receiver"]))
+    return valid[:MAX_HINTS]
 
 
 def inbox_path(wow_path: Path) -> Path:

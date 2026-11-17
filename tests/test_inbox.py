@@ -29,6 +29,7 @@ def build(seed="seed1", slot="Me", **overrides):
         slot_key=f"{seed}:{slot}", seed=seed, slot=slot, slot_data=SLOT_DATA,
         server_locations=[5110000783, 5120000002, 5130171025], checked=[5120000002],
         received_items=[Item(5110001429, 5110000783, 2), Item(5110001436, 5120000002, 1)], names=NAMES,
+        hints=[inbox.hint_entry("Progressive Alchemy", 5120000171, "Quest 7", "Friend", "Me", False, True)],
     )
     arguments.update(overrides)
     return inbox.build(**arguments)
@@ -50,6 +51,8 @@ def test_build_follows_the_inbox_schema():
         "checked": {5120000002: True},
         "items": [{"id": 5110001429, "sender": "Friend", "loc": 5110000783},
                   {"id": 5110001436, "sender": "Me", "loc": 5120000002}],
+        "hints": [{"item": "Progressive Alchemy", "itemId": 5120000171, "location": "Quest 7",
+                   "finder": "Friend", "receiver": "Me", "found": False, "ourItem": True}],
     }
 
 
@@ -167,3 +170,51 @@ def test_hostile_player_names_stay_inert_strings(tmp_path):
     inbox.write(wow, "seed1:Me", slot)
     sender = read_inbox(wow)["slots"]["seed1:Me"]["items"][0]["sender"]
     assert sender == hostile[:200]
+
+
+# --- hints ---------------------------------------------------------------------------------
+
+def hint(item="Progressive Alchemy", location="Quest 7", found=False, our_item=True, **overrides):
+    entry = inbox.hint_entry(item=item, item_id=5120000171, location=location, finder="Friend", receiver="Me",
+                             found=found, our_item=our_item)
+    entry.update(overrides)
+    return entry
+
+
+def test_build_without_hints_writes_an_empty_list():
+    assert build(hints=[])["hints"] == []
+    assert inbox.build("k", "seed", "Me", SLOT_DATA, [], [], [], NAMES)["hints"] == []
+
+
+def test_hints_are_capped_and_found_ones_are_dropped_first():
+    many = [hint(location=f"Location {number:04d}", found=number % 2 == 0) for number in range(inbox.MAX_HINTS + 50)]
+    kept = build(hints=many)["hints"]
+    assert len(kept) == inbox.MAX_HINTS
+    assert not any(entry["found"] for entry in kept[:inbox.MAX_HINTS // 2])
+    assert [entry["found"] for entry in kept] == sorted(entry["found"] for entry in kept)
+    assert inbox.MAX_HINTS == 200
+
+
+def test_hint_order_is_stable_whatever_order_the_server_sent():
+    first = [hint(location="B"), hint(location="A", found=True), hint(location="C")]
+    assert build(hints=first)["hints"] == build(hints=list(reversed(first)))["hints"]
+    assert [entry["location"] for entry in build(hints=first)["hints"]] == ["B", "C", "A"]
+
+
+def test_malformed_hints_are_dropped():
+    broken = [
+        hint(item=5), hint(location=None), hint(found="yes"), hint(our_item=1), hint(itemId="7"),
+        hint(itemId=True), "not a hint", None, {"item": "x"},
+    ]
+    assert build(hints=[*broken, hint()])["hints"] == [hint()]
+
+
+def test_hostile_hint_strings_stay_inert_strings(tmp_path):
+    wow = make_wow(tmp_path)
+    hostile = '"]] end os.exit() --' + "x" * 500
+    slot = build(hints=[hint(item=hostile, location=hostile, finder=hostile, receiver=hostile)])
+    inbox.write(wow, "seed1:Me", slot)
+    written = read_inbox(wow)["slots"]["seed1:Me"]["hints"][0]
+    for key in ("item", "location", "finder", "receiver"):
+        assert written[key] == hostile[:200]
+    assert written["found"] is False and written["ourItem"] is True

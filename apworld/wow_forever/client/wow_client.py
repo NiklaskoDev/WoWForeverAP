@@ -149,6 +149,18 @@ class WoWForeverContext(CommonContext):
             self.request_sync()
         elif cmd == "ReceivedItems" or (cmd == "RoomUpdate" and "checked_locations" in args):
             self.inbox_dirty.set()
+        elif self._hints_changed(cmd, args):
+            self.inbox_dirty.set()
+
+    @property
+    def hints_key(self) -> str:
+        """Data storage key of this slot's hints; CommonContext already subscribes to it on connect."""
+        return f"_read_hints_{self.team}_{self.slot}"
+
+    def _hints_changed(self, cmd: str, args: dict) -> bool:
+        if cmd == "Retrieved":
+            return self.hints_key in (args.get("keys") or {})
+        return cmd == "SetReply" and args.get("key") == self.hints_key
 
     def make_gui(self):
         ui_class = super().make_gui()
@@ -188,6 +200,33 @@ class WoWForeverContext(CommonContext):
             await self.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
             LOGGER.info("Goal reached: sent to the server.")
 
+    def _name_in_slot(self, lookup: Any, code: int, slot: int, fallback: str) -> str:
+        try:
+            return str(lookup.lookup_in_slot(code, slot))
+        except KeyError:  # the slot or its game is not in the data package (yet)
+            return f"{fallback} {code}"
+
+    def hint_entries(self) -> list[dict[str, Any]]:
+        """This slot's hints with item, location and player names resolved, for the inbox."""
+        raw = self.stored_data.get(self.hints_key)
+        entries = []
+        for hint in raw if isinstance(raw, list) else []:
+            try:
+                receiver, finder = int(hint["receiving_player"]), int(hint["finding_player"])
+                item_id, location_id = int(hint["item"]), int(hint["location"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            entries.append(inbox.hint_entry(
+                item=self._name_in_slot(self.item_names, item_id, receiver, "Item"),
+                item_id=item_id,
+                location=self._name_in_slot(self.location_names, location_id, finder, "Location"),
+                finder=self.player_names.get(finder, inbox.UNKNOWN_SENDER),
+                receiver=self.player_names.get(receiver, inbox.UNKNOWN_SENDER),
+                found=hint.get("found") is True,
+                our_item=receiver == self.slot,
+            ))
+        return entries
+
     async def write_inbox(self) -> None:
         """Write this slot's inbox table; problems are logged once, not on every update."""
         slot_key = self.slot_key
@@ -199,7 +238,7 @@ class WoWForeverContext(CommonContext):
         try:
             slot_dict = inbox.build(slot_key, self.server_seed_name, self.auth, self.slot_data,
                                     self.server_locations, self.checked_locations, self.items_received,
-                                    self.player_names)
+                                    self.player_names, self.hint_entries())
             await asyncio.to_thread(inbox.write, self.wow_path, slot_key, slot_dict)
         except (inbox.InboxError, OSError) as error:
             self._report_inbox_error(str(error))

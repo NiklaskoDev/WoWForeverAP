@@ -2,6 +2,7 @@ import asyncio
 import shutil
 from pathlib import Path
 
+from NetUtils import NetworkSlot, SlotType
 from worlds.wow_forever.client import wow_client
 from worlds.wow_forever.client.lua_table import parse_assignments
 from worlds.wow_forever.client.wow_client import goal_to_send, pending_checks, slot_key_for
@@ -182,6 +183,91 @@ def test_status_lines_report_linked_characters_and_pending_checks(tmp_path):
     assert "Linked characters: 1" in text
     assert "Checks waiting to be sent: 2" in text
     assert "Inbox.lua" in text
+
+
+# --- hints ---------------------------------------------------------------------------------
+
+def with_hint_data(ctx: RecordingContext, hints) -> None:
+    """Two slots (ours is 1) with their games' names, and the hints the server stored for slot 1."""
+    ctx.team = 0
+    ctx.slot_info = {
+        1: NetworkSlot(SLOT_NAME, "World of Warcraft Forever", SlotType.player),
+        2: NetworkSlot("Friend", "Other Game", SlotType.player),
+    }
+    ctx.player_names = {0: "Archipelago", 1: "Me", 2: "Friend"}
+    ctx.item_names.update_game("World of Warcraft Forever", {"Progressive Alchemy": 5120000171})
+    ctx.item_names.update_game("Other Game", {"Sword": 900})
+    ctx.location_names.update_game("World of Warcraft Forever", {"Quest 7": 5110000007})
+    ctx.location_names.update_game("Other Game", {"Chest": 77})
+    ctx.stored_data[ctx.hints_key] = hints
+
+
+OUR_HINT = {"receiving_player": 1, "finding_player": 2, "location": 77, "item": 5120000171, "found": False}
+OTHER_HINT = {"receiving_player": 2, "finding_player": 1, "location": 5110000007, "item": 900, "found": True}
+
+
+def test_hint_entries_resolve_names_in_the_game_of_the_slot_that_owns_them():
+    wow = Path("unused")
+
+    async def scenario(ctx):
+        with_hint_data(ctx, [OUR_HINT, OTHER_HINT])
+        entries = ctx.hint_entries()
+        assert entries == [
+            {"item": "Progressive Alchemy", "itemId": 5120000171, "location": "Chest", "finder": "Friend",
+             "receiver": "Me", "found": False, "ourItem": True},
+            {"item": "Sword", "itemId": 900, "location": "Quest 7", "finder": "Me", "receiver": "Friend",
+             "found": True, "ourItem": False},
+        ]
+
+    run_with_context(wow, scenario)
+
+
+def test_hint_entries_skip_garbage_and_fall_back_for_unknown_ids():
+    async def scenario(ctx):
+        with_hint_data(ctx, [{"receiving_player": "x"}, "text", None, {**OUR_HINT, "item": 1, "location": 2}])
+        entries = ctx.hint_entries()
+        assert [(e["item"], e["location"]) for e in entries] == [("Unknown item (ID: 1)", "Unknown location (ID: 2)")]
+        ctx.stored_data[ctx.hints_key] = "not a list"
+        assert ctx.hint_entries() == []
+        ctx.stored_data.clear()
+        assert ctx.hint_entries() == []
+        ctx.slot_info = {}
+        ctx.stored_data[ctx.hints_key] = [OUR_HINT]
+        assert ctx.hint_entries()[0]["item"] == "Item 5120000171"
+
+    run_with_context(Path("unused"), scenario)
+
+
+def test_write_inbox_publishes_the_hints(tmp_path):
+    wow = make_wow(tmp_path)
+
+    async def scenario(ctx):
+        with_hint_data(ctx, [OUR_HINT])
+        await ctx.write_inbox()
+
+    run_with_context(wow, scenario)
+    text = (wow / "Interface/AddOns/WoWForeverAP_Inbox/Inbox.lua").read_text(encoding="utf-8")
+    slot = parse_assignments(text)["WoWForeverAP_Inbox"]["slots"][f"{SEED}:{SLOT_NAME}"]
+    assert slot["hints"][0]["item"] == "Progressive Alchemy"
+    assert slot["hints"][0]["ourItem"] is True
+
+
+def test_a_hint_update_for_this_slot_rewrites_the_inbox_and_others_do_not():
+    async def scenario(ctx):
+        ctx.team = 0
+        key = ctx.hints_key
+        for cmd, args in (("Retrieved", {"keys": {"other": 1}}), ("SetReply", {"key": "other", "value": []}),
+                          ("Connected", {"slot_data": {}}), ("Bounced", {})):
+            ctx.inbox_dirty.clear()
+            ctx.on_package(cmd, args)
+            if cmd != "Connected":  # a connection also asks for a full resync
+                assert not ctx.inbox_dirty.is_set(), cmd
+        for cmd, args in (("Retrieved", {"keys": {key: []}}), ("SetReply", {"key": key, "value": [OUR_HINT]})):
+            ctx.inbox_dirty.clear()
+            ctx.on_package(cmd, args)
+            assert ctx.inbox_dirty.is_set(), cmd
+
+    run_with_context(Path("unused"), scenario)
 
 
 # --- commands ------------------------------------------------------------------------------
