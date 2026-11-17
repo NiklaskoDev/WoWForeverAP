@@ -266,6 +266,7 @@ Parsing details found in the real ATT files at the pinned commit; none changes t
 - Map references may be bare names (resolved via `maps.lua` or `m(...)` declarations; unknown `MAP.X` is an error); timeline markers may lack the `TIMELINE.` prefix; `DELETED` counts as removed; `coords` may be one flat coordinate; `AttAssign` node type for assignment nodes.
 - Local helper calls such as `CRAFTSMANS_WRIT_QUEST(...)` are not evaluated (never executed), so those repeatable profession writ quests are absent.
 - Fixtures sit under `tests/fixtures/att/` directly.
+- Exclusion precedence (final, stated in the `classify` docstring): `outside-maproot`, `zone-not-in-data` and `no-name` first (later checks need a zone and a name), then `duplicate` (before map resolution, so duplicates never count as unresolved), then the map check, then the remaining reasons incl. `faction-mismatch`. A prerequisite id only loses its edge when every exclusion record for it is `repeatable` or `breadcrumb`.
 - Zephra's Isle stays 1–12: ATT quest levels are 2 / 4 / 8 and the report's flag rule (min within 2, max ≥ highest quest level) does not flag it, so ATT does not contradict the range; the `zones.csv` comment cites ATT. Still provisional until the live-client check.
 
 ## Risks / follow-ups
