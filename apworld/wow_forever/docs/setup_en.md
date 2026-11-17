@@ -6,6 +6,8 @@
 - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) (the same version the apworld was built
   for, see the apworld's `archipelago.json`).
 - The two files of a release of this project: `wow_forever.apworld` and `WoWForeverAP-<version>.zip`.
+  The release also has a `SHA256SUMS` file to check the downloads (`sha256sum -c SHA256SUMS` on Linux and macOS,
+  `Get-FileHash` in PowerShell).
 
 ## Installing
 
