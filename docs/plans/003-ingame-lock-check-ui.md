@@ -1,6 +1,6 @@
 # 003 — In-game lock and check UI
 
-Status: approved
+Status: implemented (step 8 live-client check pending)
 Type: feature
 Version impact: none until release — part of the first release (expected `0.1.0`); addon-only plus inbox hints.
 
@@ -85,5 +85,8 @@ Resolved 2026-11-17: the programmer accepted every recommendation below.
 - **Map overlay precision.** (a) Rectangles from `C_Map.GetMapRectOnMap` (approximate, overlaps at zone borders). (b) Exact zone shapes via map highlight art (`C_Map.GetMapArtHighlightInfo`-style APIs, if present in Forever), more work and API-dependent. **Recommend (a)** first.
 
 ## Risks / follow-ups
+- Implemented deviation (review, accepted): AP hints carry no timestamp, so the inbox orders hints open-before-found, then by name, instead of "newest first" (cap 200 unchanged).
+- Step 8 must also confirm the panel opens in combat (no `InCombatLockdown` guard; `ButtonFrameTemplate` is not protected). If it does not, add the guard with a chat message.
+- Warning state (`reported`, `lastZone`) is per session: `/reload` inside a locked zone warns again, and skill warnings are not reset on relink. Intended ("once per entry"); reset on link/unlink only if players find it noisy.
 - Map APIs (`GetMapRectOnMap`, data providers, `Enum.UIMapType`) are Mainline APIs; confirm with 001 D2.
 - 12.x addon restrictions apply to combat and some protected frames; the panel must not open in combat if templates turn out to be protected (`InCombatLockdown()` check before showing).
