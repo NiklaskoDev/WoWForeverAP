@@ -1,6 +1,6 @@
 # 004 — Extra check categories
 
-Status: approved
+Status: implemented (live-client confirmation of APIs and data pending)
 Type: feature
 Version impact: none until release — part of the first release (expected `0.1.0`); uses location categories reserved in 001.
 
