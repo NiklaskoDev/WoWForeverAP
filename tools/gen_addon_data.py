@@ -4,7 +4,7 @@
     python tools/gen_addon_data.py --check   exit 1 when a generated file is out of date (CI)
 
 Outputs:
-  addon/WoWForeverAP/Data/Generated.lua   ns.Data: zones, quests, professions, tiers, fillers, level goal
+  addon/WoWForeverAP/Data/Generated.lua   ns.Data: zones, quests, professions, tiers, fillers, care package, goal
   addon/spec/fixtures/ids.lua             id cases computed by ids.py, which the Lua spec compares against Ids.lua
   addon/spec/fixtures/inbox_from_client.lua  an Inbox.lua exactly as the client writes it, which the Lua spec loads
 """
@@ -57,7 +57,9 @@ def build_generated(data: "data_loader.GameData") -> str:
              "release": tier.release}
             for tier in data.profession_tiers
         ],
-        "fillers": {item.native_id: {"name": item.name, "release": item.release} for item in data.misc_items},
+        "fillers": {item.native_id: {"name": item.name, "release": item.release}
+                    for item in data.misc_items if item.kind == "filler"},
+        "carePackageItemId": ids.item_id(data.care_package.category, data.care_package.native_id),
     }
     return HEADER + "local _, ns = ...\n" + _table_as_expression(tables, "ns.Data = ")
 
@@ -83,7 +85,10 @@ def build_inbox_fixture() -> str:
     """An ``Inbox.lua`` written by the client's own writer for a small made-up slot."""
     slot_data = {"schema": 1, "world_version": "0.0.0", "faction": "alliance", "start_zone": 1429,
                  "content_release": 1, "goal_level": 60, "professions": [171, 186], "level_step": 1,
-                 "profession_step": 25}
+                 "profession_step": 25,
+                 "economy": {"auctionHouse": True, "trading": True, "mail": False, "sharedBanks": False,
+                             "mainBoosts": False, "carePackages": 5, "carePackageGold": 50,
+                             "carePackageStacks": 5}}
     quest = ids.location_id(ids.LocCat.QUEST, 783)
     levels = [ids.location_id(ids.LocCat.LEVEL, level) for level in (2, 3)]
     skill = ids.location_id(ids.LocCat.PROFESSION_SKILL, ids.profession_skill_native(171, 25))

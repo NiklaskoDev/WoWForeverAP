@@ -69,6 +69,8 @@ def connected_context(wow_path: Path) -> RecordingContext:
     ctx.slot_data = {
         "schema": 1, "world_version": "0.1.0", "faction": "alliance", "start_zone": 1429, "content_release": 1,
         "goal_level": 60, "professions": [171], "level_step": 1, "profession_step": 25,
+        "economy": {"auctionHouse": True, "trading": True, "mail": True, "sharedBanks": False, "mainBoosts": False,
+                    "carePackages": 5, "carePackageGold": 50, "carePackageStacks": 5},
     }
     ctx.server_locations = {5110000783, 5120000002, 5110000007}
     ctx.missing_locations = set(ctx.server_locations)

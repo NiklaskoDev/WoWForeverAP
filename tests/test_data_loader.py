@@ -181,7 +181,8 @@ def test_tier_gap_and_bracket_coverage():
 
 def test_largest_bracket_must_reach_the_highest_profession_tier():
     # shipped data: tiers end at 300; a bracket table ending exactly at 300 is the boundary that is allowed
-    exact = "max_skill,required_level\n150,15\n300,45\n"
+    # (the bracket limits stay the ones profession_materials.csv refers to)
+    exact = "max_skill,required_level\n75,1\n150,15\n225,30\n300,50\n"
     assert parse_game_data(shipped(material_brackets=exact)).material_brackets[-1].max_skill == 300
     short = "max_skill,required_level\n150,15\n299,45\n"
     with pytest.raises(DataError) as error:
@@ -224,3 +225,86 @@ def test_comment_and_blank_lines_are_ignored_but_line_numbers_stay_physical():
 
 def test_data_files_constant_matches_shipped_files():
     assert set(read_shipped_files()) == set(data_loader.DATA_FILES)
+
+
+# --- profession materials and care package ----------------------------------------------------
+
+MATERIALS_HEADER = ("crafting_skill_line_id,max_skill,source,gather_skill_line_id,gather_skill,required_level,"
+                    "release\n")
+
+
+def materials(*rows: str) -> dict[str, str]:
+    return shipped(profession_materials=MATERIALS_HEADER + "".join(f"{row}\n" for row in rows))
+
+
+def test_shipped_materials_cover_every_bracket_of_every_crafting_profession():
+    data = load_game_data()
+    crafting = {row.crafting_skill_line_id for row in data.profession_materials}
+    brackets = {bracket.max_skill for bracket in data.material_brackets}
+    assert crafting == {164, 165, 171, 185, 197, 202, 333, 129}  # no gathering profession and no fishing
+    for line in crafting:
+        covered = {row.max_skill for row in data.profession_materials if row.crafting_skill_line_id == line}
+        assert covered == brackets, data.professions_by_id[line].name
+
+
+def test_shipped_gather_rows_name_gathering_professions_and_valid_tiers():
+    data = load_game_data()
+    for row in data.profession_materials:
+        if row.source == "gather":
+            assert data.professions_by_id[row.gather_skill_line_id].key in ("mining", "herbalism", "skinning")
+        else:
+            assert (row.gather_skill_line_id, row.gather_skill) == (None, 0)
+
+
+def test_valid_material_rows_parse_with_all_three_sources():
+    data = parse_game_data(materials("171,75,gather,182,1,1,1", "171,75,vendor,,0,1,1", "171,150,drops,,0,15,1"))
+    assert [row.source for row in data.profession_materials] == ["gather", "vendor", "drops"]
+    assert data.profession_materials[0].gather_skill_line_id == 182
+    assert data.profession_materials[1].gather_skill_line_id is None
+
+
+@pytest.mark.parametrize("row, fragment", [
+    ("171,75,buy,,0,1,1", "source must be one of"),
+    ("999,75,drops,,0,1,1", "crafting_skill_line_id 999 is not in professions.csv"),
+    ("171,75,gather,999,1,1,1", "gather_skill_line_id 999 is not in professions.csv"),
+    ("171,80,drops,,0,1,1", "max_skill 80 is not a max_skill of material_brackets.csv"),
+    ("171,75,gather,,1,1,1", "needs a gather_skill_line_id"),
+    ("171,75,gather,171,1,1,1", "cannot gather its own material"),
+    ("171,75,gather,182,0,1,1", "gather_skill must be 1..300"),
+    ("171,75,gather,182,301,1,1", "gather_skill must be 1..300"),
+    ("171,75,drops,182,0,1,1", "must have an empty gather_skill_line_id"),
+    ("171,75,vendor,,5,1,1", "must have an empty gather_skill_line_id"),
+    ("171,75,drops,,0,1,7", "unknown release 7"),
+    ("171,75,drops,,0,x,1", "required_level must be an integer"),
+])
+def test_invalid_material_rows_name_file_and_line(row, fragment):
+    assert_error(materials(row), "profession_materials.csv", 2, fragment)  # line 1 is the header
+
+
+def test_duplicate_material_row_is_rejected_but_another_gatherer_is_an_alternative():
+    assert_error(materials("171,75,drops,,0,1,1", "171,75,drops,,0,1,1"), "profession_materials.csv", 3,
+                 "duplicate material source")
+    data = parse_game_data(materials("164,75,gather,186,1,1,1", "164,75,gather,182,1,1,1"))
+    assert len(data.profession_materials) == 2
+
+
+def test_care_package_is_one_misc_item_in_category_4_that_may_share_a_native_id_with_the_filler():
+    data = load_game_data()
+    assert data.care_package.name == "Care Package"
+    assert data.care_package.category == data_loader.ids.ItemCat.CARE_PACKAGE
+    assert data.care_package.native_id == 1 and any(i.kind == "filler" and i.native_id == 1 for i in data.misc_items)
+
+
+def test_a_second_care_package_or_none_is_rejected():
+    two = "native_id,kind,name,release\n1,filler,Traveler's Tale,1\n1,care_package,A,1\n2,care_package,B,1\n"
+    none = "native_id,kind,name,release\n1,filler,Traveler's Tale,1\n"
+    for text, found in ((two, 2), (none, 0)):
+        with pytest.raises(DataError, match=f"exactly one care_package item is required, found {found}"):
+            parse_game_data(shipped(misc_items=text))
+
+
+def test_duplicate_native_id_within_one_kind_is_rejected():
+    files = replace_in("misc_items.csv", "1,care_package,Care Package,1",
+                       "1,care_package,Care Package,1\n1,care_package,Other Package,1")
+    with pytest.raises(DataError, match="duplicate native_id"):
+        parse_game_data(files)

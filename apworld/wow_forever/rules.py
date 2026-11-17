@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from BaseClasses import CollectionState
 from worlds.generic.Rules import set_rule
 
-from .data_loader import MaterialBracket, ProfessionTier, Zone
+from .data_loader import GameData, MaterialBracket, Profession, ProfessionMaterial, ProfessionTier, Zone
 from .locations import GOAL_LEVEL, GOAL_LOCATION_NAME, LocationKind, LocationSpec
 
 if TYPE_CHECKING:
@@ -59,9 +59,64 @@ def has_profession_tier(state: CollectionState, world: "WoWForeverWorld", skill_
     return state.count(item_name, world.player) >= tier.tier and can_reach_level(state, world, tier.required_level)
 
 
+def has_market_access(world: "WoWForeverWorld") -> bool:
+    """Characters may get materials from other players: Auction House, trading, mail or a shared bank."""
+    options = world.options
+    return bool(options.allow_auction_house or options.allow_trading or options.allow_mail
+                or options.allow_shared_banks)
+
+
+def compute_material_sources(data: GameData,
+                             content_release: int) -> dict[tuple[int, int], tuple[ProfessionMaterial, ...]]:
+    """The material sources of the content release, per (crafting skill line, bracket max_skill)."""
+    sources: dict[tuple[int, int], list[ProfessionMaterial]] = {}
+    for material in data.profession_materials:
+        if material.release <= content_release:
+            sources.setdefault((material.crafting_skill_line_id, material.max_skill), []).append(material)
+    return {key: tuple(rows) for key, rows in sources.items()}
+
+
+def _has_material_source(state: CollectionState, world: "WoWForeverWorld", source: ProfessionMaterial) -> bool:
+    if not can_reach_level(state, world, source.required_level):
+        return False
+    if source.source != "gather":
+        return True
+    gatherer = world.data.professions_by_id[source.gather_skill_line_id]
+    return (gatherer.skill_line_id in world.selected_skill_line_ids
+            and state.count(gatherer.item_name, world.player) >= tier_for(world, source.gather_skill).tier)
+
+
 def has_material_access(state: CollectionState, world: "WoWForeverWorld", skill_line_id: int, skill: int) -> bool:
-    """Single seam for material logic (plan 002 extends it): self-gathering needs the bracket's level."""
-    return can_reach_level(state, world, bracket_for(world, skill).required_level)
+    """Materials for the skill bracket.
+
+    With market access (Auction House, trading, mail or a shared bank) the bracket's level is enough. Otherwise
+    one of the profession's own sources must work: loot and vendors need the level, gathering also needs the
+    gathering profession and its tier. Professions or brackets without source rows keep the level-only rule.
+    """
+    bracket = bracket_for(world, skill)
+    sources = world.material_sources.get((skill_line_id, bracket.max_skill))
+    if has_market_access(world) or not sources:
+        return can_reach_level(state, world, bracket.required_level)
+    return any(_has_material_source(state, world, source) for source in sources)
+
+
+def unreachable_material_sources(world: "WoWForeverWorld") -> dict[Profession, list[Profession]]:
+    """Selected crafting professions that cannot get materials by themselves: profession -> the unselected
+    gathering professions they would need. Empty with market access."""
+    if has_market_access(world):
+        return {}
+    missing: dict[Profession, list[Profession]] = {}
+    for profession in world.selected_professions:
+        needed: list[Profession] = []
+        for (crafting_line, _), sources in world.material_sources.items():
+            if crafting_line != profession.skill_line_id or any(s.source != "gather" for s in sources):
+                continue
+            gatherers = [world.data.professions_by_id[s.gather_skill_line_id] for s in sources]
+            if all(g.skill_line_id not in world.selected_skill_line_ids for g in gatherers):
+                needed.extend(g for g in gatherers if g not in needed)
+        if needed:
+            missing[profession] = needed
+    return missing
 
 
 def _quest_rule(world: "WoWForeverWorld", spec: LocationSpec):

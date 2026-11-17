@@ -1,0 +1,40 @@
+# PROVISIONAL, hand-curated game design (not game data): which source supplies the main material of each crafting
+# profession, per skill bracket. Used by the self-found logic when the Auction House, trading, mail and shared banks
+# are all off (plan 002). max_skill must equal a max_skill of material_brackets.csv. source is gather (a gathering
+# profession supplies it: gather_skill_line_id and the gathering skill needed), drops (loot) or vendor. Several rows
+# of one bracket are alternatives: any one of them is enough. Gathering skill values follow the Classic Era
+# gathering requirements of the materials (copper/tin, iron, mithril, thorium; Peacebloom to Dreamfoil; light to rugged
+# hide). Confirm against the live Forever client (plan 001, D2).
+crafting_skill_line_id,max_skill,source,gather_skill_line_id,gather_skill,required_level,release
+171,75,gather,182,1,1,1
+171,150,gather,182,125,15,1
+171,225,gather,182,185,30,1
+171,300,gather,182,230,45,1
+164,75,gather,186,1,1,1
+164,150,gather,186,125,15,1
+164,225,gather,186,175,30,1
+164,300,gather,186,230,45,1
+202,75,gather,186,1,1,1
+202,150,gather,186,125,15,1
+202,225,gather,186,175,30,1
+202,300,gather,186,230,45,1
+165,75,gather,393,1,1,1
+165,150,gather,393,100,15,1
+165,225,gather,393,200,30,1
+165,300,gather,393,250,45,1
+333,75,drops,,0,1,1
+333,150,drops,,0,15,1
+333,225,drops,,0,30,1
+333,300,drops,,0,45,1
+197,75,drops,,0,1,1
+197,150,drops,,0,15,1
+197,225,drops,,0,30,1
+197,300,drops,,0,45,1
+185,75,drops,,0,1,1
+185,150,drops,,0,15,1
+185,225,drops,,0,30,1
+185,300,drops,,0,45,1
+129,75,drops,,0,1,1
+129,150,drops,,0,15,1
+129,225,drops,,0,30,1
+129,300,drops,,0,45,1

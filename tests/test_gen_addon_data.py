@@ -40,7 +40,8 @@ def test_generated_tables_match_the_csv_data():
     assert tables["professions"][171] == {"key": "alchemy", "name": "Alchemy", "kind": "primary", "release": 1}
     assert [tier["maxSkill"] for tier in tables["tiers"]] == [75, 150, 225, 300]
     # the parser turns a table keyed exactly 1..n into a list
-    assert tables["fillers"] == [{"name": "Traveler's Tale", "release": 1}]
+    assert tables["fillers"] == [{"name": "Traveler's Tale", "release": 1}]  # the care package is not a filler
+    assert tables["carePackageItemId"] == ids.item_id(ids.ItemCat.CARE_PACKAGE, 1) == 5_140_000_001
 
 
 def test_generation_is_deterministic():
@@ -68,6 +69,7 @@ def test_inbox_fixture_is_what_the_client_writes_and_survives_hostile_names():
     assert inbox["schema"] == 1
     assert slot["items"][0]["sender"] == 'Anna "The Tank"'
     assert slot["options"]["goalLevel"] == 60
+    assert slot["options"]["economy"]["carePackages"] == 5 and slot["options"]["economy"]["mail"] is False
     assert slot["checked"] == {ids.location_id(ids.LocCat.LEVEL, 2): True}
     assert ids.location_id(ids.LocCat.QUEST, 783) in slot["locations"]
 

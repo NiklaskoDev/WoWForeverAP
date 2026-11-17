@@ -96,6 +96,8 @@ class TestDefaultOptions(WoWTestBase):
             elif item.name in professions:
                 expected = (ids.ItemCat.PROFESSION_TIER, professions[item.name].skill_line_id)
                 self.assertEqual((category, native), expected)
+            elif item.name == "Care Package":
+                self.assertEqual((category, native), (ids.ItemCat.CARE_PACKAGE, 1))
             else:
                 self.assertEqual(category, ids.ItemCat.FILLER)
 
@@ -125,6 +127,19 @@ class TestDefaultOptions(WoWTestBase):
         self.assertEqual(data["profession_step"], 25)
         self.assertEqual(sorted(data["professions"]), sorted(p.skill_line_id for p in load_game_data().professions))
         self.assertEqual(data["world_version"], "0.0.0")
+
+    def test_slot_data_carries_every_economy_key_with_the_default_rules(self):
+        self.assertEqual(self.world.fill_slot_data()["economy"], {
+            "auctionHouse": True, "trading": True, "mail": True, "sharedBanks": False, "mainBoosts": False,
+            "carePackages": 5, "carePackageGold": 50, "carePackageStacks": 5,
+        })
+
+    def test_default_pool_holds_five_useful_care_packages_before_the_filler(self):
+        care = [item for item in self.multiworld.itempool if item.name == "Care Package"]
+        self.assertEqual(len(care), 5)
+        self.assertTrue(all(item.useful and not item.advancement for item in care))
+        self.assertEqual(self.world.care_package_count, 5)
+        self.assertEqual(len(self.multiworld.itempool), len(self.location_names()))
 
 
 class TestFactionsAndStartZones(WoWTestBase):
@@ -204,6 +219,47 @@ class TestOptions(WoWTestBase):
         with self.assertRaises(OptionError) as error:
             self.generate(professions=[], level_milestone_step=10, start_zone="elwynn_forest")
         self.assertIn("enable more professions or a later content_release", str(error.exception))
+
+
+class TestEconomyOptions(WoWTestBase):
+    def pool_count(self, name: str) -> int:
+        return [item.name for item in self.multiworld.itempool].count(name)
+
+    def test_care_package_count_follows_the_option(self):
+        for count in (0, 1, 20):
+            with self.subTest(care_packages=count):
+                self.generate(care_packages=count)
+                self.assertEqual(self.pool_count("Care Package"), count)
+                self.assertEqual(self.world.fill_slot_data()["economy"]["carePackages"], count)
+                self.assertEqual(len(self.multiworld.itempool), len(self.location_names()))
+
+    def test_care_packages_are_dropped_before_the_pool_is_rejected(self):
+        # 38 locations, 35 progression items: room for three of the five requested care packages and no filler
+        self.generate(professions=[], level_milestone_step=3, care_packages=5)
+        self.assertEqual(self.pool_count("Care Package"), 3)
+        self.assertEqual(self.pool_count("Traveler's Tale"), 0)
+        self.assertEqual(self.world.fill_slot_data()["economy"]["carePackages"], 3)
+        self.assertEqual(len(self.multiworld.itempool), len(self.location_names()))
+
+    def test_progression_that_does_not_fit_is_still_an_error_without_care_packages(self):
+        with self.assertRaises(OptionError):
+            self.generate(professions=[], level_milestone_step=4, care_packages=0)
+
+    def test_slot_data_follows_the_economy_options(self):
+        self.generate(allow_auction_house=0, allow_trading=0, allow_mail=0, allow_shared_banks=1, allow_main_boosts=1,
+                      care_package_gold=1234, care_package_stacks=7, professions=[])
+        self.assertEqual(self.world.fill_slot_data()["economy"], {
+            "auctionHouse": False, "trading": False, "mail": False, "sharedBanks": True, "mainBoosts": True,
+            "carePackages": 5, "carePackageGold": 1234, "carePackageStacks": 7,
+        })
+
+    def test_the_world_is_beatable_without_any_care_package(self):
+        self.generate(care_packages=5)
+        state = CollectionState(self.multiworld)
+        for item in self.multiworld.itempool:
+            if item.name != "Care Package":
+                state.collect(item)
+        self.assertTrue(self.multiworld.can_beat_game(state))
 
 
 def fixture_data_with_a_later_release():

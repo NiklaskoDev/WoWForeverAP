@@ -8,8 +8,8 @@ from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
 from . import items, locations, regions, rules
-from .data_loader import GameData, Profession, ProfessionTier, Zone, load_game_data
-from .items import FILLER_ITEM_NAME, GAME_NAME, ITEM_NAME_TO_ID, ITEM_TABLE, WoWForeverItem
+from .data_loader import GameData, Profession, ProfessionMaterial, ProfessionTier, Zone, load_game_data
+from .items import CARE_PACKAGE_ITEM_NAME, FILLER_ITEM_NAME, GAME_NAME, ITEM_NAME_TO_ID, ITEM_TABLE, WoWForeverItem
 from .locations import GOAL_LEVEL, LocationSpec, build_location_name_to_id
 from .options import RANDOM_START_ZONE, WoWForeverOptions
 from .settings import WoWForeverSettings
@@ -65,6 +65,9 @@ class WoWForeverWorld(World):
     allowed_zones: tuple[Zone, ...]
     start_zone: Zone
     selected_professions: tuple[Profession, ...]
+    selected_skill_line_ids: frozenset[int]
+    material_sources: dict[tuple[int, int], tuple[ProfessionMaterial, ...]]
+    care_package_count: int
     allowed_tiers: tuple[ProfessionTier, ...]
     bracket_zone_ids: dict[int, tuple[int, ...]]
     location_specs: list[LocationSpec]
@@ -81,11 +84,25 @@ class WoWForeverWorld(World):
         self.selected_professions = tuple(
             profession for profession in self.data.professions
             if profession.key in self.options.professions.value and profession.release <= self.content_release)
+        self.selected_skill_line_ids = frozenset(profession.skill_line_id for profession in self.selected_professions)
+        self.material_sources = rules.compute_material_sources(self.data, self.content_release)
+        self._check_self_found_materials()
         self.bracket_zone_ids = rules.compute_bracket_zone_ids(self.allowed_zones)
         self.location_specs = locations.select_locations(
             self.content_release, self.faction, frozenset(zone.ui_map_id for zone in self.allowed_zones),
             frozenset(profession.skill_line_id for profession in self.selected_professions),
             self.options.level_milestone_step.value, self.options.profession_milestone_step.value, self.data)
+
+    def _check_self_found_materials(self) -> None:
+        missing = rules.unreachable_material_sources(self)
+        if not missing:
+            return
+        needs = "; ".join(f"{profession.name} needs {', '.join(gatherer.name for gatherer in gatherers)}"
+                          for profession, gatherers in missing.items())
+        raise OptionError(
+            f"{self.player_name}: {needs}. Those gathering professions are not in professions, and the Auction "
+            "House, trading, mail and shared banks are all off, so the materials could not be obtained. "
+            "Select them or turn one of those options on")
 
     def _resolve_start_zone(self) -> Zone:
         start_zones = [zone for zone in self.allowed_zones if zone.is_start]
@@ -112,7 +129,9 @@ class WoWForeverWorld(World):
 
     def create_items(self) -> None:
         location_count = len(self.multiworld.get_unfilled_locations(self.player))
-        self.multiworld.itempool += items.build_pool(self, location_count)
+        pool = items.build_pool(self, location_count)
+        self.care_package_count = sum(1 for item in pool if item.name == CARE_PACKAGE_ITEM_NAME)
+        self.multiworld.itempool += pool
         self.multiworld.push_precollected(self.create_item(self.start_zone.item_name))
         early_zone = self._pick_early_zone()
         if early_zone is not None:
@@ -142,6 +161,16 @@ class WoWForeverWorld(World):
             "professions": [profession.skill_line_id for profession in self.selected_professions],
             "level_step": self.options.level_milestone_step.value,
             "profession_step": self.options.profession_milestone_step.value,
+            "economy": {
+                "auctionHouse": bool(self.options.allow_auction_house),
+                "trading": bool(self.options.allow_trading),
+                "mail": bool(self.options.allow_mail),
+                "sharedBanks": bool(self.options.allow_shared_banks),
+                "mainBoosts": bool(self.options.allow_main_boosts),
+                "carePackages": self.care_package_count,
+                "carePackageGold": self.options.care_package_gold.value,
+                "carePackageStacks": self.options.care_package_stacks.value,
+            },
         }
 
     @classmethod

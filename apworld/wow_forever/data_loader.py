@@ -14,7 +14,9 @@ from . import ids
 
 FACTIONS = ("alliance", "horde", "both")
 PROFESSION_KINDS = ("primary", "secondary")
-MISC_KINDS = ("filler",)
+MISC_KIND_CATEGORIES = {"filler": ids.ItemCat.FILLER, "care_package": ids.ItemCat.CARE_PACKAGE}
+MISC_KINDS = tuple(MISC_KIND_CATEGORIES)
+MATERIAL_SOURCES = ("gather", "drops", "vendor")
 LIST_SEPARATOR = ";"
 RESERVED_LOCATION_NAMES = frozenset({"Goal"})
 MAX_SKILL_VALUE = ids.PROFESSION_SKILL_FACTOR - 1
@@ -27,6 +29,7 @@ DATA_FILES = (
     "professions.csv",
     "profession_tiers.csv",
     "material_brackets.csv",
+    "profession_materials.csv",
     "misc_items.csv",
 )
 
@@ -109,11 +112,27 @@ class MaterialBracket:
 
 
 @dataclass(frozen=True)
+class ProfessionMaterial:
+    """One way to get the main material of a crafting profession for the skills up to ``max_skill``."""
+    crafting_skill_line_id: int
+    max_skill: int
+    source: str
+    gather_skill_line_id: int | None  # only for source "gather"
+    gather_skill: int  # gathering skill needed, 0 unless source is "gather"
+    required_level: int
+    release: int
+
+
+@dataclass(frozen=True)
 class MiscItem:
     native_id: int
     kind: str
     name: str
     release: int
+
+    @property
+    def category(self) -> ids.ItemCat:
+        return MISC_KIND_CATEGORIES[self.kind]
 
 
 @dataclass(frozen=True)
@@ -124,11 +143,17 @@ class GameData:
     professions: tuple[Profession, ...]
     profession_tiers: tuple[ProfessionTier, ...]
     material_brackets: tuple[MaterialBracket, ...]
+    profession_materials: tuple[ProfessionMaterial, ...]
     misc_items: tuple[MiscItem, ...]
     zones_by_id: dict[int, Zone] = field(default_factory=dict)
     quests_by_id: dict[int, Quest] = field(default_factory=dict)
     professions_by_id: dict[int, Profession] = field(default_factory=dict)
     releases_by_id: dict[int, Release] = field(default_factory=dict)
+
+    @property
+    def care_package(self) -> MiscItem:
+        """The single care package item (the parser guarantees exactly one)."""
+        return next(item for item in self.misc_items if item.kind == "care_package")
 
 
 # --- CSV reading -----------------------------------------------------------------------------
@@ -322,13 +347,54 @@ def _parse_misc_items(text: str, release_ids: set[int]) -> tuple[MiscItem, ...]:
     for line, row in _read_rows(file, text, ("native_id", "kind", "name", "release")):
         item = MiscItem(_int(file, line, row, "native_id"), _choice(file, line, row, "kind", MISC_KINDS),
                         _text(file, line, row, "name"), _int(file, line, row, "release"))
-        unique.add(line, item.native_id)
+        unique.add(line, (item.kind, item.native_id))  # kinds sit in different item categories
         _require_release(file, line, item.release, release_ids)
-        _native_in_range(file, line, ids.item_id, ids.ItemCat.FILLER, item.native_id)
+        _native_in_range(file, line, ids.item_id, item.category, item.native_id)
         items.append(item)
     if not any(item.kind == "filler" for item in items):
         raise DataError(file, None, "at least one filler item is required")
+    care_packages = [item for item in items if item.kind == "care_package"]
+    if len(care_packages) != 1:
+        raise DataError(file, None, f"exactly one care_package item is required, found {len(care_packages)}")
     return tuple(items)
+
+
+def _parse_profession_materials(text: str, release_ids: set[int], professions: Mapping[int, Profession],
+                                brackets: tuple[MaterialBracket, ...],
+                                tiers: tuple[ProfessionTier, ...]) -> tuple[ProfessionMaterial, ...]:
+    file = "profession_materials.csv"
+    columns = ("crafting_skill_line_id", "max_skill", "source", "gather_skill_line_id", "gather_skill",
+               "required_level", "release")
+    bracket_limits = {bracket.max_skill for bracket in brackets}
+    top_skill = max(tier.max_skill for tier in tiers)
+    unique = _Unique(file, "material source")
+    materials = []
+    for line, row in _read_rows(file, text, columns):
+        source = _choice(file, line, row, "source", MATERIAL_SOURCES)
+        gather_line = _int(file, line, row, "gather_skill_line_id") if row["gather_skill_line_id"] else None
+        material = ProfessionMaterial(
+            _int(file, line, row, "crafting_skill_line_id"), _int(file, line, row, "max_skill"), source,
+            gather_line, _int(file, line, row, "gather_skill"), _int(file, line, row, "required_level"),
+            _int(file, line, row, "release"))
+        unique.add(line, (material.crafting_skill_line_id, material.max_skill, source, gather_line))
+        _require_release(file, line, material.release, release_ids)
+        for column, skill_line_id in (("crafting_skill_line_id", material.crafting_skill_line_id),
+                                      ("gather_skill_line_id", gather_line)):
+            if skill_line_id is not None and skill_line_id not in professions:
+                raise DataError(file, line, f"{column} {skill_line_id} is not in professions.csv")
+        if material.max_skill not in bracket_limits:
+            raise DataError(file, line, f"max_skill {material.max_skill} is not a max_skill of material_brackets.csv")
+        if source == "gather":
+            if gather_line is None:
+                raise DataError(file, line, "a gather source needs a gather_skill_line_id")
+            if gather_line == material.crafting_skill_line_id:
+                raise DataError(file, line, "a profession cannot gather its own material")
+            if not 0 < material.gather_skill <= top_skill:
+                raise DataError(file, line, f"gather_skill must be 1..{top_skill}, got {material.gather_skill}")
+        elif gather_line is not None or material.gather_skill != 0:
+            raise DataError(file, line, f"{source} sources must have an empty gather_skill_line_id and gather_skill 0")
+        materials.append(material)
+    return tuple(materials)
 
 
 # --- quests ----------------------------------------------------------------------------------
@@ -445,14 +511,17 @@ def parse_game_data(files: Mapping[str, str]) -> GameData:
     professions = _parse_professions(files["professions.csv"], release_ids)
     tiers = _parse_tiers(files["profession_tiers.csv"], release_ids)
     brackets = _parse_brackets(files["material_brackets.csv"], tiers)
+    professions_by_id = {profession.skill_line_id: profession for profession in professions}
+    materials = _parse_profession_materials(files["profession_materials.csv"], release_ids, professions_by_id,
+                                            brackets, tiers)
     misc_items = _parse_misc_items(files["misc_items.csv"], release_ids)
     quests = _build_quests(_parse_raw_quests(files["quests.csv"], zones_by_id, release_ids), zones_by_id)
     _check_item_names_unique(zones, professions, misc_items)
     return GameData(
-        releases, zones, quests, professions, tiers, brackets, misc_items,
+        releases, zones, quests, professions, tiers, brackets, materials, misc_items,
         zones_by_id=zones_by_id,
         quests_by_id={quest.quest_id: quest for quest in quests},
-        professions_by_id={profession.skill_line_id: profession for profession in professions},
+        professions_by_id=professions_by_id,
         releases_by_id={release.id: release for release in releases},
     )
 

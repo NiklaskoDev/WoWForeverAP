@@ -25,6 +25,16 @@ WoWForeverAP_Inbox = {
 			},
 			["options"] = {
 				["contentRelease"] = 1,
+				["economy"] = {
+					["auctionHouse"] = true,
+					["carePackageGold"] = 50,
+					["carePackageStacks"] = 5,
+					["carePackages"] = 5,
+					["mail"] = false,
+					["mainBoosts"] = false,
+					["sharedBanks"] = false,
+					["trading"] = true,
+				},
 				["faction"] = "alliance",
 				["goalLevel"] = 60,
 				["levelStep"] = 1,

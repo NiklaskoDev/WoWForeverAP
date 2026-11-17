@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 
-from Options import Choice, OptionSet, PerGameCommonOptions, Range
+from Options import Choice, DefaultOnToggle, OptionSet, PerGameCommonOptions, Range, Toggle
 
 from .data_loader import load_game_data
 
@@ -64,6 +64,58 @@ class ProfessionMilestoneStep(Range):
     default = 25
 
 
+class AllowAuctionHouse(DefaultOnToggle):
+    """Characters may use the Auction House. Off: no buying or selling there (honor system)."""
+    display_name = "Allow Auction House"
+
+
+class AllowTrading(DefaultOnToggle):
+    """Characters may trade with other players. Off: no trade window (honor system)."""
+    display_name = "Allow Trading"
+
+
+class AllowMail(DefaultOnToggle):
+    """Characters may send and receive mail with items or gold. Off: no mailbox (honor system)."""
+    display_name = "Allow Mail"
+
+
+class AllowSharedBanks(Toggle):
+    """Characters may use the guild bank and the account (warband) bank. Off: neither (honor system)."""
+    display_name = "Allow Shared Banks"
+
+
+class AllowMainBoosts(Toggle):
+    """Dungeon carries and power levelling by a main character are allowed. Honor system only: it does not
+    change which checks are in logic."""
+    display_name = "Allow Main Boosts"
+
+
+class CarePackages(Range):
+    """How many Care Package items are added to the item pool. Each one allows a single pull from a main
+    character (see Care Package Gold and Care Package Stacks). Honor system, never required by the logic.
+    They are the first items dropped when there are fewer locations than items."""
+    display_name = "Care Packages"
+    range_start = 0
+    range_end = 20
+    default = 5
+
+
+class CarePackageGold(Range):
+    """Gold one Care Package allows you to pull from a main character."""
+    display_name = "Care Package Gold"
+    range_start = 0
+    range_end = 10000
+    default = 50
+
+
+class CarePackageStacks(Range):
+    """Stacks of crafting materials one Care Package allows you to pull from a main character."""
+    display_name = "Care Package Stacks"
+    range_start = 0
+    range_end = 20
+    default = 5
+
+
 @dataclass
 class WoWForeverOptions(PerGameCommonOptions):
     faction: Faction
@@ -72,3 +124,11 @@ class WoWForeverOptions(PerGameCommonOptions):
     professions: Professions
     level_milestone_step: LevelMilestoneStep
     profession_milestone_step: ProfessionMilestoneStep
+    allow_auction_house: AllowAuctionHouse
+    allow_trading: AllowTrading
+    allow_mail: AllowMail
+    allow_shared_banks: AllowSharedBanks
+    allow_main_boosts: AllowMainBoosts
+    care_packages: CarePackages
+    care_package_gold: CarePackageGold
+    care_package_stacks: CarePackageStacks
