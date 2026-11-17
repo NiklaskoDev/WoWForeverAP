@@ -1,8 +1,8 @@
 # PROVISIONAL - confirm in the live Forever client before the first release (plan 001, decision D2).
 # ui_map_id and name: Classic client UiMap table, github.com/Hoizame/WoW_ClassicUIResources RawData/UiMap.lua (client 1.13.3.32790);
 #   the same ids appear in the Forever data of github.com/ATTWoWAddon/AllTheThings (.contrib/.db/forever/.config/constants/maps.lua).
-# Zephra's Isle 2521: id from the same AllTheThings Forever file; 1-12 range and both-faction start from the WoW-Pro Forever guides
-#   (github.com/Ludovicus-Maior/WoW-Pro-Guides, WoWPro_Leveling/Forever/*/01_12_Zephras_Isle_*.lua).
+# Zephra's Isle 2521: id from the same AllTheThings Forever file, which has Alliance, Horde and both-faction quests there (both-faction start).
+#   The 1-12 range is provisional: ATT's quest levels in this zone are 2-8 (tools/import_att.py report, section 4).
 # min_level/max_level/faction: commonly published Classic Era zone level ranges, NOT machine-verified; the logic only needs rough brackets.
 # Cities, battlegrounds, dungeons and the other new Forever zones (Mount Hyjal 2482, Rivergladss 2548, Shendralas 2652) are left out until their levels and faction are known.
 ui_map_id,name,min_level,max_level,faction,is_start,release

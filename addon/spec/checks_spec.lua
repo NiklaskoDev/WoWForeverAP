@@ -112,7 +112,7 @@ describe("Checks", function()
                 locations = {
                     [questLocation(783)] = true, [questLocation(7)] = true, -- Elwynn Forest
                     [questLocation(170)] = true, -- Dun Morogh
-                    [questLocation(363)] = true, -- Tirisfal Glades: other faction
+                    [questLocation(354)] = true, -- Tirisfal Glades: other faction
                     [levelLocation(5)] = true,
                 },
                 checked = {},
@@ -128,7 +128,7 @@ describe("Checks", function()
             assert.same({
                 { ELWYNN, "start", { 7, 783 } },
                 { DUN_MOROGH, "unlocked", { 170 } },
-                { 1420, "unavailable", { 363 } },
+                { 1420, "unavailable", { 354 } },
             }, summary)
         end)
 
@@ -138,7 +138,7 @@ describe("Checks", function()
             local groups = Checks.openByZone(current, { [questLocation(170)] = true })
             assert.equals(2, #groups)
             assert.same({ 783 }, groups[1].quests)
-            assert.same({ 363 }, groups[2].quests)
+            assert.same({ 354 }, groups[2].quests)
         end)
 
         it("puts locked zones after the unlocked ones", function()

@@ -1,5 +1,7 @@
 -- Hand-written miniature of the ATT map constants (test fixture, not ATT content).
 local _MAP = setmetatable({
+	KALIMDOR = 1414;
+	ASHENVALE = 1440;
 	EASTERN_KINGDOMS = 1415;
 	ELWYNN_FOREST = 1429;
 		NORTHSHIRE_VALLEY = 425;

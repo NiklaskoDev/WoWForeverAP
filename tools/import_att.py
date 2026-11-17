@@ -404,8 +404,13 @@ def classify(raw: RawAttQuest, ctx: Context) -> AttQuestRow | Exclusion:
             ctx.unresolved[ref] += 1
             return excluded(f"map-outside-zones:{ref}")
         extra.add(resolved)
-    if zone.faction not in ("both", faction) and faction != "both":
+    # The faction of a quest also follows the zones it needs: without races, a quest in an Alliance zone is an
+    # Alliance quest, and one that needs zones of both factions (or a zone of the other faction) cannot be done.
+    wanted = {ctx.zones[zone_id].faction for zone_id in (raw.zone_id, *extra)} | {faction}
+    wanted.discard("both")
+    if len(wanted) > 1:
         return excluded("faction-mismatch")
+    faction = wanted.pop() if wanted else "both"
     if raw.quest_id >= data_loader.ids.CATEGORY_SIZE:
         return excluded("id-out-of-range")
     if duplicate:

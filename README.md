@@ -37,16 +37,17 @@ In short: play, `/reload`, the client sends your checks, `/reload` again to rece
 
 Game data lives in `apworld/wow_forever/data/*.csv`; each file names its sources in leading `#` comment lines.
 
-- **WoW-Pro Guides** ([Ludovicus-Maior/WoW-Pro-Guides](https://github.com/Ludovicus-Maior/WoW-Pro-Guides),
-  licensed CC BY-NC-ND 3.0): the Forever leveling guides were used only as an id lookup for `quests.csv`
-  (quest ids, quest titles and prerequisite chains) and for the Zephra's Isle level range. No guide text is
-  copied. Credit to the WoW-Pro Guides authors.
 - **WoW_ClassicUIResources** ([Hoizame/WoW_ClassicUIResources](https://github.com/Hoizame/WoW_ClassicUIResources)):
   Classic client UiMap, SkillLine, Map, Faction and BattlemasterList tables, the source of zone, profession,
   instance, faction and battleground ids and names. The repository has no licence file; only Blizzard's ids and
   names are taken from it, no code or text. Credit to its author.
-- **AllTheThings** ([ATTWoWAddon/AllTheThings](https://github.com/ATTWoWAddon/AllTheThings)): Forever map ids
-  (used to cross-check zone ids, and for Zephra's Isle).
+- **AllTheThings** ([ATTWoWAddon/AllTheThings](https://github.com/ATTWoWAddon/AllTheThings), MIT): Forever map ids
+  (used to cross-check zone ids, and for Zephra's Isle) and, since plan 005, `quests.csv`: the file is generated
+  from the Forever database (`.contrib/.db/forever/zones`) at the commit pinned in `tools/att_version.txt`
+  (quest ids, titles, levels, prerequisites, faction and zones). The generator keeps the quests of the zones in
+  `zones.csv` that characters of any race and class can do and leaves out class and race quests, repeatable
+  quests, breadcrumbs, profession and reputation quests, quests that lock out others, and quests whose giver or
+  objectives are in a city or dungeon (`tools/import_att.py`, plan 005). Its report lists every exclusion.
 - **Extra check categories (plan 004).** `instances.csv`: instance ids and names from the Classic Map table
   (Hoizame), entrance zone and entry level from the Forever dungeon files of AllTheThings (`.contrib/.db/forever/dungeons & raids`).
   `discoveries.csv`: the exploration areas of the AllTheThings Forever database (`.config/exploration/*` and the
@@ -116,11 +117,19 @@ Client facts (D2):
 Provisional data files:
 
 - `zones.csv`: ids and names from the Classic UiMap table; level ranges and factions from published Classic
-  Era values; Zephra's Isle (2521) from the WoW-Pro guides and AllTheThings. Cities, battlegrounds, dungeons and
-  the other new Forever zones (Mount Hyjal 2482, Rivergladss 2548, Shendralas 2652) are not in the data yet.
-- `quests.csv`: a small start-zone set from the WoW-Pro guides; `req_level` is 1 for every row.
+  Era values; Zephra's Isle (2521) from AllTheThings (its 1-12 range is provisional: ATT's quest levels there are
+  2-8). Cities, battlegrounds, dungeons and the other new Forever zones (Mount Hyjal 2482, Rivergladss 2548,
+  Shendralas 2652) are not in the data yet. `tools/import_att.py` cross-checks the level ranges against ATT's quest
+  levels in its report (it is a minimum level, so zone maxima are only a lower bound) and changes nothing.
+- `quests.csv`: generated from the AllTheThings Forever database (about 1,700 quests, 1,000 to 1,100 per faction), which is
+  community-maintained and partly unverified for Forever; the ids, levels, prerequisites and the leaving-out rules
+  need a check in the live client. `req_level` is ATT's minimum level (the zone's minimum when ATT has none).
+  Prerequisites with several alternatives are read as all-required. Quests in cities and dungeons, class and race
+  quests are not in the data until a later plan adds those zones or options.
 - `professions.csv`: Classic SkillLine ids and the profession set.
-- `profession_tiers.csv`: Classic ranks (75/150/225/300) and trainer level requirements, not machine-verified.
+- `profession_tiers.csv`: Classic ranks (75/150/225/300) and trainer level requirements, not machine-verified. The
+  ATT report confirms the rank names and the skill at which each rank is learnable; ATT has no character-level
+  requirement for a tier, so `required_level` stays a design value.
 - `material_brackets.csv`: a game-design approximation, not game data; tune freely.
 - `releases.csv`: only the launch release (2026-11-04) is confirmed. Later releases are added once their date
   is confirmed.
@@ -158,10 +167,19 @@ pytest                       # Python tests
 ruff check .                 # Python lint
 bash scripts/ci.sh           # Lua lint/tests (luacheck, busted), generated-data check, packaging
 python tools/gen_addon_data.py   # regenerate addon/WoWForeverAP/Data/Generated.lua after changing a CSV
+bash scripts/fetch_att.sh    # clone AllTheThings at the commit in tools/att_version.txt into .att/ (dev only)
+python tools/import_att.py   # regenerate quests.csv from it; the review report goes to data_capture/att_report.txt
+python tools/import_att.py --check   # exit 1 when quests.csv differs from what the import would write
 python tools/build.py        # dist/wow_forever.apworld and dist/WoWForeverAP-<version>.zip
 ```
 
 Python 3.12 is what CI uses; Archipelago supports 3.11 to 3.13.
+
+`quests.csv` is generated, never edited by hand. To update it from AllTheThings: put the new commit hash into
+`tools/att_version.txt`, run `bash scripts/fetch_att.sh` and `python tools/import_att.py`, review the `quests.csv`
+diff and the report, and note the exclusion counts per reason in the pull request. CI does not fetch ATT; a test
+only checks that the CSV header names the pinned commit. ATT is read as data by `tools/att_lua.py`; its Lua is
+never executed, and nothing from ATT is needed to play.
 
 ## License
 

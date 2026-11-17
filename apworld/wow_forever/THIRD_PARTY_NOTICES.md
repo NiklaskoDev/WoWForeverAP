@@ -4,9 +4,9 @@ The data files in `data/` were prepared with the help of the public sources belo
 
 ## AllTheThings
 
-Zone, area, instance and exploration data derived from the Forever database of
-[AllTheThings](https://github.com/ATTWoWAddon/AllTheThings) (`instances.csv`, `discoveries.csv`, `zones.csv`) is used
-under this licence:
+Quest, zone, area, instance and exploration data derived from the Forever database of
+[AllTheThings](https://github.com/ATTWoWAddon/AllTheThings) (`quests.csv`, `instances.csv`, `discoveries.csv`,
+`zones.csv`) is used under this licence:
 
 ```text
 MIT License
@@ -34,6 +34,5 @@ SOFTWARE.
 
 ## Others
 
-The WoW-Pro Guides (CC BY-NC-ND 3.0, used only as an id lookup, no text copied) and WoW_ClassicUIResources by Hoizame
-(no licence file; only Blizzard ids and names are taken from it) are credited in the repository `README.md`,
-section "Data and sources".
+WoW_ClassicUIResources by Hoizame (no licence file; only Blizzard ids and names are taken from it) is credited in the
+repository `README.md`, section "Data and sources".

@@ -1,4 +1,6 @@
 Name_lang,ID,ParentUiMapID,Flags
+Kalimdor,1414,947,0
+Ashenvale,1440,1414,0
 Eastern Kingdoms,1415,947,0
 Elwynn Forest,1429,1415,0
 Westfall,1436,1415,0
