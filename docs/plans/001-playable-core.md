@@ -295,6 +295,7 @@ Resolved 2026-11-17: the programmer accepted every recommendation below (D1 a, D
 - **D9 Honor rule for locked zones and start areas.** Travel: (a) passing through a locked zone (roads, flight paths, boats) is allowed, but no questing, XP kills, gathering or looting there; (b) locked zones may not be entered at all — then the logic would need a zone-adjacency graph. **Recommend (a)** (no graph needed). Start areas: (a) one start zone per seed, precollected; characters of other races travel to it; (b) every start zone of the faction is free. **Recommend (a)**.
 
 ## Risks / follow-ups
+- Amended 2026-11-17 (programmer): Python code stays compatible with 3.11–3.13 like Archipelago 0.6.8 (ruff target py311; CI runs 3.12), replacing "Python 3.12" in the Project block values.
 - Implemented deviation (review of Phases D–E, accepted): `Data/Generated.lua` holds a top-level `tiers` list and adds `name`/`kind`/`release` to professions (English fallback names for `Core/Names.lua`) instead of `professions[skillLineID] = {key, tiers}`.
 - Follow-up (optional): with several slots in the inbox, the link hint repeats on every login for unlinked characters; consider `/wfap link never` or a one-time hint.
 - Follow-up (optional): `Link.linkPlayer` records an empty profession baseline when no profession API exists; record a "baseline unknown" marker if this ever matters.

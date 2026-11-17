@@ -39,7 +39,7 @@ Out of scope: everything declined in 001 (#7–#10); new item types (any dungeon
 - Slot data / inbox `options.categories = { boss = bool, discovery = bool, reputation = bool, legacy = bool, pvp = bool }`.
 
 ## Interfaces
-- Options (defaults): `BossChecks` [on], `DiscoveryChecks` [on], `ReputationChecks` [off], `LegacyChecks` [off], `PvpChecks` [off]; each `…Weight(Range 1–100)` [100] = percentage of the category's eligible locations included, sampled with `self.random` after release/faction filtering (at least 1 when enabled and eligible > 0).
+- Options (defaults, amended 2026-11-17 by the programmer): `BossChecks` [off until `encounters.csv` has captured rows], `DiscoveryChecks` [on, `DiscoveryWeight` 20], `ReputationChecks` [off], `PvpChecks` [off] (`LegacyChecks` dropped per D2 b); each other `…Weight(Range 1–100)` [100] = percentage of the category's eligible locations included, sampled with `self.random` after release/faction filtering (at least 1 when enabled and eligible > 0).
 - Rules:
   - boss: `has_zone(entrance)` and `can_reach_level(instance.min_level)`; raids additionally `can_reach_level(60)` and access to the same release (D1 may add an access item).
   - discovery: `has_zone(ui_map_id)`.
@@ -76,6 +76,7 @@ New categories appear in 003's Checks tab: bosses and discoveries under their zo
 
 ## Decisions for the programmer
 Resolved 2026-11-17: the programmer accepted every recommendation below.
+Review of 2026-11-17, programmer decisions: (1) keep the Python 3.11–3.13 compatibility range (ruff target py311, CI on 3.12) to match Archipelago 0.6.8; (2) `BossChecks` defaults to off until encounter ids are captured in the live client; (3) `DiscoveryWeight` defaults to 20; (4) Hoizame/WoW_ClassicUIResources (no licence file; only Blizzard ids and names used) stays credited in README and THIRD_PARTY_NOTICES.
 - **D1 Dungeons and raids in the zone rules.** (a) An instance belongs to the zone with its entrance; no new items. (b) Separate "Dungeon/Raid: X" unlock items (reserved item category 5). **Recommend (a)** for fewer items; (b) gives more pool variety. Group finder teleports: honor rule "allowed only if the entrance zone is unlocked" under (a).
 - **D2 Legacy System milestones.** The scout's "Legacy System" is unverified and its addon API is unknown. (a) The programmer confirms the feature and gives the API (event + query function) from the live client; implement then. (b) Leave the category out of this plan and keep `LocCat.LEGACY` reserved. **Recommend (b)** unless (a) can be confirmed before Step 2.
 - **D3 PvP scope.** (a) Honourable-kill totals + battleground wins. (b) Honourable kills only. **Recommend (a)**, off by default.
