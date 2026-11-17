@@ -1,6 +1,6 @@
 # 003 — In-game lock and check UI
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: none until release — part of the first release (expected `0.1.0`); addon-only plus inbox hints.
 
@@ -80,6 +80,7 @@ No design system exists; this proposal needs the programmer's approval before bu
 - Inbox hints: capped at 200; hostile strings rendered inert; missing hints in old inbox → empty list in Lua.
 
 ## Decisions for the programmer
+Resolved 2026-11-17: the programmer accepted every recommendation below.
 - **UI proposal above** — approve, or name changes.
 - **Map overlay precision.** (a) Rectangles from `C_Map.GetMapRectOnMap` (approximate, overlaps at zone borders). (b) Exact zone shapes via map highlight art (`C_Map.GetMapArtHighlightInfo`-style APIs, if present in Forever), more work and API-dependent. **Recommend (a)** first.
 

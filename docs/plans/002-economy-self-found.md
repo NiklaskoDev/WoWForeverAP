@@ -1,6 +1,6 @@
 # 002 — Economy and self-found rules
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: none until release — part of the first release together with 001, 003 and 004 (expected `0.1.0`). Must land before the first release, because it changes profession logic and adds an item category.
 
@@ -80,6 +80,7 @@ Chat lines, `UIErrorsFrame` warnings, one confirmation `StaticPopup`. Same prefi
 - Lua: interaction warnings fire only for disallowed types; available count = received − used, never negative; `use` with 0 available refuses.
 
 ## Decisions for the programmer
+Resolved 2026-11-17: the programmer accepted every recommendation below.
 - **Care packages in logic?** (a) Not in logic (convenience only). (b) Each package counts as material access for one bracket. **Recommend (a)**: simpler and never forces a pull.
 - **Default strictness.** (a) Market allowed, banks and boosts off (above). (b) Strict self-found by default. **Recommend (a)**: friendlier for levelling alts, which is the project's purpose.
 

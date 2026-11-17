@@ -1,6 +1,6 @@
 # 001 — Playable core: apworld, AP client, WoW addon (multi-character, release-tagged, ID-based)
 
-Status: draft
+Status: approved
 Type: new project
 Version impact: none until release — nothing is released yet; all entries go under `[Unreleased]`. Plans 001–004 together form the first release (expected `0.1.0`), which happens only when the programmer says so.
 
@@ -283,6 +283,7 @@ Phase E — packaging and docs
 - Lua (busted): DB init/migrate idempotent; outbox no duplicates; prune drops checked ids; Link refuses faction mismatch; level milestone list for `linkedLevel=5 → level 8` with step 1 = {6,7,8}; locale fallback returns enUS for missing deDE key; every key in `deDE.lua` exists in `enUS.lua`.
 
 ## Decisions for the programmer
+Resolved 2026-11-17: the programmer accepted every recommendation below (D1 a, D3 a, D4 a, D5 luacheck + busted CI-only and own Lua-table parser, D6 a, D7 a, D8 MIT, D9 a/a). D2 (live-client facts) is still open: Phases A–C go ahead now; Phase D waits for D2. Until D2 and the capture pass, initial zone/quest rows come from public Classic Era sources (cite the source per file in a comment line or the README data section) and are provisional; the first release needs them confirmed in the live client.
 - **D1 Data source for quests/zones/IDs (biggest risk).** (a) Hand-curated CSVs, filled from an in-game dev capture mode (`/wfap capture` logs uiMapID + localised name + `C_Map.GetMapLevels`, and questID + title + uiMapID + level on turn-in, into SavedVariables; `tools/import_capture.py` turns it into review CSVs). ToS-clean, accurate for Forever, slow to grow. (b) Import from a community database (e.g. Questie's Classic DB): fast, but GPL-3.0 licence obligations for the apworld and Classic IDs may not match Forever. (c) (a) plus datamined DB2 tables from a site such as wago.tools for static tables (zones, skill lines): fast for static data, unclear whether a Forever build is published, and relies on datamined client data. **Recommend (a)**, with 001 shipping all zones/professions and a small verified quest set; quests grow in later data-only changes.
 - **D2 Client facts the programmer must supply from the live client** (cannot be verified from outside): output of `/dump GetBuildInfo()` (interface number for the TOCs), the game folder name of Forever (e.g. `_forever_`) under the WoW install, and whether `C_TradeSkillUI.GetProfessionInfoBySkillLineID` and `GetProfessions` exist (`/dump GetProfessions()`). The plan assumes the Mainline (12.x) API; if it is a Classic-style API, detection functions in `Detect/*` change (the plan gets amended).
 - **D3 Archipelago dependency and client shipping.** (a) Client lives in the apworld and registers as a Launcher component, using AP's CommonClient; CI clones a pinned AP release. (b) A standalone client (own websocket code, own installer). **Recommend (a)**, pinned to the latest stable AP release at implementation time.

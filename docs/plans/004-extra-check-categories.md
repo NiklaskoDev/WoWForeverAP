@@ -1,6 +1,6 @@
 # 004 — Extra check categories
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: none until release — part of the first release (expected `0.1.0`); uses location categories reserved in 001.
 
@@ -75,6 +75,7 @@ New categories appear in 003's Checks tab: bosses and discoveries under their zo
 - Lua: `ENCOUNTER_END` with success 0 ignored; reputation below or equal to baseline ignored; HK milestones count from baseline; discovery of an unlisted area ignored.
 
 ## Decisions for the programmer
+Resolved 2026-11-17: the programmer accepted every recommendation below.
 - **D1 Dungeons and raids in the zone rules.** (a) An instance belongs to the zone with its entrance; no new items. (b) Separate "Dungeon/Raid: X" unlock items (reserved item category 5). **Recommend (a)** for fewer items; (b) gives more pool variety. Group finder teleports: honor rule "allowed only if the entrance zone is unlocked" under (a).
 - **D2 Legacy System milestones.** The scout's "Legacy System" is unverified and its addon API is unknown. (a) The programmer confirms the feature and gives the API (event + query function) from the live client; implement then. (b) Leave the category out of this plan and keep `LocCat.LEGACY` reserved. **Recommend (b)** unless (a) can be confirmed before Step 2.
 - **D3 PvP scope.** (a) Honourable-kill totals + battleground wins. (b) Honourable kills only. **Recommend (a)**, off by default.
