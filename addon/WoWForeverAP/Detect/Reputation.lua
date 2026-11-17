@@ -23,27 +23,48 @@ function Reputation.decode(locationId)
     return math.floor(native / 10), native % 10
 end
 
---- Standings of the factions the slot lists, `{ [factionID] = standing }`, as the link baseline. A faction the
---- client does not report is left out (it counts as Neutral later).
-function Reputation.standings(slot)
-    local standings = {}
+local function seedFactionIds(slot)
+    local factionIds = {}
     for locationId in pairs(type(slot.locations) == "table" and slot.locations or {}) do
         local factionId = Reputation.decode(locationId)
-        if factionId and standings[factionId] == nil then
-            standings[factionId] = Reputation.currentStanding(factionId)
+        if factionId then
+            factionIds[factionId] = true
         end
+    end
+    return factionIds
+end
+
+--- Standings of the factions the slot lists, `{ [factionID] = standing }`. A faction the client does not report
+--- is left out.
+function Reputation.standings(slot)
+    local standings = {}
+    for factionId in pairs(seedFactionIds(slot)) do
+        standings[factionId] = Reputation.currentStanding(factionId)
     end
     return standings
 end
 
+--- The link baseline: the standings of `Reputation.standings`, with `false` ("baseline unknown") for a listed
+--- faction the client did not report. Nothing is awarded for such a faction until a later read gives its standing,
+--- which then becomes its baseline: what the character had before it was linked never counts.
+function Reputation.baseline(slot)
+    local baseline = {}
+    for factionId in pairs(seedFactionIds(slot)) do
+        baseline[factionId] = Reputation.currentStanding(factionId) or false
+    end
+    return baseline
+end
+
 --- Location ids of the seed that `current` (`{ [factionID] = standing }`) satisfies: the standing is reached and
---- lies above the baseline. Ascending, so chat feedback comes in a stable order.
+--- lies above the baseline (no entry: Neutral; `false`: unknown, nothing is awarded). Ascending, so chat feedback
+--- comes in a stable order.
 function Reputation.milestones(slot, baseline, current)
     local found = {}
     for locationId in pairs(type(slot.locations) == "table" and slot.locations or {}) do
         local factionId, standing = Reputation.decode(locationId)
-        if factionId and (current[factionId] or 0) >= standing
-            and standing > (baseline[factionId] or Reputation.NEUTRAL) then
+        local known = baseline[factionId]
+        if factionId and known ~= false and (current[factionId] or 0) >= standing
+            and standing > (known or Reputation.NEUTRAL) then
             found[#found + 1] = locationId
         end
     end
@@ -57,7 +78,14 @@ function Reputation.scan()
         return
     end
     local baselines = character.baselines or {}
-    for _, locationId in ipairs(Reputation.milestones(slot, baselines.rep or {}, Reputation.standings(slot))) do
+    local current = Reputation.standings(slot)
+    local baseline = baselines.rep or {}
+    for factionId, known in pairs(baseline) do
+        if known == false and current[factionId] then
+            baseline[factionId] = current[factionId] -- first successful read: progress so far does not count
+        end
+    end
+    for _, locationId in ipairs(Reputation.milestones(slot, baseline, current)) do
         ns.Tracker.recordForPlayer(locationId)
     end
 end

@@ -161,7 +161,7 @@ describe("Link", function()
             local standing = ns.Ids.locationId(ns.Ids.LocCat.REPUTATION, 726)
             _G.WoWForeverAP_Inbox = Env.inbox({ locations = { [standing] = true } })
             assert.is_true(Link.linkPlayer("S1:Wow"))
-            assert.same({ rep = {}, bgWins = {} }, db.characters[game.guid].baselines)
+            assert.same({ rep = { [72] = false }, bgWins = {} }, db.characters[game.guid].baselines)
         end)
 
         it("linkPlayer reports a refusal in chat", function()

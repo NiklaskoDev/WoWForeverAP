@@ -82,7 +82,23 @@ describe("Reputation", function()
         end)
     end)
 
+    describe("baseline", function()
+        it("holds the standing of every listed faction and false for one the client does not report", function()
+            standings({ [STORMWIND] = HONORED })
+            assert.same({ [STORMWIND] = HONORED, [IRONFORGE] = false }, ns.Reputation.baseline(slotOf()))
+        end)
+
+        it("is false for every listed faction without the API, and empty without reputation locations", function()
+            assert.same({ [STORMWIND] = false, [IRONFORGE] = false }, ns.Reputation.baseline(slotOf()))
+            assert.same({}, ns.Reputation.baseline({}))
+        end)
+    end)
+
     describe("milestones", function()
+        it("awards nothing for a faction whose baseline is unknown", function()
+            assert.same({}, ns.Reputation.milestones(slotOf(), { [STORMWIND] = false }, { [STORMWIND] = EXALTED }))
+        end)
+
         it("counts the standings reached above the baseline, ascending", function()
             local found = ns.Reputation.milestones(slotOf(), { [STORMWIND] = 4 }, { [STORMWIND] = REVERED })
             assert.same({ repId(STORMWIND, FRIENDLY), repId(STORMWIND, HONORED), repId(STORMWIND, REVERED) }, found)
@@ -138,6 +154,31 @@ describe("Reputation", function()
             standings({ [STORMWIND] = FRIENDLY })
             ns.Events.dispatch("UPDATE_FACTION")
             assert.same({}, Linked.outbox(db))
+        end)
+
+        it("gives an Exalted character nothing when the API was missing at link time", function()
+            db.characters[game.guid].baselines = { rep = ns.Reputation.baseline(slotOf()) } -- no API: all false
+            standings({ [STORMWIND] = EXALTED, [IRONFORGE] = 4 })
+            ns.Events.dispatch("UPDATE_FACTION")
+            assert.same({}, Linked.outbox(db))
+            assert.equals(EXALTED, db.characters[game.guid].baselines.rep[STORMWIND]) -- now the baseline
+            assert.equals(4, db.characters[game.guid].baselines.rep[IRONFORGE])
+            ns.Events.dispatch("UPDATE_FACTION")
+            assert.same({}, Linked.outbox(db))
+        end)
+
+        it("keeps an unknown baseline unknown while the API still fails, then counts only later gains", function()
+            db.characters[game.guid].baselines = { rep = { [STORMWIND] = false, [IRONFORGE] = false } }
+            ns.Events.dispatch("UPDATE_FACTION") -- API missing
+            assert.same({ [STORMWIND] = false, [IRONFORGE] = false }, db.characters[game.guid].baselines.rep)
+            standings({ [STORMWIND] = HONORED }) -- first read: baseline Honored, nothing awarded
+            ns.Events.dispatch("UPDATE_FACTION")
+            assert.same({}, Linked.outbox(db))
+            assert.equals(HONORED, db.characters[game.guid].baselines.rep[STORMWIND])
+            assert.is_false(db.characters[game.guid].baselines.rep[IRONFORGE]) -- still not reported
+            standings({ [STORMWIND] = REVERED })
+            ns.Events.dispatch("UPDATE_FACTION")
+            assert.same({ repId(STORMWIND, REVERED) }, Linked.outbox(db))
         end)
 
         it("works for a character without stored baselines (all Neutral)", function()

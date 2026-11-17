@@ -30,8 +30,10 @@ function Link.loginAction(db, guid, inbox)
 end
 
 --- Links the character to the slot. `skills` maps skillLineID to the current rank, `baselines` is what the
---- character already had (`{ rep = { [factionID] = standing }, hk = honorable kills, bgWins = {} }`, nil
---- parts are fine): reputation, honorable kills and battleground wins before the link do not count.
+--- character already had: `{ rep = { [factionID] = standing or false }, hk = honorable kills, bgWins = {} }`
+--- (nil parts are fine). `false` in `rep` means the client did not report that faction at link time; it is
+--- filled in on the first successful read. `bgWins` is different: not a snapshot but the running count of won
+--- battleground matches per map id since the link (starts empty). Progress before the link does not count.
 --- Returns true plus a list of warning messages, or false plus one error message.
 --- A message is { localeKey, formatArgs... }.
 function Link.link(db, guid, slotKey, inbox, level, skills, now, baselines)
@@ -89,7 +91,7 @@ function Link.linkPlayer(slotKey)
     local skills = ns.Professions.currentRanks() or {}
     local inbox = ns.Inbox.current()
     local baselines = {
-        rep = ns.Reputation.standings(ns.Inbox.slot(inbox, slotKey) or {}),
+        rep = ns.Reputation.baseline(ns.Inbox.slot(inbox, slotKey) or {}),
         hk = ns.PvP.honorableKills(),
         bgWins = {},
     }
