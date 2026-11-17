@@ -4,7 +4,7 @@ import import_capture as tool
 from worlds.wow_forever.client.lua_table import render
 from worlds.wow_forever.data_loader import read_shipped_files
 
-BUILD = {"version": "12.1.5", "build": "70783", "date": "Nov 4 2026", "toc": 120105}
+BUILD = {"version": "1.60.1", "build": "70938", "date": "Nov 12 2026", "toc": 16001}
 
 
 def write_saved_variables(path, capture):
@@ -57,7 +57,7 @@ def test_review_files_use_the_shipped_schemas_and_hold_the_captured_rows(tmp_pat
         ["99", 'Tricky, "quoted" title', "1519", "9", "horde", "1", "", "", ""],
         ["783", "Eine Gefahr, die lauert", "1429", "4", "alliance", "1", "", "", ""],
     ]
-    assert "12.1.5 (70783)" in capsys.readouterr().out
+    assert "1.60.1 (70938)" in capsys.readouterr().out
 
 
 EXTRA_CAPTURE = {

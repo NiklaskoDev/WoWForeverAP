@@ -1,4 +1,4 @@
-## Interface: 16001, 120105
+## Interface: 16001
 ## Title: WoWForeverAP Inbox
 ## Notes: Data file written by the Archipelago client for WoWForeverAP. Do not edit.
 ## Author: WoWForeverAP contributors

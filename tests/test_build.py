@@ -82,7 +82,7 @@ def test_version_placeholder_is_replaced_in_both_tocs_and_nowhere_left(built):
     for toc in ("WoWForeverAP/WoWForeverAP.toc", "WoWForeverAP_Inbox/WoWForeverAP_Inbox.toc"):
         text = read(addon, toc).decode("utf-8")
         assert f"## Version: {VERSION}\n" in text
-        assert "## Interface: 16001, 120105" in text
+        assert "## Interface: 16001\n" in text
     for entry in names(addon):
         assert b"@version@" not in read(addon, entry), entry
 

@@ -1,4 +1,4 @@
-## Interface: 16001, 120105
+## Interface: 16001
 ## Title: WoWForeverAP
 ## Notes: Archipelago multiworld for World of Warcraft: Forever. Records quest, level and profession checks for the Archipelago client.
 ## Notes-deDE: Archipelago-Multiworld für World of Warcraft: Forever. Erfasst Quest-, Stufen- und Berufs-Checks für den Archipelago-Client.

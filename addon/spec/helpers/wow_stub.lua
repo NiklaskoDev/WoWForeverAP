@@ -182,7 +182,7 @@ function Stub.install()
     _G.UnitLevel = function() return game.level end
     _G.UnitFactionGroup = function() return game.faction end
     _G.UnitClass = function() return "Paladin", game.classFile, 2 end
-    _G.GetBuildInfo = function() return "12.1.5", "70783", "Nov 4 2026", 120105 end
+    _G.GetBuildInfo = function() return "1.60.1", "70938", "Nov 12 2026", 16001 end
     -- A template missing from the client makes CreateFrame raise; specs list such templates in game.missingTemplates.
     game.missingTemplates = {}
     _G.CreateFrame = function(kind, name, parent, template)

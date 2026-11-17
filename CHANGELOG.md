@@ -20,6 +20,7 @@ Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ### Changed
 - `quests.csv` is now generated from the AllTheThings Forever database (about 1,700 quests, 1,000 to 1,100 per faction, replacing the 34 provisional start-zone rows); `req_level` is ATT's minimum level. Class and race quests, repeatable quests, breadcrumbs, profession and reputation quests, quests that lock out others, and quests in cities and dungeons are left out. The WoW-Pro Guides credit is gone from the data and the docs.
+- The addon targets the Forever interface 16001 only (confirmed in the live client with `GetBuildInfo()`); the TOCs no longer list 120105.
 
 ## [0.1.0] - YYYY-MM-DD
 ### Added

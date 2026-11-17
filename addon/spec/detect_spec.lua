@@ -203,6 +203,14 @@ describe("Detection", function()
             assert.equals(6, (function() local n = 0 for _ in pairs(ranks) do n = n + 1 end return n end)())
         end)
 
+        it("reads the five indexes of the live Forever client and ignores the nil sixth position", function()
+            local skillLines = { [7] = 171, [8] = 164, [5] = 185, [9] = 356, [6] = 202 }
+            local ranks = ns.Professions.readRanks(function() return 7, 8, 5, 9, 6, nil end, function(index)
+                return "Name", "icon", index * 10, 300, 0, 0, skillLines[index]
+            end)
+            assert.same({ [171] = 70, [164] = 80, [185] = 50, [356] = 90, [202] = 60 }, ranks)
+        end)
+
         it("falls back to C_TradeSkillUI.GetProfessionInfoBySkillLineID for the data's professions", function()
             _G.C_TradeSkillUI = { GetProfessionInfoBySkillLineID = function(line)
                 if line == 171 then return { skillLevel = 40 } end
