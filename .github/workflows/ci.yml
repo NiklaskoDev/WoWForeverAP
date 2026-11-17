@@ -34,7 +34,7 @@ jobs:
         if: hashFiles('pyproject.toml', 'requirements.txt') != ''
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.12'
       - name: Python - install, lint, test
         if: hashFiles('pyproject.toml', 'requirements.txt') != ''
         run: |
@@ -42,6 +42,8 @@ jobs:
           pip install ruff pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f pyproject.toml ] && grep -q '^\[project\]' pyproject.toml; then pip install -e .; fi
+          # The apworld imports Archipelago, so a pinned checkout is needed to import or test it.
+          bash scripts/setup_ap.sh
           ruff check .
           pytest
 
