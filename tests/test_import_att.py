@@ -435,3 +435,25 @@ def test_check_writes_nothing(tmp_path):
     out, report = tmp_path / "quests.csv", tmp_path / "report.txt"
     tool.main(["--att-root", str(FIXTURE), "--out", str(out), "--report", str(report), "--check"])
     assert not out.exists() and not report.exists()
+
+
+def test_a_deeply_nested_zone_file_is_an_error_line_not_a_traceback(att_copy, capsys):
+    (att_copy / "zones" / "eastern kingdoms" / "westfall.lua").write_text(
+        "maproot(MAP.WESTFALL, { x = " + "not " * 5000 + "1 })\n", encoding="utf-8")
+    assert tool.main(["--att-root", str(att_copy), "--out", str(att_copy / "q.csv"),
+                      "--report", str(att_copy / "r.txt")]) == 1
+    error = capsys.readouterr().err
+    assert error.startswith("error: ") and "westfall.lua" in error and "deeper" in error
+
+
+@pytest.mark.parametrize("relative", [
+    "zones/eastern kingdoms/westfall.lua", ".nyi/quests.lua", ".config/constants/maps.lua",
+    ".config/exports/Skill Level Requirements.lua", ".config/.wago/UiMap.1.60.1.70959.csv",
+])
+def test_a_file_that_is_not_utf8_is_an_error_naming_it(att_copy, capsys, relative):
+    (att_copy / relative).write_bytes(b"maproot(\xff\xfe broken")
+    assert tool.main(["--att-root", str(att_copy), "--out", str(att_copy / "q.csv"),
+                      "--report", str(att_copy / "r.txt")]) == 1
+    error = capsys.readouterr().err
+    assert error.startswith("error: ") and "not valid UTF-8" in error and Path(relative).name in error
+    assert "Traceback" not in error

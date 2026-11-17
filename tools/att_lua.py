@@ -151,6 +151,8 @@ class _AttParser(lua_table._Parser):
         self.pos += next(len(symbol) for symbol in _SYMBOL_OPERATORS if self.text.startswith(symbol, self.pos))
 
     def _parse_operand(self, depth: int) -> Any:
+        if depth > lua_table.MAX_DEPTH:  # unary operators recurse without going through parse_value
+            raise self.error(f"values nested deeper than {lua_table.MAX_DEPTH}")
         self.skip_space()
         char, start = self.peek(), self.pos
         if char == "-" and not self.text.startswith(_COMMENT_START, start):

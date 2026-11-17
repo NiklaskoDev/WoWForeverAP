@@ -157,10 +157,16 @@ def _read(path: Path) -> str:
         return path.read_text(encoding="utf-8-sig")
     except OSError as error:
         raise AttImportError(f"cannot read {path}: {error.strerror or error}") from None
+    except UnicodeDecodeError:
+        raise AttImportError(f"{path} is not valid UTF-8") from None
 
 
 def read_nyi_ids(text: str) -> frozenset[int]:
-    return frozenset(call.args[0] for node in att_lua.parse_chunk(text, ".nyi/quests.lua")
+    try:
+        nodes = att_lua.parse_chunk(text, ".nyi/quests.lua")
+    except att_lua.AttParseError as error:
+        raise AttImportError(str(error)) from None
+    return frozenset(call.args[0] for node in nodes
                      for call in att_lua.iter_calls(node, "q") if call.args and isinstance(call.args[0], int))
 
 
@@ -233,6 +239,8 @@ def collect_quests(files: Iterable[Path], maps: Mapping[str, int], root: Path | 
             nodes = att_lua.parse_file(file)
         except att_lua.AttParseError as error:
             raise AttImportError(str(error)) from None
+        except UnicodeDecodeError:
+            raise AttImportError(f"{shown} is not valid UTF-8") from None
         found_maproot = False
         for node in nodes:
             is_maproot = isinstance(node, att_lua.AttCall) and node.name == "maproot"

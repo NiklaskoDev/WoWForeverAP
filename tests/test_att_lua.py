@@ -167,3 +167,10 @@ def test_parse_file_reads_utf8_with_bom_and_crlf(tmp_path):
     path = tmp_path / "zone.lua"
     path.write_bytes("﻿q(1, {\t-- Café\r\n})\r\n".encode())
     assert parse_file(path)[0].comment == "Café"
+
+
+@pytest.mark.parametrize("chain", ["not " * 5000, "- " * 5000, "# " * 5000, "(" * 5000, "a[" * 5000])
+def test_long_unary_and_nested_chains_are_a_parse_error_not_a_recursion_error(chain):
+    with pytest.raises(AttParseError, match="deeper") as raised:
+        parse_chunk(f"x = 1\ny = {chain}1", "zones/deep.lua")
+    assert (raised.value.path, raised.value.line) == ("zones/deep.lua", 2)
