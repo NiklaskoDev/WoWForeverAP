@@ -1,0 +1,51 @@
+name: CI
+
+# Lint, test, build. Stacks in this project: Python (apworld + AP client), Lua (WoW addon).
+# Lua checks and apworld packaging go into scripts/ci.sh once plan 001 defines them.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail if no known stack is present
+        if: hashFiles('pyproject.toml', 'requirements.txt', 'scripts/ci.sh') == ''
+        run: |
+          echo "::error::No supported project file found. Add pyproject.toml/requirements.txt or create scripts/ci.sh."
+          exit 1
+
+      # ---------- Python (pytest fails when no tests exist - intended) ----------
+      - name: Set up Python
+        if: hashFiles('pyproject.toml', 'requirements.txt') != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Python - install, lint, test
+        if: hashFiles('pyproject.toml', 'requirements.txt') != ''
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ] && grep -q '^\[project\]' pyproject.toml; then pip install -e .; fi
+          ruff check .
+          pytest
+
+      # ---------- Anything else (Lua addon checks, apworld packaging) ----------
+      - name: Custom - scripts/ci.sh
+        if: hashFiles('scripts/ci.sh') != ''
+        run: bash scripts/ci.sh
