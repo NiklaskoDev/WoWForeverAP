@@ -2,9 +2,11 @@
 
     python tools/import_capture.py <SavedVariables file or WoW folder> [more ...] [--out data_capture]
 
-The review files use the shipped CSV schemas (zones.csv, quests.csv) so rows can be copied over after a
-check. Guesses are marked in the header comment: faction of zones, is_start, release, and the quest level
-(the character's level at turn-in, an upper bound for the quest's requirement).
+The review files use the shipped CSV schemas (zones.csv, quests.csv, encounters.csv, discoveries.csv) so rows can
+be copied over after a check. Guesses are marked in the header comment: faction of zones, is_start, release, and
+the quest level (the character's level at turn-in, an upper bound for the quest's requirement). Only successful
+boss kills become encounter rows; their instance_id is the instance the character stood in and must exist in
+instances.csv (a raid or new dungeon needs a row there first).
 """
 import argparse
 import csv
@@ -22,10 +24,16 @@ DEFAULT_OUT = ROOT / "data_capture"
 ZONE_COLUMNS = ("ui_map_id", "name", "min_level", "max_level", "faction", "is_start", "release")
 QUEST_COLUMNS = ("quest_id", "name", "zone_ui_map_id", "req_level", "faction", "release",
                  "prereq_quest_ids", "extra_zone_ids", "name_suffix")
+ENCOUNTER_COLUMNS = ("encounter_id", "name", "instance_id", "release")
+DISCOVERY_COLUMNS = ("area_id", "name", "ui_map_id", "release")
 FACTIONS = {"Alliance": "alliance", "Horde": "horde"}
 FIRST_RELEASE = 1
 REVIEW_NOTE = "REVIEW FILE written by tools/import_capture.py: check every row against the game before copying it."
 ZONE_NOTE = "faction is a guess ('both'), is_start is 0 and release is 1 for every row; empty levels were not reported."
+ENCOUNTER_NOTE = ("only encounters that ended in a kill; instance_id is the map id of the instance the character "
+                  "was in (empty when the game did not report it), release is 1.")
+DISCOVERY_NOTE = ("ui_map_id is the map the area was explored on, which may be a city or another map "
+                  "outside zones.csv.")
 QUEST_NOTE = ("req_level is the character's level at turn-in (an upper bound), release is 1, "
               "prerequisites are not known.")
 
@@ -104,6 +112,30 @@ def merge_quests(captures: Iterable[Mapping]) -> dict[int, dict]:
     return quests
 
 
+def merge_encounters(captures: Iterable[Mapping]) -> dict[int, dict]:
+    """Encounter rows by encounter id for encounters that ended in a kill; the first capture that names one wins."""
+    encounters: dict[int, dict] = {}
+    for capture in captures:
+        for encounter_id, entry in _table(capture.get("encounters")).items():
+            entry = _table(entry)
+            if _number(encounter_id) is None or encounter_id in encounters or entry.get("success") is not True:
+                continue
+            encounters[encounter_id] = {"name": _text(entry.get("name")), "instance": _number(entry.get("instanceId"))}
+    return encounters
+
+
+def merge_areas(captures: Iterable[Mapping]) -> dict[int, dict]:
+    """Explored-area rows by area id; the first capture that names an area wins."""
+    areas: dict[int, dict] = {}
+    for capture in captures:
+        for area_id, entry in _table(capture.get("areas")).items():
+            if _number(area_id) is None or area_id in areas:
+                continue
+            entry = _table(entry)
+            areas[area_id] = {"name": _text(entry.get("name")), "zone": _number(entry.get("uiMapId"))}
+    return areas
+
+
 def _cell(value: object) -> object:
     return "" if value is None else value
 
@@ -142,6 +174,15 @@ def _quest_rows(quests: Mapping[int, dict]) -> list[tuple]:
             for quest_id, quest in sorted(quests.items())]
 
 
+def _encounter_rows(encounters: Mapping[int, dict]) -> list[tuple]:
+    return [(encounter_id, encounter["name"], _cell(encounter["instance"]), FIRST_RELEASE)
+            for encounter_id, encounter in sorted(encounters.items())]
+
+
+def _discovery_rows(areas: Mapping[int, dict]) -> list[tuple]:
+    return [(area_id, area["name"], _cell(area["zone"]), FIRST_RELEASE) for area_id, area in sorted(areas.items())]
+
+
 def _build_summary(captures: list[dict]) -> str:
     builds = sorted({f"{_text(c['build'].get('version'))} ({_text(c['build'].get('build'))})"
                      for c in captures if isinstance(c.get("build"), dict)})
@@ -149,12 +190,17 @@ def _build_summary(captures: list[dict]) -> str:
 
 
 def write_review_files(captures: list[dict], out_dir: Path) -> tuple[list[str], list[str]]:
-    """Write zones.csv and quests.csv into ``out_dir``. Returns (summary lines, warnings)."""
+    """Write the review CSVs into ``out_dir``. Returns (summary lines, warnings)."""
     zones, quests = merge_zones(captures), merge_quests(captures)
+    encounters, areas = merge_encounters(captures), merge_areas(captures)
     out_dir.mkdir(parents=True, exist_ok=True)
     _write_csv(out_dir / "zones.csv", [REVIEW_NOTE, ZONE_NOTE], ZONE_COLUMNS, _zone_rows(zones))
     _write_csv(out_dir / "quests.csv", [REVIEW_NOTE, QUEST_NOTE], QUEST_COLUMNS, _quest_rows(quests))
-    summary = [f"{len(zones)} zones and {len(quests)} quests written to {out_dir}", _build_summary(captures)]
+    _write_csv(out_dir / "encounters.csv", [REVIEW_NOTE, ENCOUNTER_NOTE], ENCOUNTER_COLUMNS,
+               _encounter_rows(encounters))
+    _write_csv(out_dir / "discoveries.csv", [REVIEW_NOTE, DISCOVERY_NOTE], DISCOVERY_COLUMNS, _discovery_rows(areas))
+    summary = [f"{len(zones)} zones, {len(quests)} quests, {len(encounters)} boss kills and {len(areas)} areas "
+               f"written to {out_dir}", _build_summary(captures)]
     warnings = [f"quest {quest_id} has no title (not in the client cache yet)"
                 for quest_id, quest in sorted(quests.items()) if not quest["title"]]
     return summary, warnings + duplicate_names(zones, quests)

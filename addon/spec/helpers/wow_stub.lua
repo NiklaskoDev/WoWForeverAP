@@ -5,7 +5,8 @@ local Stub = {}
 local FAKE_GLOBALS = {
     "GetLocale", "time", "UnitGUID", "UnitName", "UnitLevel", "UnitFactionGroup", "UnitClass", "GetBuildInfo",
     "CreateFrame", "geterrorhandler", "StaticPopup_Show", "StaticPopupDialogs", "SlashCmdList", "SLASH_WFAP1",
-    "C_Map", "C_QuestLog", "C_TradeSkillUI", "GetProfessions", "GetProfessionInfo",
+    "C_Map", "C_MapExplorationInfo", "C_PvP", "C_Reputation", "GetInstanceInfo", "GetPVPLifetimeStats",
+    "GetBattlefieldWinner", "C_QuestLog", "C_TradeSkillUI", "GetProfessions", "GetProfessionInfo",
     "Enum", "C_EventUtils", "UIErrorsFrame", "RaidWarningUtil", "RaidNotice_AddMessage", "RaidWarningFrame",
     "UIParent", "GameTooltip", "UISpecialFrames", "ButtonFrameTemplate_HidePortrait", "PanelTemplates_SetNumTabs",
     "PanelTemplates_SetTab", "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider", "Settings",

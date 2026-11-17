@@ -308,3 +308,174 @@ def test_duplicate_native_id_within_one_kind_is_rejected():
                        "1,care_package,Care Package,1\n1,care_package,Other Package,1")
     with pytest.raises(DataError, match="duplicate native_id"):
         parse_game_data(files)
+
+
+# --- extra check categories (plan 004) --------------------------------------------------------
+
+INSTANCE_HEADER = "instance_id,name,kind,entrance_ui_map_id,min_level,group_size,faction,release\n"
+ENCOUNTER_HEADER = "encounter_id,name,instance_id,release\n"
+DISCOVERY_HEADER = "area_id,name,ui_map_id,release\n"
+REPUTATION_HEADER = "faction_id,standing,name,faction_side,required_level,required_ui_map_ids,release\n"
+PVP_HEADER = "pvp_id,kind,param,name,required_level,release\n"
+TEST_INSTANCE = "36,Test Mines,dungeon,1436,10,5,both,1"
+
+
+def with_rows(file: str, header: str, *rows: str, **extra: str) -> dict[str, str]:
+    return shipped(**{file: header + "".join(f"{row}\n" for row in rows)}, **extra)
+
+
+def test_shipped_category_files_load_and_every_foreign_key_resolves():
+    data = load_game_data()
+    assert data.instances and data.discoveries and data.reputations and data.pvp_milestones
+    assert all(instance.entrance_ui_map_id in data.zones_by_id for instance in data.instances)
+    assert all(discovery.ui_map_id in data.zones_by_id for discovery in data.discoveries)
+    for reputation in data.reputations:
+        assert set(reputation.required_ui_map_ids) <= set(data.zones_by_id)
+    assert all(encounter.instance_id in data.instances_by_id for encounter in data.encounters)
+
+
+def test_shipped_raids_are_left_out_until_their_release_is_confirmed():
+    data = load_game_data()
+    assert not [instance for instance in data.instances if instance.kind == "raid"]
+    assert {release.id for release in data.releases} == {1}
+
+
+def test_shipped_battleground_rows_use_the_classic_battleground_map_ids():
+    data = load_game_data()
+    wins = {milestone.name: milestone.param for milestone in data.pvp_milestones if milestone.kind == "bg_win"}
+    assert wins == {"Win Warsong Gulch": 489, "Win Arathi Basin": 529, "Win Alterac Valley": 30}
+
+
+def test_shipped_reputation_standings_are_friendly_to_exalted_for_every_faction():
+    data = load_game_data()
+    by_faction: dict[int, set[int]] = {}
+    for reputation in data.reputations:
+        by_faction.setdefault(reputation.faction_id, set()).add(reputation.standing)
+    assert all(standings == {5, 6, 7, 8} for standings in by_faction.values())
+    # a higher standing never needs a lower level than the one below it
+    for faction_id in by_faction:
+        levels = [data.reputations_by_native[faction_id * 10 + standing].required_level for standing in (5, 6, 7, 8)]
+        assert levels == sorted(levels), faction_id
+
+
+def test_category_ap_names_and_native_ids_follow_the_plan():
+    data = parse_game_data(with_rows(
+        "instances", INSTANCE_HEADER, TEST_INSTANCE,
+        encounters=ENCOUNTER_HEADER + "593,Edwin Test,36,1\n"))
+    assert data.encounters_by_id[593].location_name == "Test Mines: Edwin Test"
+    stormwind = data_loader.Reputation(72, 6, "Stormwind", "alliance", 20, (1429,), 1)
+    assert (stormwind.native_id, stormwind.location_name) == (726, "Stormwind: Honored")
+    shipped_data = load_game_data()
+    assert shipped_data.discoveries_by_id[18].location_name == "Discover Elwynn Forest: Crystal Lake"
+    assert shipped_data.reputations_by_native[728].location_name == "Stormwind: Exalted"
+    assert shipped_data.pvp_by_id[10].location_name == "PvP: Win Warsong Gulch"
+
+
+def test_an_instance_may_be_a_raid_and_encounters_may_be_empty():
+    raid = "409,Molten Core,raid,1434,50,40,both,1\n"
+    data = parse_game_data(with_rows("instances", INSTANCE_HEADER, TEST_INSTANCE, raid))
+    assert [instance.kind for instance in data.instances] == ["dungeon", "raid"]
+    assert not parse_game_data(shipped(encounters=ENCOUNTER_HEADER)).encounters
+
+
+@pytest.mark.parametrize("row, fragment", [
+    ("36,Test Mines,cave,1436,10,5,both,1", "kind must be one of dungeon, raid"),
+    ("36,Test Mines,dungeon,9999,10,5,both,1", "unknown zone 9999"),
+    ("36,Test Mines,dungeon,1436,0,5,both,1", "min_level must be 1..60, got 0"),
+    ("36,Test Mines,dungeon,1436,61,5,both,1", "min_level must be 1..60, got 61"),
+    ("36,Test Mines,dungeon,1436,10,0,both,1", "group_size must be at least 1"),
+    ("36,Test Mines,dungeon,1436,10,5,neutral,1", "faction must be one of"),
+    ("36,Test Mines,dungeon,1436,10,5,both,7", "unknown release 7"),
+    ("36,,dungeon,1436,10,5,both,1", "name must not be empty"),
+])
+def test_invalid_instance_rows_name_file_and_line(row, fragment):
+    assert_error(with_rows("instances", INSTANCE_HEADER, row), "instances.csv", 2, fragment)
+
+
+def test_duplicate_instance_id():
+    files = with_rows("instances", INSTANCE_HEADER, TEST_INSTANCE, TEST_INSTANCE)
+    assert_error(files, "instances.csv", 3, "duplicate instance_id 36")
+
+
+@pytest.mark.parametrize("row, fragment", [
+    ("593,Edwin Test,999,1", "unknown instance 999"),
+    ("593,Edwin Test,36,7", "unknown release 7"),
+    ("-5,Edwin Test,36,1", "out of range"),
+    ("10000000,Edwin Test,36,1", "out of range"),
+    ("593,,36,1", "name must not be empty"),
+])
+def test_invalid_encounter_rows_name_file_and_line(row, fragment):
+    files = with_rows("encounters", ENCOUNTER_HEADER, row, instances=INSTANCE_HEADER + TEST_INSTANCE + "\n")
+    assert_error(files, "encounters.csv", 2, fragment)
+
+
+def test_duplicate_encounter_id_and_the_largest_valid_native_id():
+    instances = INSTANCE_HEADER + TEST_INSTANCE + "\n"
+    files = with_rows("encounters", ENCOUNTER_HEADER, "593,A,36,1", "593,B,36,1", instances=instances)
+    assert_error(files, "encounters.csv", 3, "duplicate encounter_id 593")
+    edge = with_rows("encounters", ENCOUNTER_HEADER, "9999999,Last,36,1", instances=instances)
+    assert parse_game_data(edge).encounters_by_id[9999999].instance_id == 36
+
+
+@pytest.mark.parametrize("row, fragment", [
+    ("18,Crystal Lake,9999,1", "unknown zone 9999"),
+    ("18,Crystal Lake,1429,7", "unknown release 7"),
+    ("x,Crystal Lake,1429,1", "area_id must be an integer"),
+    ("18,,1429,1", "name must not be empty"),
+])
+def test_invalid_discovery_rows_name_file_and_line(row, fragment):
+    assert_error(with_rows("discoveries", DISCOVERY_HEADER, row), "discoveries.csv", 2, fragment)
+
+
+def test_duplicate_discovery_area():
+    files = with_rows("discoveries", DISCOVERY_HEADER, "18,Crystal Lake,1429,1", "18,Other,1436,1")
+    assert_error(files, "discoveries.csv", 3, "duplicate area_id 18")
+
+
+@pytest.mark.parametrize("row, fragment", [
+    ("72,4,Stormwind,alliance,8,1429,1", "standing must be one of 5, 6, 7, 8, got 4"),
+    ("72,9,Stormwind,alliance,8,1429,1", "standing must be one of 5, 6, 7, 8, got 9"),
+    ("72,5,Stormwind,elves,8,1429,1", "faction_side must be one of"),
+    ("72,5,Stormwind,alliance,0,1429,1", "required_level must be 1..60, got 0"),
+    ("72,5,Stormwind,alliance,8,1429;9999,1", "unknown zone 9999"),
+    ("72,5,Stormwind,alliance,8,1429,7", "unknown release 7"),
+    ("999999999,5,Stormwind,alliance,8,1429,1", "out of range"),
+])
+def test_invalid_reputation_rows_name_file_and_line(row, fragment):
+    assert_error(with_rows("reputations", REPUTATION_HEADER, row), "reputations.csv", 2, fragment)
+
+
+def test_reputation_key_is_faction_and_standing_and_several_required_zones_are_kept():
+    rows = ("72,5,Stormwind,alliance,8,1429;1436,1", "72,6,Stormwind,alliance,20,1429,1")
+    data = parse_game_data(with_rows("reputations", REPUTATION_HEADER, *rows))
+    assert data.reputations_by_native[725].required_ui_map_ids == (1429, 1436)
+    assert_error(with_rows("reputations", REPUTATION_HEADER, rows[0], rows[0]), "reputations.csv", 3,
+                 "duplicate faction_id/standing (72, 5)")
+
+
+@pytest.mark.parametrize("row, fragment", [
+    ("1,kills,100,100 Kills,20,1", "kind must be one of hk_total, bg_win"),
+    ("1,hk_total,0,Zero Kills,20,1", "param must be at least 1"),
+    ("1,hk_total,100,100 Kills,0,1", "required_level must be 1..60, got 0"),
+    ("1,hk_total,100,100 Kills,61,1", "required_level must be 1..60, got 61"),
+    ("1,hk_total,100,100 Kills,20,7", "unknown release 7"),
+    ("10000000,hk_total,100,100 Kills,20,1", "out of range"),
+])
+def test_invalid_pvp_rows_name_file_and_line(row, fragment):
+    assert_error(with_rows("pvp", PVP_HEADER, row), "pvp.csv", 2, fragment)
+
+
+def test_duplicate_pvp_id():
+    files = with_rows("pvp", PVP_HEADER, "1,hk_total,100,100 Kills,20,1", "1,hk_total,200,200 Kills,30,1")
+    assert_error(files, "pvp.csv", 3, "duplicate pvp_id 1")
+
+
+def test_location_names_must_be_unique_across_categories():
+    clash = with_rows("pvp", PVP_HEADER, "1,hk_total,100,Friendly,20,1",
+                      reputations=REPUTATION_HEADER + "72,5,PvP,alliance,8,1429,1\n")
+    with pytest.raises(DataError, match=r"duplicate AP location name 'PvP: Friendly' \(also in reputations.csv\)"):
+        parse_game_data(clash)
+    quest_clash = with_rows("reputations", REPUTATION_HEADER, "72,5,Elwynn Forest,alliance,8,1429,1",
+                            quests=QUEST_HEADER + "783,Friendly,1429,1,both,1,,,\n")
+    with pytest.raises(DataError, match=r"duplicate AP location name 'Elwynn Forest: Friendly' \(also in quests.csv\)"):
+        parse_game_data(quest_clash)

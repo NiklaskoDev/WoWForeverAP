@@ -1,0 +1,8 @@
+# NO ROWS YET - on purpose. encounter_id must be the id the client passes to ENCOUNTER_END (plan 004), and no public
+# source lists it for the Classic Era dungeon bosses: the Classic client's DungeonEncounter table
+# (github.com/Hoizame/WoW_ClassicUIResources RawData/DungeonEncounter.lua, client 1.13.3.32790) holds raid bosses only, and the
+# encounter ids in the AllTheThings Forever files are Encounter Journal ids, a different numbering. Raids are out of release 1.
+# Fill this file from `/wfap capture on` in the live Forever client: it logs every ENCOUNTER_END id, and
+# tools/import_capture.py writes the review file. Every row needs a cited source and an instance_id from instances.csv.
+# Boss kills are in the seed only for rows listed here, so with no rows the boss category has no locations.
+encounter_id,name,instance_id,release

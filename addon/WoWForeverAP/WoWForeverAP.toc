@@ -25,6 +25,7 @@ Core\Link.lua
 Detect\Quests.lua
 Detect\Level.lua
 Detect\Professions.lua
+Detect\Discovery.lua
 Detect\Capture.lua
 Rules\Economy.lua
 Rules\Warnings.lua

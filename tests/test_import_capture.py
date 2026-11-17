@@ -60,6 +60,52 @@ def test_review_files_use_the_shipped_schemas_and_hold_the_captured_rows(tmp_pat
     assert "12.1.5 (70783)" in capsys.readouterr().out
 
 
+EXTRA_CAPTURE = {
+    "zones": {},
+    "quests": {},
+    "encounters": {
+        1000: {"name": "Edwin Test", "difficultyId": 1, "groupSize": 5, "instanceId": 36, "success": True, "seen": 3},
+        1001: {"name": "Wipe Only", "instanceId": 36, "success": False},
+        1002: {"name": "Outside", "success": True},  # the game reported no instance
+        "x": {"name": "Not a number", "success": True},
+    },
+    "areas": {
+        18: {"name": "Crystal Lake", "uiMapId": 1429, "seen": 4},
+        19: {"uiMapId": 1429},
+        "y": {"name": "Not a number"},
+    },
+}
+
+
+def test_encounter_and_area_review_files_hold_kills_and_explored_areas_only(tmp_path, capsys):
+    source = write_saved_variables(tmp_path / "WoWForeverAP.lua", EXTRA_CAPTURE)
+    out = tmp_path / "out"
+    assert tool.main([str(source), "--out", str(out)]) == 0
+    encounters, discoveries = read_csv(out / "encounters.csv"), read_csv(out / "discoveries.csv")
+    assert encounters[0] == shipped_header("encounters.csv")
+    assert discoveries[0] == shipped_header("discoveries.csv")
+    assert encounters[1:] == [["1000", "Edwin Test", "36", "1"], ["1002", "Outside", "", "1"]]
+    assert discoveries[1:] == [["18", "Crystal Lake", "1429", "1"], ["19", "", "1429", "1"]]
+    assert "2 boss kills and 2 areas" in capsys.readouterr().out
+
+
+def test_review_files_are_written_empty_for_a_capture_without_encounters_or_areas(tmp_path):
+    source = write_saved_variables(tmp_path / "WoWForeverAP.lua", {"zones": {}, "quests": {}})
+    out = tmp_path / "out"
+    assert tool.main([str(source), "--out", str(out)]) == 0
+    assert read_csv(out / "encounters.csv") == [shipped_header("encounters.csv")]
+    assert read_csv(out / "discoveries.csv") == [shipped_header("discoveries.csv")]
+
+
+def test_the_first_capture_that_names_an_encounter_or_area_wins():
+    first = {"encounters": {5: {"name": "First", "instanceId": 1, "success": True}},
+             "areas": {6: {"name": "First", "uiMapId": 1}}}
+    second = {"encounters": {5: {"name": "Second", "instanceId": 2, "success": True}},
+              "areas": {6: {"name": "Second", "uiMapId": 2}}}
+    assert tool.merge_encounters([first, second])[5] == {"name": "First", "instance": 1}
+    assert tool.merge_areas([first, second])[6] == {"name": "First", "zone": 1}
+
+
 def test_a_wow_folder_is_searched_for_every_accounts_file_and_the_lowest_level_wins(tmp_path):
     first = {"zones": {}, "quests": {783: {"title": "A", "uiMapId": 1429, "level": 6, "faction": "Alliance"}}}
     second = {"zones": {}, "quests": {783: {"title": "A", "uiMapId": 1429, "level": 3, "faction": "Alliance"}}}

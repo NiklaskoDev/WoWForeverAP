@@ -1,0 +1,56 @@
+# PROVISIONAL - Classic Era city and Steamwheedle Cartel factions; confirm the set in the live Forever client (plan 004, plan 001 D2).
+# faction_id and name: Classic client Faction table, github.com/Hoizame/WoW_ClassicUIResources RawData/Faction.lua (client 1.13.3.32790);
+#   faction_side from the parent faction there (Alliance 469, Horde 67, Steamwheedle Cartel 169 = both).
+# standing: the standingID the client reports (5 Friendly, 6 Honored, 7 Revered, 8 Exalted); the location is reached when the
+#   character gets there after linking (plan 004). Neutral and Hated are not checks.
+# required_ui_map_ids and required_level: a game-design approximation for the logic, NOT game data - the zone where the reputation
+#   is mostly earned (home zone of the faction) and a rough level for that standing; tune freely.
+faction_id,standing,name,faction_side,required_level,required_ui_map_ids,release
+21,5,Booty Bay,both,30,1434,1
+21,6,Booty Bay,both,35,1434,1
+21,7,Booty Bay,both,40,1434,1
+21,8,Booty Bay,both,45,1434,1
+47,5,Ironforge,alliance,8,1426,1
+47,6,Ironforge,alliance,20,1426,1
+47,7,Ironforge,alliance,35,1426,1
+47,8,Ironforge,alliance,50,1426,1
+54,5,Gnomeregan Exiles,alliance,20,1426,1
+54,6,Gnomeregan Exiles,alliance,28,1426,1
+54,7,Gnomeregan Exiles,alliance,38,1426,1
+54,8,Gnomeregan Exiles,alliance,50,1426,1
+68,5,Undercity,horde,8,1420,1
+68,6,Undercity,horde,20,1420,1
+68,7,Undercity,horde,35,1420,1
+68,8,Undercity,horde,50,1420,1
+69,5,Darnassus,alliance,8,1438,1
+69,6,Darnassus,alliance,20,1438,1
+69,7,Darnassus,alliance,35,1438,1
+69,8,Darnassus,alliance,50,1438,1
+72,5,Stormwind,alliance,8,1429,1
+72,6,Stormwind,alliance,20,1429,1
+72,7,Stormwind,alliance,35,1429,1
+72,8,Stormwind,alliance,50,1429,1
+76,5,Orgrimmar,horde,8,1411,1
+76,6,Orgrimmar,horde,20,1411,1
+76,7,Orgrimmar,horde,35,1411,1
+76,8,Orgrimmar,horde,50,1411,1
+81,5,Thunder Bluff,horde,8,1412,1
+81,6,Thunder Bluff,horde,20,1412,1
+81,7,Thunder Bluff,horde,35,1412,1
+81,8,Thunder Bluff,horde,50,1412,1
+369,5,Gadgetzan,both,40,1446,1
+369,6,Gadgetzan,both,43,1446,1
+369,7,Gadgetzan,both,46,1446,1
+369,8,Gadgetzan,both,50,1446,1
+470,5,Ratchet,both,15,1413,1
+470,6,Ratchet,both,20,1413,1
+470,7,Ratchet,both,25,1413,1
+470,8,Ratchet,both,30,1413,1
+530,5,Darkspear Trolls,horde,8,1411,1
+530,6,Darkspear Trolls,horde,20,1411,1
+530,7,Darkspear Trolls,horde,35,1411,1
+530,8,Darkspear Trolls,horde,50,1411,1
+577,5,Everlook,both,53,1452,1
+577,6,Everlook,both,55,1452,1
+577,7,Everlook,both,57,1452,1
+577,8,Everlook,both,60,1452,1

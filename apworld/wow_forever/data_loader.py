@@ -19,6 +19,10 @@ MISC_KINDS = tuple(MISC_KIND_CATEGORIES)
 MATERIAL_SOURCES = ("gather", "drops", "vendor")
 LIST_SEPARATOR = ";"
 RESERVED_LOCATION_NAMES = frozenset({"Goal"})
+INSTANCE_KINDS = ("dungeon", "raid")
+PVP_KINDS = ("hk_total", "bg_win")
+STANDING_NAMES = {5: "Friendly", 6: "Honored", 7: "Revered", 8: "Exalted"}
+REPUTATION_FACTOR = 10  # native id of a reputation location: faction_id * 10 + standing
 MAX_SKILL_VALUE = ids.PROFESSION_SKILL_FACTOR - 1
 GOAL_LEVEL = 60  # the level that wins the game; here (not in locations.py) so the addon generator needs no Archipelago
 
@@ -31,6 +35,11 @@ DATA_FILES = (
     "material_brackets.csv",
     "profession_materials.csv",
     "misc_items.csv",
+    "instances.csv",
+    "encounters.csv",
+    "discoveries.csv",
+    "reputations.csv",
+    "pvp.csv",
 )
 
 
@@ -136,6 +145,69 @@ class MiscItem:
 
 
 @dataclass(frozen=True)
+class Instance:
+    instance_id: int
+    name: str
+    kind: str
+    entrance_ui_map_id: int
+    min_level: int
+    group_size: int
+    faction: str
+    release: int
+
+
+@dataclass(frozen=True)
+class Encounter:
+    encounter_id: int
+    name: str
+    instance_id: int
+    release: int
+    location_name: str  # AP location name: "<instance>: <boss>"
+
+
+@dataclass(frozen=True)
+class Discovery:
+    area_id: int
+    name: str
+    ui_map_id: int
+    release: int
+    location_name: str  # AP location name: "Discover <zone>: <area>"
+
+
+@dataclass(frozen=True)
+class Reputation:
+    faction_id: int
+    standing: int
+    name: str
+    faction_side: str
+    required_level: int
+    required_ui_map_ids: tuple[int, ...]
+    release: int
+
+    @property
+    def native_id(self) -> int:
+        return self.faction_id * REPUTATION_FACTOR + self.standing
+
+    @property
+    def location_name(self) -> str:
+        return f"{self.name}: {STANDING_NAMES[self.standing]}"
+
+
+@dataclass(frozen=True)
+class PvpMilestone:
+    pvp_id: int
+    kind: str
+    param: int  # kill count for hk_total, battleground map id for bg_win
+    name: str
+    required_level: int
+    release: int
+
+    @property
+    def location_name(self) -> str:
+        return f"PvP: {self.name}"
+
+
+@dataclass(frozen=True)
 class GameData:
     releases: tuple[Release, ...]
     zones: tuple[Zone, ...]
@@ -145,10 +217,20 @@ class GameData:
     material_brackets: tuple[MaterialBracket, ...]
     profession_materials: tuple[ProfessionMaterial, ...]
     misc_items: tuple[MiscItem, ...]
+    instances: tuple[Instance, ...] = ()
+    encounters: tuple[Encounter, ...] = ()
+    discoveries: tuple[Discovery, ...] = ()
+    reputations: tuple[Reputation, ...] = ()
+    pvp_milestones: tuple[PvpMilestone, ...] = ()
     zones_by_id: dict[int, Zone] = field(default_factory=dict)
     quests_by_id: dict[int, Quest] = field(default_factory=dict)
     professions_by_id: dict[int, Profession] = field(default_factory=dict)
     releases_by_id: dict[int, Release] = field(default_factory=dict)
+    instances_by_id: dict[int, Instance] = field(default_factory=dict)
+    encounters_by_id: dict[int, Encounter] = field(default_factory=dict)
+    discoveries_by_id: dict[int, Discovery] = field(default_factory=dict)
+    reputations_by_native: dict[int, Reputation] = field(default_factory=dict)
+    pvp_by_id: dict[int, PvpMilestone] = field(default_factory=dict)
 
     @property
     def care_package(self) -> MiscItem:
@@ -491,6 +573,119 @@ def _build_quests(raw: Mapping[int, _RawQuest], zones: Mapping[int, Zone]) -> tu
     return tuple(quests)
 
 
+# --- extra check categories (plan 004) -------------------------------------------------------
+
+def _parse_instances(text: str, zones: Mapping[int, Zone], release_ids: set[int]) -> tuple[Instance, ...]:
+    file = "instances.csv"
+    columns = ("instance_id", "name", "kind", "entrance_ui_map_id", "min_level", "group_size", "faction", "release")
+    unique = _Unique(file, "instance_id")
+    instances = []
+    for line, row in _read_rows(file, text, columns):
+        instance = Instance(
+            _int(file, line, row, "instance_id"), _text(file, line, row, "name"),
+            _choice(file, line, row, "kind", INSTANCE_KINDS), _int(file, line, row, "entrance_ui_map_id"),
+            _int(file, line, row, "min_level"), _int(file, line, row, "group_size"),
+            _choice(file, line, row, "faction", FACTIONS), _int(file, line, row, "release"))
+        unique.add(line, instance.instance_id)
+        _require_release(file, line, instance.release, release_ids)
+        if instance.entrance_ui_map_id not in zones:
+            raise DataError(file, line, f"unknown zone {instance.entrance_ui_map_id}")
+        if not 1 <= instance.min_level <= GOAL_LEVEL:
+            raise DataError(file, line, f"min_level must be 1..{GOAL_LEVEL}, got {instance.min_level}")
+        if instance.group_size < 1:
+            raise DataError(file, line, f"group_size must be at least 1, got {instance.group_size}")
+        instances.append(instance)
+    return tuple(instances)
+
+
+def _parse_encounters(text: str, instances: Mapping[int, Instance], release_ids: set[int]) -> tuple[Encounter, ...]:
+    file = "encounters.csv"
+    unique = _Unique(file, "encounter_id")
+    encounters = []
+    for line, row in _read_rows(file, text, ("encounter_id", "name", "instance_id", "release")):
+        encounter_id, instance_id = _int(file, line, row, "encounter_id"), _int(file, line, row, "instance_id")
+        name, release = _text(file, line, row, "name"), _int(file, line, row, "release")
+        unique.add(line, encounter_id)
+        _require_release(file, line, release, release_ids)
+        _native_in_range(file, line, ids.location_id, ids.LocCat.BOSS, encounter_id)
+        if instance_id not in instances:
+            raise DataError(file, line, f"unknown instance {instance_id}")
+        encounters.append(Encounter(encounter_id, name, instance_id, release,
+                                    f"{instances[instance_id].name}: {name}"))
+    return tuple(encounters)
+
+
+def _parse_discoveries(text: str, zones: Mapping[int, Zone], release_ids: set[int]) -> tuple[Discovery, ...]:
+    file = "discoveries.csv"
+    unique = _Unique(file, "area_id")
+    discoveries = []
+    for line, row in _read_rows(file, text, ("area_id", "name", "ui_map_id", "release")):
+        area_id, name = _int(file, line, row, "area_id"), _text(file, line, row, "name")
+        ui_map_id, release = _int(file, line, row, "ui_map_id"), _int(file, line, row, "release")
+        unique.add(line, area_id)
+        _require_release(file, line, release, release_ids)
+        _native_in_range(file, line, ids.location_id, ids.LocCat.AREA_DISCOVERY, area_id)
+        if ui_map_id not in zones:
+            raise DataError(file, line, f"unknown zone {ui_map_id}")
+        discoveries.append(Discovery(area_id, name, ui_map_id, release, f"Discover {zones[ui_map_id].name}: {name}"))
+    return tuple(discoveries)
+
+
+def _parse_reputations(text: str, zones: Mapping[int, Zone], release_ids: set[int]) -> tuple[Reputation, ...]:
+    file = "reputations.csv"
+    columns = ("faction_id", "standing", "name", "faction_side", "required_level", "required_ui_map_ids", "release")
+    unique = _Unique(file, "faction_id/standing")
+    reputations = []
+    for line, row in _read_rows(file, text, columns):
+        reputation = Reputation(
+            _int(file, line, row, "faction_id"), _int(file, line, row, "standing"), _text(file, line, row, "name"),
+            _choice(file, line, row, "faction_side", FACTIONS), _int(file, line, row, "required_level"),
+            _id_list(file, line, row, "required_ui_map_ids"), _int(file, line, row, "release"))
+        unique.add(line, (reputation.faction_id, reputation.standing))
+        _require_release(file, line, reputation.release, release_ids)
+        if reputation.standing not in STANDING_NAMES:
+            allowed = ", ".join(str(standing) for standing in STANDING_NAMES)
+            raise DataError(file, line, f"standing must be one of {allowed}, got {reputation.standing}")
+        if not 1 <= reputation.required_level <= GOAL_LEVEL:
+            raise DataError(file, line, f"required_level must be 1..{GOAL_LEVEL}, got {reputation.required_level}")
+        for zone_id in reputation.required_ui_map_ids:
+            if zone_id not in zones:
+                raise DataError(file, line, f"unknown zone {zone_id}")
+        _native_in_range(file, line, ids.location_id, ids.LocCat.REPUTATION, reputation.native_id)
+        reputations.append(reputation)
+    return tuple(reputations)
+
+
+def _parse_pvp(text: str, release_ids: set[int]) -> tuple[PvpMilestone, ...]:
+    file = "pvp.csv"
+    unique = _Unique(file, "pvp_id")
+    milestones = []
+    for line, row in _read_rows(file, text, ("pvp_id", "kind", "param", "name", "required_level", "release")):
+        milestone = PvpMilestone(
+            _int(file, line, row, "pvp_id"), _choice(file, line, row, "kind", PVP_KINDS),
+            _int(file, line, row, "param"), _text(file, line, row, "name"),
+            _int(file, line, row, "required_level"), _int(file, line, row, "release"))
+        unique.add(line, milestone.pvp_id)
+        _require_release(file, line, milestone.release, release_ids)
+        _native_in_range(file, line, ids.location_id, ids.LocCat.PVP, milestone.pvp_id)
+        if milestone.param < 1:
+            raise DataError(file, line, f"param must be at least 1, got {milestone.param}")
+        if not 1 <= milestone.required_level <= GOAL_LEVEL:
+            raise DataError(file, line, f"required_level must be 1..{GOAL_LEVEL}, got {milestone.required_level}")
+        milestones.append(milestone)
+    return tuple(milestones)
+
+
+def _check_location_names_unique(data_names: Iterable[tuple[str, str]]) -> None:
+    """AP location names must be unique across every category: (file, name) pairs in file order."""
+    seen: dict[str, str] = {}
+    for file, name in data_names:
+        if name in RESERVED_LOCATION_NAMES or name in seen:
+            other = seen.get(name, "the reserved names")
+            raise DataError(file, None, f"duplicate AP location name '{name}' (also in {other})")
+        seen[name] = file
+
+
 def _check_item_names_unique(zones: tuple[Zone, ...], professions: tuple[Profession, ...],
                              misc_items: tuple[MiscItem, ...]) -> None:
     seen: set[str] = set()
@@ -517,12 +712,30 @@ def parse_game_data(files: Mapping[str, str]) -> GameData:
     misc_items = _parse_misc_items(files["misc_items.csv"], release_ids)
     quests = _build_quests(_parse_raw_quests(files["quests.csv"], zones_by_id, release_ids), zones_by_id)
     _check_item_names_unique(zones, professions, misc_items)
+    instances = _parse_instances(files["instances.csv"], zones_by_id, release_ids)
+    instances_by_id = {instance.instance_id: instance for instance in instances}
+    encounters = _parse_encounters(files["encounters.csv"], instances_by_id, release_ids)
+    discoveries = _parse_discoveries(files["discoveries.csv"], zones_by_id, release_ids)
+    reputations = _parse_reputations(files["reputations.csv"], zones_by_id, release_ids)
+    pvp_milestones = _parse_pvp(files["pvp.csv"], release_ids)
+    _check_location_names_unique(
+        [("quests.csv", quest.location_name) for quest in quests]
+        + [("encounters.csv", encounter.location_name) for encounter in encounters]
+        + [("discoveries.csv", discovery.location_name) for discovery in discoveries]
+        + [("reputations.csv", reputation.location_name) for reputation in reputations]
+        + [("pvp.csv", milestone.location_name) for milestone in pvp_milestones])
     return GameData(
         releases, zones, quests, professions, tiers, brackets, materials, misc_items,
+        instances, encounters, discoveries, reputations, pvp_milestones,
         zones_by_id=zones_by_id,
         quests_by_id={quest.quest_id: quest for quest in quests},
         professions_by_id=professions_by_id,
         releases_by_id={release.id: release for release in releases},
+        instances_by_id=instances_by_id,
+        encounters_by_id={encounter.encounter_id: encounter for encounter in encounters},
+        discoveries_by_id={discovery.area_id: discovery for discovery in discoveries},
+        reputations_by_native={reputation.native_id: reputation for reputation in reputations},
+        pvp_by_id={milestone.pvp_id: milestone for milestone in pvp_milestones},
     )
 
 
