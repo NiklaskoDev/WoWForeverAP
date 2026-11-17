@@ -12,7 +12,8 @@ ALCHEMY = 171
 
 class RulesTestBase(WorldTestBase):
     game = GAME
-    options = {"faction": "alliance", "start_zone": "elwynn_forest"}  # Elwynn Forest covers levels 1-10
+    # Elwynn Forest covers levels 1-10; every quest is a location so the tests can name them
+    options = {"faction": "alliance", "start_zone": "elwynn_forest", "quest_weight": 100}
 
     def fresh_state(self) -> CollectionState:
         return CollectionState(self.multiworld)
@@ -122,7 +123,7 @@ class TestQuestAndGoalRules(RulesTestBase):
 class TestQuestWithPrerequisiteInAnotherZone(WorldTestBase):
     game = GAME
     auto_construct = False
-    options = {"faction": "alliance", "start_zone": "elwynn_forest"}
+    options = {"faction": "alliance", "start_zone": "elwynn_forest", "quest_weight": 100}
 
     def setUp(self) -> None:
         files = read_shipped_files()

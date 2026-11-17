@@ -93,7 +93,7 @@ class WoWForeverWorld(World):
             self.content_release, self.faction, frozenset(zone.ui_map_id for zone in self.allowed_zones),
             frozenset(profession.skill_line_id for profession in self.selected_professions),
             self.options.level_milestone_step.value, self.options.profession_milestone_step.value, self.data,
-            category_weights(self.options), self.random)
+            category_weights(self.options), self.random, self.options.quest_weight.value)
 
     def _check_self_found_materials(self) -> None:
         missing = rules.unreachable_material_sources(self)

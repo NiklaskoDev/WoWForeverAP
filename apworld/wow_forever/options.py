@@ -64,6 +64,15 @@ class ProfessionMilestoneStep(Range):
     default = 25
 
 
+class QuestWeight(Range):
+    """Percentage of the eligible quests that are checks (at least one when any are eligible). There are
+    over a thousand quests per faction, so only a quarter is included by default."""
+    display_name = "Quest Weight"
+    range_start = 1
+    range_end = 100
+    default = 25
+
+
 class AllowAuctionHouse(DefaultOnToggle):
     """Characters may use the Auction House. Off: no buying or selling there (honor system)."""
     display_name = "Allow Auction House"
@@ -193,6 +202,7 @@ class WoWForeverOptions(PerGameCommonOptions):
     professions: Professions
     level_milestone_step: LevelMilestoneStep
     profession_milestone_step: ProfessionMilestoneStep
+    quest_weight: QuestWeight
     allow_auction_house: AllowAuctionHouse
     allow_trading: AllowTrading
     allow_mail: AllowMail

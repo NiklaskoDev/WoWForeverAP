@@ -1,10 +1,12 @@
+import random
+import unittest
 from unittest import mock
 
 import worlds.wow_forever as wow_world
 from BaseClasses import CollectionState
 from Options import OptionError
 from test.bases import WorldTestBase
-from worlds.wow_forever import ids, locations
+from worlds.wow_forever import ids, locations, options
 from worlds.wow_forever.data_loader import load_game_data, parse_game_data, read_shipped_files
 
 GAME = "World of Warcraft Forever"
@@ -13,6 +15,8 @@ ALL_START_ZONE_KEYS = ["elwynn_forest", "dun_morogh", "teldrassil", "durotar", "
 ALLIANCE_START = {"elwynn_forest", "dun_morogh", "teldrassil", "zephras_isle"}
 HORDE_START = {"durotar", "mulgore", "tirisfal_glades", "zephras_isle"}
 NO_EXTRA_CATEGORIES = {"boss_checks": False, "discovery_checks": False}  # keeps location counts small and exact
+# Also 2 percent of the quests: 23 of the 1132 alliance ones, so counts stay small and exact.
+SMALL_SEED = {**NO_EXTRA_CATEGORIES, "quest_weight": 2}
 
 
 class WoWTestBase(WorldTestBase):
@@ -170,7 +174,7 @@ class TestFactionsAndStartZones(WoWTestBase):
                 self.assertTrue(self.world.start_zone.is_start)
 
     def test_horde_seed_has_no_alliance_zones_or_quests(self):
-        self.generate(faction="horde", start_zone="durotar")
+        self.generate(faction="horde", start_zone="durotar", quest_weight=100)
         names = self.location_names()
         self.assertNotIn("Elwynn Forest: A Threat Within", names)
         self.assertIn("Durotar: Cutting Teeth", names)
@@ -178,7 +182,7 @@ class TestFactionsAndStartZones(WoWTestBase):
         self.assertIn("Zone: The Barrens", [item.name for item in self.multiworld.itempool])
 
     def test_quests_of_a_start_zone_other_than_the_chosen_one_stay_locked_behind_its_item(self):
-        self.generate(faction="alliance", start_zone="elwynn_forest")
+        self.generate(faction="alliance", start_zone="elwynn_forest", quest_weight=100)
         state = CollectionState(self.multiworld)
         self.assertTrue(state.can_reach("Elwynn Forest: A Threat Within", "Location", self.player))
         self.assertFalse(state.can_reach("Dun Morogh: Dwarven Outfitters", "Location", self.player))
@@ -220,7 +224,7 @@ class TestOptions(WoWTestBase):
 
     def test_too_few_locations_is_an_option_error(self):
         with self.assertRaises(OptionError) as error:
-            self.generate(professions=[], level_milestone_step=10, start_zone="elwynn_forest", **NO_EXTRA_CATEGORIES)
+            self.generate(professions=[], level_milestone_step=10, start_zone="elwynn_forest", **SMALL_SEED)
         self.assertIn("enable more professions or a later content_release", str(error.exception))
 
 
@@ -237,8 +241,9 @@ class TestEconomyOptions(WoWTestBase):
                 self.assertEqual(len(self.multiworld.itempool), len(self.location_names()))
 
     def test_care_packages_are_dropped_before_the_pool_is_rejected(self):
-        # 38 locations, 35 progression items: room for three of the five requested care packages and no filler
-        self.generate(professions=[], level_milestone_step=3, care_packages=5, **NO_EXTRA_CATEGORIES)
+        # 38 locations (23 quests, 15 levels), 35 progression items: room for three of the five requested care
+        # packages and no filler
+        self.generate(professions=[], level_milestone_step=4, care_packages=5, **SMALL_SEED)
         self.assertEqual(self.pool_count("Care Package"), 3)
         self.assertEqual(self.pool_count("Traveler's Tale"), 0)
         self.assertEqual(self.world.fill_slot_data()["economy"]["carePackages"], 3)
@@ -246,7 +251,7 @@ class TestEconomyOptions(WoWTestBase):
 
     def test_progression_that_does_not_fit_is_still_an_error_without_care_packages(self):
         with self.assertRaises(OptionError):
-            self.generate(professions=[], level_milestone_step=4, care_packages=0, **NO_EXTRA_CATEGORIES)
+            self.generate(professions=[], level_milestone_step=7, care_packages=0, **SMALL_SEED)  # 32 locations
 
     def test_slot_data_follows_the_economy_options(self):
         self.generate(allow_auction_house=0, allow_trading=0, allow_mail=0, allow_shared_banks=1, allow_main_boosts=1,
@@ -326,3 +331,91 @@ class TestWithoutEarlyZoneCandidate(WoWTestBase):
             self.generate(faction="alliance", start_zone="elwynn_forest")
         self.assertEqual(dict(self.multiworld.early_items[self.player]), {})
         self.assertEqual(len(self.multiworld.itempool), len(self.location_names()))
+
+
+def quest_specs(faction: str, quest_weight: int, seed: int = 1, data=None) -> list[locations.LocationSpec]:
+    data = data or load_game_data()
+    zones = frozenset(zone.ui_map_id for zone in data.zones if zone.faction in (faction, "both"))
+    specs = locations.select_locations(1, faction, zones, frozenset(), 60, 25, data, None, random.Random(seed),
+                                       quest_weight)
+    return [spec for spec in specs if spec.kind == locations.LocationKind.QUEST]
+
+
+class TestQuestWeightSelection(unittest.TestCase):
+    def test_the_option_is_a_percentage_that_defaults_to_a_quarter(self):
+        self.assertEqual((options.QuestWeight.range_start, options.QuestWeight.range_end), (1, 100))
+        self.assertEqual(options.QuestWeight.default, 25)
+        self.assertIn("quest_weight", options.WoWForeverOptions.__dataclass_fields__)
+
+    def test_weight_100_keeps_every_eligible_quest_and_needs_no_generator(self):
+        data = load_game_data()
+        for faction in ("alliance", "horde"):
+            with self.subTest(faction=faction):
+                zones = frozenset(zone.ui_map_id for zone in data.zones if zone.faction in (faction, "both"))
+                eligible = [quest.quest_id for quest in data.quests
+                            if quest.faction in (faction, "both") and zones.issuperset(quest.effective_zones)]
+                self.assertGreater(len(eligible), 500)
+                self.assertEqual([spec.quest_id for spec in quest_specs(faction, 100)], eligible)
+                without_generator = locations.select_locations(1, faction, zones, frozenset(), 60, 25, data)
+                self.assertEqual([spec.quest_id for spec in without_generator
+                                  if spec.kind == locations.LocationKind.QUEST], eligible)
+
+    def test_weight_25_keeps_a_quarter_rounded_half_up(self):
+        for faction in ("alliance", "horde"):
+            with self.subTest(faction=faction):
+                total = len(quest_specs(faction, 100))
+                self.assertEqual(len(quest_specs(faction, 25)), (total * 25 + 50) // 100)
+
+    def test_a_low_weight_keeps_at_least_one_quest(self):
+        data = load_game_data()
+        one_quest = parse_game_data({**read_shipped_files(), "quests.csv": "".join(
+            line for line in read_shipped_files()["quests.csv"].splitlines(keepends=True)
+            if not line[0].isdigit() or line.startswith("783,"))})
+        self.assertEqual(len(quest_specs("alliance", 1, data=one_quest)), 1)
+        self.assertGreater(len(data.quests), 1)
+
+    def test_the_sample_follows_the_seed_and_keeps_the_data_order(self):
+        first, same = quest_specs("alliance", 25, 7), quest_specs("alliance", 25, 7)
+        other = quest_specs("alliance", 25, 8)
+        self.assertEqual(first, same)
+        self.assertNotEqual([spec.quest_id for spec in first], [spec.quest_id for spec in other])
+        order = {quest.quest_id: index for index, quest in enumerate(load_game_data().quests)}
+        positions = [order[spec.quest_id] for spec in first]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_only_quests_are_sampled_by_the_quest_weight(self):
+        data = load_game_data()
+        zones = frozenset(zone.ui_map_id for zone in data.zones if zone.faction in ("alliance", "both"))
+        for weight in (1, 100):
+            specs = locations.select_locations(1, "alliance", zones, frozenset(), 10, 25, data, None,
+                                               random.Random(1), weight)
+            self.assertEqual([spec.name for spec in specs if spec.kind == locations.LocationKind.LEVEL],
+                             [f"Reach Level {level}" for level in (11, 21, 31, 41, 51, 60)])
+
+
+class TestQuestWeightInSeeds(WoWTestBase):
+    def quest_names(self) -> set[str]:
+        quests = {quest.location_name for quest in load_game_data().quests}
+        return self.location_names() & quests
+
+    def test_the_default_seed_holds_a_quarter_of_the_quests_and_is_beatable_for_both_factions(self):
+        for faction in ("alliance", "horde"):
+            with self.subTest(faction=faction):
+                self.generate(faction=faction)
+                self.assertEqual(len(self.quest_names()), len(quest_specs(faction, 25)))
+                self.collect(self.multiworld.itempool)
+                self.assertBeatable(True)
+
+    def test_the_option_sets_the_number_of_quest_locations(self):
+        counts = {}
+        for weight in (1, 50, 100):
+            self.generate(quest_weight=weight)
+            counts[weight] = len(self.quest_names())
+        self.assertEqual(counts, {weight: len(quest_specs("alliance", weight)) for weight in (1, 50, 100)})
+        self.assertLess(counts[1], counts[50])
+        self.assertLess(counts[50], counts[100])
+
+    def test_a_full_quest_weight_seed_is_beatable(self):
+        self.generate(quest_weight=100)
+        self.collect(self.multiworld.itempool)
+        self.assertBeatable(True)

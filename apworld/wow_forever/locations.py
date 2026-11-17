@@ -133,19 +133,21 @@ def select_locations(
     data: GameData | None = None,
     category_weights: Mapping[str, int] | None = None,
     rng: random.Random | None = None,
+    quest_weight: int = 100,
 ) -> list[LocationSpec]:
     """Locations of one seed (all filtered by release and faction), without the event location.
 
-    ``category_weights`` holds the extra categories (boss, discovery, reputation, pvp) that are on, each with the
-    percentage of its eligible locations to include; sampling uses ``rng``. Absent categories add nothing."""
+    ``quest_weight`` is the percentage of the eligible quests to include. ``category_weights`` holds the extra
+    categories (boss, discovery, reputation, pvp) that are on, each with the percentage of its eligible locations
+    to include. Sampling uses ``rng`` (quests first); absent categories add nothing."""
     data = data or load_game_data()
-    specs: list[LocationSpec] = []
-    for quest in data.quests:
+    quest_specs = [
+        LocationSpec(quest.location_name, ids.location_id(ids.LocCat.QUEST, quest.quest_id),
+                     data.zones_by_id[quest.zone_ui_map_id].name, LocationKind.QUEST, quest_id=quest.quest_id)
+        for quest in data.quests
         if (quest.release <= content_release and quest.faction in (faction, "both")
-                and allowed_zone_ids.issuperset(quest.effective_zones)):
-            specs.append(LocationSpec(
-                quest.location_name, ids.location_id(ids.LocCat.QUEST, quest.quest_id),
-                data.zones_by_id[quest.zone_ui_map_id].name, LocationKind.QUEST, quest_id=quest.quest_id))
+            and allowed_zone_ids.issuperset(quest.effective_zones))]
+    specs: list[LocationSpec] = sample_by_weight(quest_specs, quest_weight, rng)
     for level in milestone_levels(level_step):
         specs.append(LocationSpec(level_location_name(level), ids.location_id(ids.LocCat.LEVEL, level),
                                   CHARACTER_REGION, LocationKind.LEVEL, level=level))

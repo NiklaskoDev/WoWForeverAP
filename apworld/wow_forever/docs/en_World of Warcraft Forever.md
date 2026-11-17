@@ -14,7 +14,9 @@ unlocks it arrives. What you do in the game sends out checks.
 - **Items:** a zone unlock for every zone of your faction, and one *Progressive* item per profession (each
   copy unlocks the next tier). Then the *Care Package* items (see below). Everything else is filler.
 - **Locations (checks):**
-  - turning in a quest (see the quest list of your seed),
+  - turning in a quest (a share of the quests your faction can do, set by `quest_weight`: 1-100 percent, default 25;
+    the quest list of your seed shows which ones are checks. Class quests, race quests, repeatable quests,
+    profession quests and quests in cities and dungeons are never checks),
   - reaching a character level (every `level_milestone_step` levels, and always level 60),
   - reaching a profession skill (every `profession_milestone_step` points, up to the top tier of your content release),
   - the optional categories below (bosses, area discoveries, reputation, PvP).
@@ -135,6 +137,7 @@ German (`/wfap help` lists its commands).
 
 ## Unconfirmed content
 
-Zone level ranges, profession skill-line ids and tier limits, and the start-zone quests come from public
-Classic Era sources and community guides and are still being confirmed against the live Forever client. If
+Zone level ranges, profession skill-line ids and tier limits come from public Classic Era sources, and the
+quests from the community-maintained AllTheThings database; all of it is still being confirmed against the live
+Forever client. If
 something in your seed does not match the game, please report it.
