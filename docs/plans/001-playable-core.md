@@ -190,7 +190,7 @@ The client rewrites only its own `slotKey`; other slots in the file are kept (on
 ## Interfaces
 ### Python (apworld)
 - `WoWForeverWorld`: `game = "World of Warcraft Forever"`, `options_dataclass = WoWForeverOptions`, `item_name_to_id` / `location_name_to_id` from full data (all releases, all categories present in data), `settings_key = "wow_forever_options"`, `settings: ClassVar[WoWForeverSettings]`.
-  - `generate_early()`: resolve `start_zone` (random among `is_start` zones of the faction if `random`); validate faction match → `OptionError`.
+  - `generate_early()`: resolve `start_zone` (random among `is_start` zones of the faction if `faction_random`); validate faction match → `OptionError`.
   - `create_regions()` → `regions.create_regions(self)`.
   - `create_items()` → `items.build_pool(self)`; precollect `Zone: <start>`; `self.multiworld.early_items[self.player][<random zone of the faction, release-allowed, not start, min_level <= 11 <= max_level>] = 1`.
   - `set_rules()` → `rules.set_rules(self)`; completion `state.has("Victory", player)`.
@@ -198,7 +198,7 @@ The client rewrites only its own `slotKey`; other slots in the file are kept (on
   - `fill_slot_data()` → `{"schema": 1, "world_version", "faction", "start_zone", "content_release", "goal_level", "professions": [skillLineIDs], "level_step", "profession_step"}`.
 - Options (`options.py`):
   - `Faction(Choice)`: `alliance`, `horde`; default `alliance`.
-  - `StartZone(Choice)`: `random` (default) + one option per `is_start` zone, keys built from `zones.csv` names (snake_case) at import time.
+  - `StartZone(Choice)`: `faction_random` (default; Archipelago reserves the key `random` for its own random pick — amended 2026-11-17 after review) + one option per `is_start` zone, keys built from `zones.csv` names (snake_case) at import time.
   - `ContentRelease(Choice)`: one option per `releases.csv` key; default = highest id.
   - `Professions(OptionSet)`: valid keys from `professions.csv`; default all.
   - `LevelMilestoneStep(Range)`: 1–10, default 1.
