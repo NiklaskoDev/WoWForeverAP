@@ -1,0 +1,6 @@
+Name_lang,ID,ParentUiMapID,Flags
+Eastern Kingdoms,1415,947,0
+Elwynn Forest,1429,1415,0
+Westfall,1436,1415,0
+Stormwind City,1453,1415,0
+Test Cave,9999,1436,0

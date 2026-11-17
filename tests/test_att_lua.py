@@ -48,7 +48,8 @@ def test_lists_of_markers_and_races():
 
 
 def test_nested_calls_are_found_depth_first_in_order():
-    call = only_call("maproot(MAP.A, MAP.B, { groups = { m(MAP.C, { groups = { n(QUESTS, { q(1, {}), q(2, {}) }) } }) } })")
+    call = only_call(
+        "maproot(MAP.A, MAP.B, { groups = { m(MAP.C, { groups = { n(QUESTS, { q(1, {}), q(2, {}) }) } }) } })")
     assert call.args[:2] == [AttName("MAP.A"), AttName("MAP.B")]
     assert [c.args[0] for c in iter_calls(call, "q")] == [1, 2]
     assert [c.name for c in iter_calls(call, "m")] == ["m"]

@@ -98,7 +98,7 @@ class _AttParser(lua_table._Parser):
         return match.group() if match else ""
 
     def _skip_block(self) -> None:
-        """Skip a ``function`` / ``if`` / ``for`` ... ``end`` block by keyword balance, honouring strings and comments."""
+        """Skip a ``function`` / ``if`` / ``for`` ... ``end`` block by keyword balance (strings, comments aware)."""
         depth = 0
         while True:
             self.skip_space()
