@@ -43,6 +43,14 @@ DATA_FILES = (
 )
 
 
+def level_location_name(level: int) -> str:
+    return f"Reach Level {level}"
+
+
+def profession_location_name(profession_name: str, skill: int) -> str:
+    return f"{profession_name} {skill}"
+
+
 class DataError(ValueError):
     """Raised for any invalid game data; the message names the file and line."""
 
@@ -676,6 +684,16 @@ def _parse_pvp(text: str, release_ids: set[int]) -> tuple[PvpMilestone, ...]:
     return tuple(milestones)
 
 
+def _level_and_profession_names(professions: Iterable[Profession],
+                                tiers: Iterable[ProfessionTier]) -> list[tuple[str, str]]:
+    """The (file, name) pairs of the level and profession-skill locations, which have no CSV rows of their own."""
+    top_skill = max((tier.max_skill for tier in tiers), default=0)
+    names = [("the level locations", level_location_name(level)) for level in range(2, GOAL_LEVEL + 1)]
+    names += [("professions.csv", profession_location_name(profession.name, skill))
+              for profession in professions for skill in range(1, top_skill + 1)]
+    return names
+
+
 def _check_location_names_unique(data_names: Iterable[tuple[str, str]]) -> None:
     """AP location names must be unique across every category: (file, name) pairs in file order."""
     seen: dict[str, str] = {}
@@ -719,7 +737,8 @@ def parse_game_data(files: Mapping[str, str]) -> GameData:
     reputations = _parse_reputations(files["reputations.csv"], zones_by_id, release_ids)
     pvp_milestones = _parse_pvp(files["pvp.csv"], release_ids)
     _check_location_names_unique(
-        [("quests.csv", quest.location_name) for quest in quests]
+        _level_and_profession_names(professions, tiers)
+        + [("quests.csv", quest.location_name) for quest in quests]
         + [("encounters.csv", encounter.location_name) for encounter in encounters]
         + [("discoveries.csv", discovery.location_name) for discovery in discoveries]
         + [("reputations.csv", reputation.location_name) for reputation in reputations]

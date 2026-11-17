@@ -8,7 +8,7 @@ from typing import TypeVar
 from BaseClasses import Location
 
 from . import ids
-from .data_loader import GOAL_LEVEL, GameData, load_game_data
+from .data_loader import GOAL_LEVEL, GameData, level_location_name, load_game_data, profession_location_name
 from .items import GAME_NAME
 
 CHARACTER_REGION = "Character"
@@ -44,14 +44,6 @@ class LocationSpec:
 
 class WoWForeverLocation(Location):
     game = GAME_NAME
-
-
-def level_location_name(level: int) -> str:
-    return f"Reach Level {level}"
-
-
-def profession_location_name(profession_name: str, skill: int) -> str:
-    return f"{profession_name} {skill}"
 
 
 def max_tier_skill(data: GameData, content_release: int | None = None) -> int:

@@ -130,7 +130,9 @@ class BossWeight(Range):
 
 
 class DiscoveryChecks(DefaultOnToggle):
-    """Discovering a map area (the parts of a zone map that are revealed as you explore) is a check."""
+    """Discovering a map area (the parts of a zone map that are revealed as you explore) is a check. Unlike
+    reputation and PvP, an area you explored before linking counts when you stand in it again: the game does not
+    say when an area was discovered."""
     display_name = "Discovery Checks"
 
 

@@ -39,8 +39,8 @@ faction are never eligible.
 | PvP | `pvp_checks` (off), `pvp_weight` | 100, 250, 500 and 1000 honorable kills, and a first win in Warsong Gulch, Arathi Basin and Alterac Valley |
 
 - **Discoveries are many** (about 500 for a seed with every zone of your faction). Lower `discovery_weight` for a
-  shorter seed. An area you explored before linking counts the next time you stand in it, because the game does
-  not say when an area was discovered.
+  shorter seed. Unlike reputation and PvP, an area you explored **before** linking still counts: the next time you
+  stand in it the check is recorded, because the game does not say when an area was discovered.
 - **Bosses:** a dungeon belongs to the zone with its entrance, so its bosses need that zone's unlock item and the
   dungeon's level; there are no separate dungeon unlock items. Raids (not part of the first release) would also
   need level 60 in the logic. Boss checks only exist for bosses whose encounter id is in the game data; the first

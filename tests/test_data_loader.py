@@ -479,3 +479,26 @@ def test_location_names_must_be_unique_across_categories():
                             quests=QUEST_HEADER + "783,Friendly,1429,1,both,1,,,\n")
     with pytest.raises(DataError, match=r"duplicate AP location name 'Elwynn Forest: Friendly' \(also in quests.csv\)"):
         parse_game_data(quest_clash)
+
+
+def test_location_names_must_not_collide_with_the_level_locations():
+    # a profession called "Reach Level" would name its skill 2 location "Reach Level 2"
+    files = replace_in("professions.csv", "129,first_aid,First Aid,secondary,1",
+                       "129,first_aid,Reach Level,secondary,1")
+    with pytest.raises(DataError, match=r"duplicate AP location name 'Reach Level 2' \(also in the level locations\)"):
+        parse_game_data(files)
+
+
+def test_location_names_must_not_collide_with_the_profession_skill_locations():
+    files = with_rows("pvp", PVP_HEADER, "1,hk_total,100,Win Warsong Gulch 25,20,1",
+                      professions=read_shipped_files()["professions.csv"] + "999,pvp_win,PvP: Win Warsong Gulch,"
+                                                                          "secondary,1\n")
+    with pytest.raises(DataError, match=r"duplicate AP location name 'PvP: Win Warsong Gulch 25'") as error:
+        parse_game_data(files)
+    assert error.value.file == "pvp.csv"
+
+
+def test_the_shipped_level_and_profession_names_are_unique_with_the_other_categories():
+    names = {name for _, name in data_loader._level_and_profession_names(
+        load_game_data().professions, load_game_data().profession_tiers)}
+    assert "Reach Level 60" in names and "Alchemy 300" in names
