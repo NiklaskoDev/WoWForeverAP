@@ -184,6 +184,16 @@ describe("MapOverlay", function()
             end
         end)
 
+        it("counts bosses and areas of a zone as open checks next to its quests", function()
+            ns.Data.bosses[9001] = { name = "Boss A", instance = "Test Mines", zone = ELWYNN }
+            local slot = slotOf()
+            slot.locations[ns.Ids.locationId(ns.Ids.LocCat.BOSS, 9001)] = true
+            slot.locations[ns.Ids.locationId(ns.Ids.LocCat.AREA_DISCOVERY, 18)] = true
+            for _, zone in ipairs(ns.MapOverlay.view(CONTINENT, slot).zones) do
+                if zone.uiMapId == ELWYNN then assert.equals(4, zone.open) end
+            end
+        end)
+
         it("words the tooltip as zone name, state label and open checks", function()
             local view = ns.MapOverlay.view(CONTINENT, slotOf())
             local lines = {}

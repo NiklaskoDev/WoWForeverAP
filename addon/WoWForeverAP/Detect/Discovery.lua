@@ -1,5 +1,5 @@
--- Area discovery: reads which map-exploration areas the player stands in. Detection of discovery checks is added
--- below the read function; dev capture mode (Capture.lua) shares the read.
+-- Area discovery: ZONE_CHANGED* becomes "Discover <area>" checks for the map-exploration areas the player stands
+-- in. The read function is shared with dev capture mode (Capture.lua).
 local _, ns = ...
 
 local Discovery = {}
@@ -23,4 +23,32 @@ function Discovery.exploredAreaIds()
     end
     table.sort(areaIds)
     return areaIds, uiMapId
+end
+
+--- Location ids of the seed for the explored `areaIds`, in the order given.
+function Discovery.milestones(slot, areaIds)
+    local found = {}
+    for _, areaId in ipairs(areaIds) do
+        local ok, locationId = pcall(ns.Ids.locationId, ns.Ids.LocCat.AREA_DISCOVERY, areaId)
+        if ok and ns.Inbox.isLocationInSeed(slot, locationId) then
+            found[#found + 1] = locationId
+        end
+    end
+    return found
+end
+
+--- Records the areas explored at the player's position that the seed lists. Areas explored before linking are
+--- counted when the player stands in them again: the client does not say when an area was discovered.
+function Discovery.scan()
+    local _, _, slot = ns.Tracker.playerContext()
+    if not slot then
+        return
+    end
+    for _, locationId in ipairs(Discovery.milestones(slot, (Discovery.exploredAreaIds()))) do
+        ns.Tracker.recordForPlayer(locationId)
+    end
+end
+
+for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }) do
+    ns.Events.register(event, Discovery.scan)
 end

@@ -76,6 +76,14 @@ def test_build_requires_the_economy_rules():
         build(slot_data=without_economy)
 
 
+def test_build_requires_the_category_switches_and_passes_them_on_as_they_are():
+    without_categories = {key: value for key, value in SLOT_DATA.items() if key != "categories"}
+    with pytest.raises(inbox.InboxError, match="categories"):
+        build(slot_data=without_categories)
+    assert build()["options"]["categories"] == CATEGORIES
+    assert "legacy" not in build()["options"]["categories"]
+
+
 def test_write_creates_the_file_in_the_inbox_addon_only(tmp_path):
     wow = make_wow(tmp_path)
     path = inbox.write(wow, "seed1:Me", build(), now=lambda: 1763380000)

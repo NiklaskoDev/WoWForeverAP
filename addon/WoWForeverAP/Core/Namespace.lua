@@ -52,3 +52,13 @@ function Events.register(event, handler)
     handlers[event][#handlers[event] + 1] = handler
     frame:RegisterEvent(event)
 end
+
+--- Like register, for an event the client may not know: skips it (and returns false) when the client reports it as
+--- invalid or refuses the registration, so one missing event cannot stop the rest of the file from loading.
+function Events.tryRegister(event, handler)
+    local isEventValid = C_EventUtils and C_EventUtils.IsEventValid
+    if type(isEventValid) == "function" and isEventValid(event) ~= true then
+        return false
+    end
+    return (pcall(Events.register, event, handler))
+end

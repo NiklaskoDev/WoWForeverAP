@@ -105,34 +105,59 @@ local function zoneOrder(a, b)
     return a.uiMapId < b.uiMapId
 end
 
---- Open quest checks grouped by zone: { { uiMapId, state, quests = { questId, ... } }, ... }, the zones the player
---- may play first. Quests the data cannot place go to the last group (uiMapId `Checks.UNKNOWN_ZONE`, state nil).
+local function zoneGroup(byZone, slot, uiMapId)
+    local group = byZone[uiMapId]
+    if not group then
+        group = { uiMapId = uiMapId, state = Checks.zoneState(slot, uiMapId), quests = {}, bosses = {}, areas = {} }
+        byZone[uiMapId] = group
+    end
+    return group
+end
+
+--- The zone a boss or area check belongs to (`Checks.UNKNOWN_ZONE` when the addon data does not list it).
+local function placeOf(dataTable, native)
+    local entry = dataTable[native]
+    return entry and entry.zone or Checks.UNKNOWN_ZONE
+end
+
+--- How many open checks a zone group holds.
+function Checks.openCount(group)
+    return #group.quests + #group.bosses + #group.areas
+end
+
+--- Open quest, boss and area checks grouped by zone: { { uiMapId, state, quests = { questId, ... },
+--- bosses = { encounterId, ... }, areas = { areaId, ... } }, ... }, the zones the player may play first. Checks
+--- the data cannot place go to the last group (uiMapId `Checks.UNKNOWN_ZONE`, state nil).
 function Checks.openByZone(slot, pending)
     local byZone = {}
+    local LocCat = ns.Ids.LocCat
     for _, location in ipairs(openLocations(slot, pending)) do
-        if location.category == ns.Ids.LocCat.QUEST then
-            local uiMapId = ns.Data.quests[location.native] or Checks.UNKNOWN_ZONE
-            local group = byZone[uiMapId]
-            if not group then
-                group = { uiMapId = uiMapId, state = Checks.zoneState(slot, uiMapId), quests = {} }
-                byZone[uiMapId] = group
-            end
+        if location.category == LocCat.QUEST then
+            local group = zoneGroup(byZone, slot, ns.Data.quests[location.native] or Checks.UNKNOWN_ZONE)
             group.quests[#group.quests + 1] = location.native
+        elseif location.category == LocCat.BOSS then
+            local group = zoneGroup(byZone, slot, placeOf(ns.Data.bosses, location.native))
+            group.bosses[#group.bosses + 1] = location.native
+        elseif location.category == LocCat.AREA_DISCOVERY then
+            local group = zoneGroup(byZone, slot, placeOf(ns.Data.areas, location.native))
+            group.areas[#group.areas + 1] = location.native
         end
     end
     local groups = {}
     for _, group in pairs(byZone) do
         table.sort(group.quests)
+        table.sort(group.bosses)
+        table.sort(group.areas)
         groups[#groups + 1] = group
     end
     table.sort(groups, zoneOrder)
     return groups
 end
 
---- Open level and profession milestones: { levels = { level, ... }, professions = { [skillLineId] = { skill, ... } } },
---- every list ascending.
+--- Open character checks: { levels = { level, ... }, professions = { [skillLineId] = { skill, ... } },
+--- reputations = { [factionId] = { standing, ... } }, pvp = { pvpId, ... } }, every list ascending.
 function Checks.openCharacter(slot, pending)
-    local result = { levels = {}, professions = {} }
+    local result = { levels = {}, professions = {}, reputations = {}, pvp = {} }
     for _, location in ipairs(openLocations(slot, pending)) do
         if location.category == ns.Ids.LocCat.LEVEL then
             result.levels[#result.levels + 1] = location.native
@@ -142,11 +167,22 @@ function Checks.openCharacter(slot, pending)
             local skills = result.professions[skillLineId] or {}
             result.professions[skillLineId] = skills
             skills[#skills + 1] = location.native % factor
+        elseif location.category == ns.Ids.LocCat.REPUTATION then
+            local factionId = math.floor(location.native / 10)
+            local standings = result.reputations[factionId] or {}
+            result.reputations[factionId] = standings
+            standings[#standings + 1] = location.native % 10
+        elseif location.category == ns.Ids.LocCat.PVP then
+            result.pvp[#result.pvp + 1] = location.native
         end
     end
     table.sort(result.levels)
+    table.sort(result.pvp)
     for _, skills in pairs(result.professions) do
         table.sort(skills)
+    end
+    for _, standings in pairs(result.reputations) do
+        table.sort(standings)
     end
     return result
 end

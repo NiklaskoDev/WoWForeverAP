@@ -4,7 +4,8 @@
     python tools/gen_addon_data.py --check   exit 1 when a generated file is out of date (CI)
 
 Outputs:
-  addon/WoWForeverAP/Data/Generated.lua   ns.Data: zones, quests, professions, tiers, fillers, care package, goal
+  addon/WoWForeverAP/Data/Generated.lua   ns.Data: zones, quests, bosses, areas, factions, pvp, professions, tiers,
+                                          fillers, care package, goal
   addon/spec/fixtures/ids.lua             id cases computed by ids.py, which the Lua spec compares against Ids.lua
   addon/spec/fixtures/inbox_from_client.lua  an Inbox.lua exactly as the client writes it, which the Lua spec loads
 """
@@ -57,6 +58,16 @@ def build_generated(data: "data_loader.GameData") -> str:
              "release": tier.release}
             for tier in data.profession_tiers
         ],
+        "bosses": {
+            encounter.encounter_id: {"name": encounter.name, "instance": instance.name,
+                                     "zone": instance.entrance_ui_map_id}
+            for encounter in data.encounters
+            for instance in (data.instances_by_id[encounter.instance_id],)
+        },
+        "areas": {area.area_id: {"name": area.name, "zone": area.ui_map_id} for area in data.discoveries},
+        "factions": {reputation.faction_id: reputation.name for reputation in data.reputations},
+        "pvp": {milestone.pvp_id: {"kind": milestone.kind, "param": milestone.param, "name": milestone.name}
+                for milestone in data.pvp_milestones},
         "fillers": {item.native_id: {"name": item.name, "release": item.release}
                     for item in data.misc_items if item.kind == "filler"},
         "carePackageItemId": ids.item_id(data.care_package.category, data.care_package.native_id),

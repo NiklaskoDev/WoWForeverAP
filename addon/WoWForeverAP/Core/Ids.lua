@@ -13,11 +13,11 @@ Ids.LocCat = {
     QUEST = 1, -- native: questID
     LEVEL = 2, -- native: character level reached
     PROFESSION_SKILL = 3, -- native: skillLineID * 1000 + skill
-    BOSS = 4, -- reserved (plan 004)
-    AREA_DISCOVERY = 5, -- reserved (plan 004)
-    REPUTATION = 6, -- reserved (plan 004)
-    LEGACY = 7, -- reserved (plan 004)
-    PVP = 8, -- reserved (plan 004)
+    BOSS = 4, -- native: encounterID (what ENCOUNTER_END reports)
+    AREA_DISCOVERY = 5, -- native: areaID (map-exploration area)
+    REPUTATION = 6, -- native: factionID * 10 + standingID (5 friendly ... 8 exalted)
+    LEGACY = 7, -- reserved, left out of plan 004 (decision D2)
+    PVP = 8, -- native: curated id (pvp.csv)
 }
 
 Ids.ItemCat = {

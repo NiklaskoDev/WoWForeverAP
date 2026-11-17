@@ -52,6 +52,39 @@ describe("Names and Notify", function()
             assert.equals("Alchemy 75", ns.Names.location(locationId(ns.Ids.LocCat.PROFESSION_SKILL, native)))
         end)
 
+        it("names boss, area, reputation and PvP locations from the generated data", function()
+            ns.Data.bosses[9001] = { name = "Boss A", instance = "Test Mines", zone = 1436 }
+            assert.equals("Test Mines: Boss A", ns.Names.location(locationId(ns.Ids.LocCat.BOSS, 9001)))
+            assert.equals("Discover Crystal Lake", ns.Names.location(locationId(ns.Ids.LocCat.AREA_DISCOVERY, 18)))
+            assert.equals("Stormwind: Honored", ns.Names.location(locationId(ns.Ids.LocCat.REPUTATION, 726)))
+            assert.equals("100 honorable kills", ns.Names.location(locationId(ns.Ids.LocCat.PVP, 1)))
+            assert.equals("Win Warsong Gulch", ns.Names.location(locationId(ns.Ids.LocCat.PVP, 10)))
+        end)
+
+        it("falls back to numbered labels for rows the data does not know", function()
+            assert.equals("Boss 5", ns.Names.location(locationId(ns.Ids.LocCat.BOSS, 5)))
+            assert.equals("Discover Area 5", ns.Names.location(locationId(ns.Ids.LocCat.AREA_DISCOVERY, 5)))
+            assert.equals("Faction 99: Friendly", ns.Names.location(locationId(ns.Ids.LocCat.REPUTATION, 995)))
+            assert.equals("PvP check 99", ns.Names.location(locationId(ns.Ids.LocCat.PVP, 99)))
+            assert.equals("Faction 99: 9", ns.Names.location(locationId(ns.Ids.LocCat.REPUTATION, 999)))
+        end)
+
+        it("uses the game's area and faction names and falls back when the API fails", function()
+            _G.C_Map = { GetAreaInfo = function() return "Kristallsee" end }
+            _G.C_Reputation = { GetFactionDataByID = function() return { name = "Sturmwind" } end }
+            assert.equals("Discover Kristallsee", ns.Names.location(locationId(ns.Ids.LocCat.AREA_DISCOVERY, 18)))
+            assert.equals("Sturmwind: Honored", ns.Names.location(locationId(ns.Ids.LocCat.REPUTATION, 726)))
+            _G.C_Map = { GetAreaInfo = function() error("restricted") end }
+            _G.C_Reputation = { GetFactionDataByID = function() return nil end }
+            assert.equals("Discover Crystal Lake", ns.Names.location(locationId(ns.Ids.LocCat.AREA_DISCOVERY, 18)))
+            assert.equals("Stormwind: Honored", ns.Names.location(locationId(ns.Ids.LocCat.REPUTATION, 726)))
+        end)
+
+        it("localises the standings", function()
+            game.locale = "deDE"
+            assert.equals("Stormwind: Wohlwollend", ns.Names.location(locationId(ns.Ids.LocCat.REPUTATION, 726)))
+        end)
+
         it("shows other ids as plain numbers", function()
             assert.equals("12", ns.Names.location(12))
             assert.equals("nope", ns.Names.location("nope"))

@@ -11,6 +11,12 @@ describe("Panel", function()
     local function tierItem(skillLine) return ns.Ids.itemId(ns.Ids.ItemCat.PROFESSION_TIER, skillLine) end
     local function questLocation(quest) return ns.Ids.locationId(ns.Ids.LocCat.QUEST, quest) end
     local function levelLocation(level) return ns.Ids.locationId(ns.Ids.LocCat.LEVEL, level) end
+    local function bossLocation(encounter) return ns.Ids.locationId(ns.Ids.LocCat.BOSS, encounter) end
+    local function areaLocation(area) return ns.Ids.locationId(ns.Ids.LocCat.AREA_DISCOVERY, area) end
+    local function repLocation(faction, standing)
+        return ns.Ids.locationId(ns.Ids.LocCat.REPUTATION, faction * 10 + standing)
+    end
+    local function pvpLocation(pvpId) return ns.Ids.locationId(ns.Ids.LocCat.PVP, pvpId) end
 
     local function texts(rows)
         local list = {}
@@ -137,7 +143,7 @@ describe("Panel", function()
                 "Elwynn Forest - start zone (2 open)", "Quest 7", "Quest 783",
                 "Dun Morogh - unlocked (1 open)", "Quest 170",
                 "Mulgore - not in your seed (1 open)", "Quest 747",
-                "Levels and professions", "Levels: 5, 6",
+                "Character", "Levels: 5, 6",
             }, listed)
         end)
 
@@ -191,6 +197,57 @@ describe("Panel", function()
             _G.C_QuestLog = { GetTitleForQuestID = function() return "|cffff0000Red|r" end }
             link({ locations = { [questLocation(7)] = true } })
             assert.equals("||cffff0000Red||r", rows("checks")[2].text)
+        end)
+
+        it("lists bosses one per row and areas as one compact row under their zone, counted as open", function()
+            ns.Data.bosses[9001] = { name = "Boss A", instance = "Test Mines", zone = 1436 }
+            link({ items = items({ zoneItem(1436) }), locations = {
+                [questLocation(783)] = true, [bossLocation(9001)] = true,
+                [areaLocation(18)] = true, [areaLocation(57)] = true,
+            } })
+            assert.same({
+                "Elwynn Forest - start zone (3 open)", "Quest 783", "Areas: Crystal Lake, Fargodeep Mine",
+                "Westfall - unlocked (1 open)", "Test Mines: Boss A",
+            }, texts(rows("checks")))
+        end)
+
+        it("shortens a long area list and gives every name in the tooltip", function()
+            local locations = {}
+            for areaId, area in pairs(ns.Data.areas) do
+                if area.zone == 1429 then
+                    locations[areaLocation(areaId)] = true
+                end
+            end
+            link({ locations = locations })
+            local result = rows("checks")
+            assert.matches("^Elwynn Forest %- start zone %(%d+ open%)$", result[1].text)
+            assert.matches("^Areas: .+ %(%+%d+ more%)$", result[2].text)
+            assert.matches("Crystal Lake", result[2].tooltip[1])
+        end)
+
+        it("uses the game's localised area names and escapes them", function()
+            _G.C_Map = { GetAreaInfo = function() return "|cffff0000Rot|r" end }
+            link({ locations = { [areaLocation(18)] = true } })
+            assert.equals("Areas: ||cffff0000Rot||r", rows("checks")[2].text)
+        end)
+
+        it("lists reputation per faction and PvP under the character header", function()
+            link({ locations = {
+                [repLocation(72, 6)] = true, [repLocation(72, 5)] = true, [repLocation(47, 8)] = true,
+                [pvpLocation(1)] = true, [pvpLocation(10)] = true,
+                [levelLocation(5)] = true,
+            } })
+            assert.same({
+                "Character", "Levels: 5", "Ironforge: Exalted", "Stormwind: Friendly, Honored",
+                "PvP: 100 honorable kills, Win Warsong Gulch",
+            }, texts(rows("checks")))
+        end)
+
+        it("localises standings and uses the game's faction names", function()
+            ns.Locale.setActive("deDE")
+            _G.C_Reputation = { GetFactionDataByID = function(id) return { name = "Fraktion" .. id } end }
+            link({ locations = { [repLocation(72, 8)] = true } })
+            assert.equals("Fraktion72: Ehrfürchtig", rows("checks")[2].text)
         end)
 
         it("puts quests the data cannot place under a last header", function()

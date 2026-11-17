@@ -29,10 +29,12 @@ function Link.loginAction(db, guid, inbox)
     return nil
 end
 
---- Links the character to the slot. `skills` maps skillLineID to the current rank.
+--- Links the character to the slot. `skills` maps skillLineID to the current rank, `baselines` is what the
+--- character already had (`{ rep = { [factionID] = standing }, hk = honorable kills, bgWins = {} }`, nil
+--- parts are fine): reputation, honorable kills and battleground wins before the link do not count.
 --- Returns true plus a list of warning messages, or false plus one error message.
 --- A message is { localeKey, formatArgs... }.
-function Link.link(db, guid, slotKey, inbox, level, skills, now)
+function Link.link(db, guid, slotKey, inbox, level, skills, now, baselines)
     local character = db.characters[guid]
     local slot = ns.Inbox.slot(inbox, slotKey)
     if not character or not slot then
@@ -49,6 +51,7 @@ function Link.link(db, guid, slotKey, inbox, level, skills, now)
     character.linkedAt = now
     character.linkedLevel = level
     character.skillAtLink = skills
+    character.baselines = baselines or {}
     character.seenItemCount = 0
     character.neverAsk = nil
     local warnings = {}
@@ -68,6 +71,7 @@ function Link.unlink(db, guid)
     character.linkedAt = nil
     character.linkedLevel = nil
     character.skillAtLink = nil
+    character.baselines = nil
     character.seenItemCount = nil
     return true
 end
@@ -83,7 +87,13 @@ function Link.linkPlayer(slotKey)
         return false
     end
     local skills = ns.Professions.currentRanks() or {}
-    local ok, result = Link.link(ns.db, guid, slotKey, ns.Inbox.current(), UnitLevel("player"), skills, time())
+    local inbox = ns.Inbox.current()
+    local baselines = {
+        rep = ns.Reputation.standings(ns.Inbox.slot(inbox, slotKey) or {}),
+        hk = ns.PvP.honorableKills(),
+        bgWins = {},
+    }
+    local ok, result = Link.link(ns.db, guid, slotKey, inbox, UnitLevel("player"), skills, time(), baselines)
     if not ok then
         sayMessage(result)
         return false

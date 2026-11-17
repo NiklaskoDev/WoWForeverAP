@@ -10,6 +10,12 @@ describe("Checks", function()
     local function tierItem(skillLine) return ns.Ids.itemId(ns.Ids.ItemCat.PROFESSION_TIER, skillLine) end
     local function questLocation(quest) return ns.Ids.locationId(ns.Ids.LocCat.QUEST, quest) end
     local function levelLocation(level) return ns.Ids.locationId(ns.Ids.LocCat.LEVEL, level) end
+    local function bossLocation(encounter) return ns.Ids.locationId(ns.Ids.LocCat.BOSS, encounter) end
+    local function areaLocation(area) return ns.Ids.locationId(ns.Ids.LocCat.AREA_DISCOVERY, area) end
+    local function repLocation(faction, standing)
+        return ns.Ids.locationId(ns.Ids.LocCat.REPUTATION, faction * 10 + standing)
+    end
+    local function pvpLocation(pvpId) return ns.Ids.locationId(ns.Ids.LocCat.PVP, pvpId) end
     local function skillLocation(skillLine, skill)
         return ns.Ids.locationId(ns.Ids.LocCat.PROFESSION_SKILL, ns.Ids.professionSkillNative(skillLine, skill))
     end
@@ -177,17 +183,86 @@ describe("Checks", function()
             assert.same({
                 levels = { 10 },
                 professions = { [ALCHEMY] = { 25, 50 }, [MINING] = { 25 } },
+                reputations = {}, pvp = {},
             }, Checks.openCharacter(current))
         end)
 
         it("skips milestones waiting in the outbox", function()
             local current = slot({}, { locations = { [levelLocation(5)] = true, [levelLocation(6)] = true } })
-            assert.same({ levels = { 6 }, professions = {} },
+            assert.same({ levels = { 6 }, professions = {}, reputations = {}, pvp = {} },
                 Checks.openCharacter(current, { [levelLocation(5)] = true }))
         end)
 
         it("is empty for an empty slot", function()
-            assert.same({ levels = {}, professions = {} }, Checks.openCharacter({}))
+            assert.same({ levels = {}, professions = {}, reputations = {}, pvp = {} }, Checks.openCharacter({}))
+        end)
+
+        it("lists open reputation standings per faction and PvP milestones, ascending", function()
+            local current = slot({}, {
+                locations = {
+                    [repLocation(72, 6)] = true, [repLocation(72, 5)] = true, [repLocation(47, 8)] = true,
+                    [pvpLocation(11)] = true, [pvpLocation(2)] = true, [pvpLocation(3)] = true,
+                },
+                checked = { [pvpLocation(3)] = true },
+            })
+            local result = Checks.openCharacter(current, { [repLocation(47, 8)] = true })
+            assert.same({ [72] = { 5, 6 } }, result.reputations)
+            assert.same({ 2, 11 }, result.pvp)
+        end)
+    end)
+
+    describe("boss and area checks", function()
+        local CRYSTAL_LAKE, MOONBROOK = 18, 20 -- areas of Elwynn Forest and Westfall in the generated data
+
+        before_each(function()
+            ns.Data.bosses[9001] = { name = "Boss A", instance = "Test Mines", zone = WESTFALL }
+        end)
+
+        it("groups bosses and areas with the quests of their zone and counts them all as open", function()
+            local current = slot({}, { locations = {
+                [questLocation(783)] = true, [bossLocation(9001)] = true,
+                [areaLocation(CRYSTAL_LAKE)] = true, [areaLocation(MOONBROOK)] = true,
+            } })
+            local groups = Checks.openByZone(current)
+            assert.equals(2, #groups)
+            assert.equals(ELWYNN, groups[1].uiMapId)
+            assert.same({ 783 }, groups[1].quests)
+            assert.same({ CRYSTAL_LAKE }, groups[1].areas)
+            assert.equals(2, Checks.openCount(groups[1]))
+            assert.equals(WESTFALL, groups[2].uiMapId)
+            assert.same({ 9001 }, groups[2].bosses)
+            assert.same({ MOONBROOK }, groups[2].areas)
+            assert.equals(2, Checks.openCount(groups[2]))
+        end)
+
+        it("skips checked ones and the ones waiting in the outbox", function()
+            local current = slot({}, {
+                locations = { [bossLocation(9001)] = true, [areaLocation(CRYSTAL_LAKE)] = true,
+                    [areaLocation(MOONBROOK)] = true },
+                checked = { [areaLocation(CRYSTAL_LAKE)] = true },
+            })
+            local groups = Checks.openByZone(current, { [bossLocation(9001)] = true })
+            assert.equals(1, #groups)
+            assert.same({ MOONBROOK }, groups[1].areas)
+            assert.same({}, groups[1].bosses)
+        end)
+
+        it("puts a boss or area the data cannot place into the last group", function()
+            local current = slot({}, { locations = {
+                [bossLocation(424242)] = true, [areaLocation(999999)] = true, [areaLocation(CRYSTAL_LAKE)] = true,
+            } })
+            local groups = Checks.openByZone(current)
+            assert.equals(2, #groups)
+            assert.equals(Checks.UNKNOWN_ZONE, groups[2].uiMapId)
+            assert.same({ 424242 }, groups[2].bosses)
+            assert.same({ 999999 }, groups[2].areas)
+            assert.is_nil(groups[2].state)
+        end)
+
+        it("keeps the lists ascending", function()
+            local current = slot({}, { locations = {
+                [areaLocation(57)] = true, [areaLocation(CRYSTAL_LAKE)] = true, [areaLocation(54)] = true } })
+            assert.same({ CRYSTAL_LAKE, 54, 57 }, Checks.openByZone(current)[1].areas)
         end)
     end)
 end)

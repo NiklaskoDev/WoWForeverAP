@@ -36,6 +36,45 @@ function Names.quest(questId)
     return title or ns.L.QUEST_FMT:format(questId)
 end
 
+--- Boss kill, "Instance: Boss": the client has no localised boss names, so the generated English names stand.
+function Names.boss(encounterId)
+    local boss = ns.Data.bosses[encounterId]
+    return boss and ("%s: %s"):format(boss.instance, boss.name) or ns.L.BOSS_FMT:format(encounterId)
+end
+
+function Names.area(areaId)
+    local name = C_Map and present(tryCall(C_Map.GetAreaInfo, areaId))
+    if name then
+        return name
+    end
+    local area = ns.Data.areas[areaId]
+    return area and area.name or ns.L.AREA_FMT:format(areaId)
+end
+
+function Names.faction(factionId)
+    local data = C_Reputation and tryCall(C_Reputation.GetFactionDataByID, factionId)
+    local name = type(data) == "table" and present(data.name)
+    if name then
+        return name
+    end
+    return ns.Data.factions[factionId] or ns.L.FACTION_FMT:format(factionId)
+end
+
+--- Name of a reputation standing id (5 Friendly ... 8 Exalted).
+function Names.standing(standing)
+    local key = "STANDING_" .. tostring(standing)
+    return ns.L[key] ~= key and ns.L[key] or tostring(standing)
+end
+
+--- PvP milestone: kill totals are formatted with the count, battleground wins use the generated English name.
+function Names.pvp(pvpId)
+    local row = ns.Data.pvp[pvpId]
+    if not row then
+        return ns.L.PVP_FMT:format(pvpId)
+    end
+    return row.kind == "hk_total" and ns.L.PVP_HK_CHECK:format(row.param) or row.name
+end
+
 local decode = ns.Ids.tryDecode
 
 --- Display name of a location id.
@@ -48,6 +87,14 @@ function Names.location(locationId)
     elseif category == ns.Ids.LocCat.PROFESSION_SKILL then
         local skillLineId = math.floor(native / ns.Ids.PROFESSION_SKILL_FACTOR)
         return ns.L.PROFESSION_CHECK:format(Names.profession(skillLineId), native % ns.Ids.PROFESSION_SKILL_FACTOR)
+    elseif category == ns.Ids.LocCat.BOSS then
+        return Names.boss(native)
+    elseif category == ns.Ids.LocCat.AREA_DISCOVERY then
+        return ns.L.AREA_CHECK:format(Names.area(native))
+    elseif category == ns.Ids.LocCat.REPUTATION then
+        return ns.L.REPUTATION_CHECK:format(Names.faction(math.floor(native / 10)), Names.standing(native % 10))
+    elseif category == ns.Ids.LocCat.PVP then
+        return Names.pvp(native)
     end
     return tostring(locationId)
 end

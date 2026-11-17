@@ -94,6 +94,21 @@ describe("Main", function()
             assert.same({ ns.L.SLOT_MISSING:format("S9:Gone") }, chat())
         end)
 
+        it("catches up reputation and honorable kills gained while the addon was not running", function()
+            local friendly = ns.Ids.locationId(ns.Ids.LocCat.REPUTATION, 725)
+            local kills = ns.Ids.locationId(ns.Ids.LocCat.PVP, 1)
+            _G.WoWForeverAP_Inbox = Env.inbox({ locations = { [friendly] = true, [kills] = true } })
+            _G.WoWForeverAP_DB = { schema = 1, characters = { [game.guid] = {
+                slotKey = "S1:Wow", seenItemCount = 0, linkedLevel = 1, skillAtLink = {},
+                baselines = { rep = { [72] = 4 }, hk = 10, bgWins = {} } } }, slots = {} }
+            _G.C_Reputation = { GetFactionDataByID = function() return { reaction = 5 } end }
+            _G.GetPVPLifetimeStats = function() return 150 end
+            addonLoaded()
+            login()
+            local outbox = ns.db.slots["S1:Wow"].outbox
+            assert.same({ friendly, kills }, { outbox[1].id, outbox[2].id })
+        end)
+
         it("catches up profession skill gained while the addon was not running", function()
             local milestone = ns.Ids.locationId(ns.Ids.LocCat.PROFESSION_SKILL, ns.Ids.professionSkillNative(171, 25))
             _G.WoWForeverAP_Inbox = Env.inbox({ locations = { [milestone] = true } })

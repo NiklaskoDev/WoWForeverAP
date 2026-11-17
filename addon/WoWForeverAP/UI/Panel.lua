@@ -125,7 +125,53 @@ local function zoneHeader(group)
         return header(ns.L.CHECKS_UNKNOWN_ZONE)
     end
     local label = ns.L[Style.STATE_LABEL_KEYS[group.state]]
-    return header(ns.L.CHECKS_ZONE_HEADER:format(ns.Names.zone(group.uiMapId), label, #group.quests))
+    return header(ns.L.CHECKS_ZONE_HEADER:format(ns.Names.zone(group.uiMapId), label, ns.Checks.openCount(group)))
+end
+
+--- Display names of the ids, alphabetical, for a compact row.
+local function sortedNames(values, nameOf)
+    local names = {}
+    for index, value in ipairs(values) do
+        names[index] = nameOf(value)
+    end
+    table.sort(names)
+    return names
+end
+
+local function zoneRows(group)
+    local rows = {}
+    for _, questId in ipairs(group.quests) do
+        rows[#rows + 1] = row(Style.escape(ns.Names.quest(questId)), { indent = true })
+    end
+    for _, encounterId in ipairs(group.bosses) do
+        rows[#rows + 1] = row(Style.escape(ns.Names.boss(encounterId)), { indent = true })
+    end
+    if #group.areas > 0 then
+        local shown, all = compactList(sortedNames(group.areas, ns.Names.area))
+        rows[#rows + 1] = row(Style.escape(ns.L.CHECKS_AREAS:format(shown)),
+            { indent = true, tooltip = { Style.escape(all) } })
+    end
+    return rows
+end
+
+local function reputationRows(reputations)
+    local factionIds = {}
+    for factionId in pairs(reputations) do
+        factionIds[#factionIds + 1] = factionId
+    end
+    table.sort(factionIds, function(a, b)
+        return ns.Names.faction(a) < ns.Names.faction(b)
+    end)
+    local rows = {}
+    for _, factionId in ipairs(factionIds) do
+        local standings = {}
+        for index, standing in ipairs(reputations[factionId]) do
+            standings[index] = ns.Names.standing(standing)
+        end
+        rows[#rows + 1] = row(Style.escape(ns.L.CHECKS_REPUTATION:format(ns.Names.faction(factionId),
+            table.concat(standings, ", "))), { indent = true })
+    end
+    return rows
 end
 
 local function characterRows(character)
@@ -146,6 +192,14 @@ local function characterRows(character)
             indent = true, tooltip = { ns.L.CHECKS_PROFESSION:format(name, all) },
         })
     end
+    for _, entry in ipairs(reputationRows(character.reputations)) do
+        rows[#rows + 1] = entry
+    end
+    if #character.pvp > 0 then
+        local shown, all = compactList(sortedNames(character.pvp, ns.Names.pvp))
+        rows[#rows + 1] = row(Style.escape(ns.L.CHECKS_PVP:format(shown)),
+            { indent = true, tooltip = { Style.escape(all) } })
+    end
     if #rows > 0 then
         table.insert(rows, 1, header(ns.L.CHECKS_CHARACTER_HEADER))
     end
@@ -157,8 +211,8 @@ local function checksRows(snapshot)
     local rows = {}
     for _, group in ipairs(ns.Checks.openByZone(snapshot.slot, pending)) do
         rows[#rows + 1] = zoneHeader(group)
-        for _, questId in ipairs(group.quests) do
-            rows[#rows + 1] = row(Style.escape(ns.Names.quest(questId)), { indent = true })
+        for _, entry in ipairs(zoneRows(group)) do
+            rows[#rows + 1] = entry
         end
     end
     for _, entry in ipairs(characterRows(ns.Checks.openCharacter(snapshot.slot, pending))) do

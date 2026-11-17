@@ -35,6 +35,32 @@ describe("Detection", function()
         ns.db, ns.ready = db, true
     end)
 
+    describe("tryRegister", function()
+        it("registers an event and answers true, also when the client cannot tell whether it is valid", function()
+            assert.is_true(ns.Events.tryRegister("SOME_EVENT", function() end))
+            assert.is_true(game.frames[1].events.SOME_EVENT)
+            _G.C_EventUtils = { IsEventValid = function() return true end }
+            assert.is_true(ns.Events.tryRegister("OTHER_EVENT", function() end))
+            assert.is_true(game.frames[1].events.OTHER_EVENT)
+        end)
+
+        it("skips an event the client calls invalid, and an event whose registration fails", function()
+            _G.C_EventUtils = { IsEventValid = function() return false end }
+            assert.is_false(ns.Events.tryRegister("SOME_EVENT", function() end))
+            assert.is_nil(game.frames[1].events.SOME_EVENT)
+            _G.C_EventUtils = nil
+            game.frames[1].RegisterEvent = function() error("unknown event") end
+            assert.is_false(ns.Events.tryRegister("BAD_EVENT", function() end))
+        end)
+
+        it("still calls the handler of a registered event", function()
+            local got
+            ns.Events.tryRegister("SOME_EVENT", function(value) got = value end)
+            ns.Events.dispatch("SOME_EVENT", 42)
+            assert.equals(42, got)
+        end)
+    end)
+
     describe("quests", function()
         it("records a turned-in quest that is in the seed, with chat feedback", function()
             linkedCharacter({ questId(783) })

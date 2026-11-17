@@ -39,6 +39,16 @@ describe("Link", function()
             assert.equals(0, character.seenItemCount)
         end)
 
+        it("stores the baselines it is given and an empty table when there are none", function()
+            local baselines = { rep = { [72] = 6 }, hk = 321, bgWins = {} }
+            assert.is_true(Link.link(db, "Player-1", "S1:Wow", slotInbox(), 1, {}, 555, baselines))
+            assert.same(baselines, db.characters["Player-1"].baselines)
+            assert.is_true(Link.unlink(db, "Player-1"))
+            assert.is_nil(db.characters["Player-1"].baselines)
+            assert.is_true(Link.link(db, "Player-1", "S1:Wow", slotInbox(), 1, {}, 555))
+            assert.same({}, db.characters["Player-1"].baselines)
+        end)
+
         it("warns that earlier progress does not count above level 1", function()
             local ok, warnings = Link.link(db, "Player-1", "S1:Wow", slotInbox(), 12, {}, 1)
             assert.is_true(ok)
@@ -136,6 +146,22 @@ describe("Link", function()
             local chat = Env.chatText(game)
             assert.equals(ns.L.LINK_OK:format("Arthas", "S1:Wow"), chat[1])
             assert.equals(ns.L.LINK_LEVEL_WARNING:format(5), chat[2])
+        end)
+
+        it("linkPlayer stores the reputation, honorable kills and battleground baselines of the character", function()
+            local standing = ns.Ids.locationId(ns.Ids.LocCat.REPUTATION, 726)
+            _G.WoWForeverAP_Inbox = Env.inbox({ locations = { [standing] = true } })
+            _G.C_Reputation = { GetFactionDataByID = function() return { reaction = 6 } end }
+            _G.GetPVPLifetimeStats = function() return 321, 0 end
+            assert.is_true(Link.linkPlayer("S1:Wow"))
+            assert.same({ rep = { [72] = 6 }, hk = 321, bgWins = {} }, db.characters[game.guid].baselines)
+        end)
+
+        it("linkPlayer still links when the reputation and PvP APIs are missing", function()
+            local standing = ns.Ids.locationId(ns.Ids.LocCat.REPUTATION, 726)
+            _G.WoWForeverAP_Inbox = Env.inbox({ locations = { [standing] = true } })
+            assert.is_true(Link.linkPlayer("S1:Wow"))
+            assert.same({ rep = {}, bgWins = {} }, db.characters[game.guid].baselines)
         end)
 
         it("linkPlayer reports a refusal in chat", function()

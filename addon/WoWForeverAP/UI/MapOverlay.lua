@@ -54,7 +54,7 @@ end
 local function openCounts(slot, pending)
     local counts = {}
     for _, group in ipairs(ns.Checks.openByZone(slot, pending)) do
-        counts[group.uiMapId] = #group.quests
+        counts[group.uiMapId] = ns.Checks.openCount(group)
     end
     return counts
 end

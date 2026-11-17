@@ -39,6 +39,8 @@ local function onPlayerLogin()
     if slot then
         refreshLinkedCharacter(character, slotKey, slot)
         ns.Professions.scan() -- catches skill gained while the addon was not looking
+        ns.Reputation.scan() -- the same for reputation standing and honorable kills
+        ns.PvP.onKillsChanged()
     else
         ns.Notify.say("SLOT_MISSING", character.slotKey)
     end

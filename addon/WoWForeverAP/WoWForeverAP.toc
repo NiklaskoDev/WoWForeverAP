@@ -25,7 +25,10 @@ Core\Link.lua
 Detect\Quests.lua
 Detect\Level.lua
 Detect\Professions.lua
+Detect\Encounters.lua
 Detect\Discovery.lua
+Detect\Reputation.lua
+Detect\PvP.lua
 Detect\Capture.lua
 Rules\Economy.lua
 Rules\Warnings.lua
