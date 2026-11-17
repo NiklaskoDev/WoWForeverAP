@@ -181,11 +181,24 @@ describe("Reputation", function()
             assert.same({ repId(STORMWIND, REVERED) }, Linked.outbox(db))
         end)
 
-        it("works for a character without stored baselines (all Neutral)", function()
+        it("treats a character without stored standings as unknown: the first read is the baseline", function()
             db.characters[game.guid].baselines = nil
-            standings({ [STORMWIND] = FRIENDLY })
+            standings({ [STORMWIND] = HONORED })
             ns.Events.dispatch("UPDATE_FACTION")
-            assert.same({ repId(STORMWIND, FRIENDLY) }, Linked.outbox(db))
+            assert.same({}, Linked.outbox(db))
+            assert.equals(HONORED, db.characters[game.guid].baselines.rep[STORMWIND])
+            assert.is_false(db.characters[game.guid].baselines.rep[IRONFORGE])
+            standings({ [STORMWIND] = REVERED })
+            ns.Events.dispatch("UPDATE_FACTION")
+            assert.same({ repId(STORMWIND, REVERED) }, Linked.outbox(db))
+        end)
+
+        it("does the same for baselines that hold no standings table", function()
+            db.characters[game.guid].baselines = { hk = 3 }
+            standings({ [STORMWIND] = EXALTED })
+            ns.Events.dispatch("UPDATE_FACTION")
+            assert.same({}, Linked.outbox(db))
+            assert.equals(3, db.characters[game.guid].baselines.hk)
         end)
 
         it("does nothing without the API, for an unlinked character or before the addon is ready", function()

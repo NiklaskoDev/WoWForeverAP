@@ -61,10 +61,17 @@ end
 
 function PvP.onKillsChanged()
     local character, _, slot = ns.Tracker.playerContext()
-    local baseline = slot and character.baselines and character.baselines.hk
     local kills = slot and PvP.honorableKills()
-    if not (baseline and kills) then
-        return -- no baseline: the kills before the link cannot be told from the ones after it
+    if not kills then
+        return
+    end
+    character.baselines = character.baselines or {}
+    local baseline = character.baselines.hk
+    if not baseline then
+        -- The total was unknown at link time: the first successful read becomes the baseline, so the kills made
+        -- before the link (or before this read) never count.
+        character.baselines.hk = kills
+        return
     end
     for _, locationId in ipairs(PvP.killMilestones(slot, kills - baseline)) do
         ns.Tracker.recordForPlayer(locationId)

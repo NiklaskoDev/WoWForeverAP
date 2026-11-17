@@ -77,9 +77,12 @@ function Reputation.scan()
     if not slot then
         return
     end
-    local baselines = character.baselines or {}
+    character.baselines = character.baselines or {}
     local current = Reputation.standings(slot)
-    local baseline = baselines.rep or {}
+    -- No stored standings at all (a character linked before they were recorded) is as unknown as a `false`: the
+    -- first read becomes the baseline.
+    character.baselines.rep = character.baselines.rep or Reputation.baseline(slot)
+    local baseline = character.baselines.rep
     for factionId, known in pairs(baseline) do
         if known == false and current[factionId] then
             baseline[factionId] = current[factionId] -- first successful read: progress so far does not count

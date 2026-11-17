@@ -86,12 +86,32 @@ describe("PvP", function()
             assert.same({}, Linked.outbox(db))
         end)
 
-        it("does nothing without a baseline, without the API, unlinked or before the addon is ready", function()
-            lifetimeKills(1000)
-            db.characters[game.guid].baselines = {}
+        it("uses the first successful read as the baseline when the total was unknown at link time", function()
+            db.characters[game.guid].baselines = { hk = nil, bgWins = {} }
+            ns.Events.dispatch("PLAYER_PVP_KILLS_CHANGED", "player") -- API still missing
+            assert.is_nil(db.characters[game.guid].baselines.hk)
+            lifetimeKills(5000)
             ns.Events.dispatch("PLAYER_PVP_KILLS_CHANGED", "player")
+            assert.equals(5000, db.characters[game.guid].baselines.hk)
+            assert.same({}, Linked.outbox(db))
+            lifetimeKills(5099)
+            ns.Events.dispatch("PLAYER_PVP_KILLS_CHANGED", "player")
+            assert.same({}, Linked.outbox(db))
+            lifetimeKills(5100)
+            ns.Events.dispatch("PLAYER_PVP_KILLS_CHANGED", "player")
+            assert.same({ pvpId(HK_100) }, Linked.outbox(db))
+        end)
+
+        it("does the same for a character without any stored baselines", function()
             db.characters[game.guid].baselines = nil
+            lifetimeKills(800)
             ns.Events.dispatch("PLAYER_PVP_KILLS_CHANGED", "player")
+            assert.same({}, Linked.outbox(db))
+            assert.equals(800, db.characters[game.guid].baselines.hk)
+        end)
+
+        it("does nothing without the API, unlinked or before the addon is ready", function()
+            lifetimeKills(1000)
             db.characters[game.guid].baselines = { hk = 0 }
             _G.GetPVPLifetimeStats = nil
             assert.has_no.errors(function() ns.Events.dispatch("PLAYER_PVP_KILLS_CHANGED", "player") end)
