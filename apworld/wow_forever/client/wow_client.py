@@ -255,7 +255,10 @@ async def inbox_writer_loop(ctx: WoWForeverContext) -> None:
         await ctx.inbox_dirty.wait()
         await asyncio.sleep(INBOX_DEBOUNCE_SECONDS)
         ctx.inbox_dirty.clear()
-        await ctx.write_inbox()
+        try:
+            await ctx.write_inbox()
+        except Exception:  # noqa: BLE001 - the writer must outlive any single failed round
+            LOGGER.exception("Unexpected error while writing the inbox")
 
 
 async def main(args) -> None:

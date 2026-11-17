@@ -253,3 +253,25 @@ def test_watch_loop_survives_an_unexpected_error_and_keeps_syncing(tmp_path, mon
         run_with_context(wow, scenario)
     assert calls == [1, 2]
     assert any("Unexpected error while syncing" in r.getMessage() and r.exc_info for r in caplog.records)
+
+
+def test_inbox_writer_loop_survives_an_unexpected_error_and_keeps_writing(tmp_path, monkeypatch, caplog):
+    monkeypatch.setattr(wow_client, "INBOX_DEBOUNCE_SECONDS", 0.01)
+    calls = []
+
+    async def scenario(ctx):
+        async def flaky_write():
+            calls.append(len(calls) + 1)
+            if len(calls) == 1:
+                ctx.inbox_dirty.set()  # ask for another round
+                raise RuntimeError("boom")
+            ctx.exit_event.set()
+
+        ctx.write_inbox = flaky_write
+        ctx.inbox_dirty.set()
+        await asyncio.wait_for(wow_client.inbox_writer_loop(ctx), timeout=5)
+
+    with caplog.at_level("ERROR", logger="Client"):
+        run_with_context(tmp_path, scenario)
+    assert calls == [1, 2]
+    assert any("Unexpected error while writing the inbox" in r.getMessage() and r.exc_info for r in caplog.records)
