@@ -488,6 +488,90 @@ describe("Panel", function()
         it("does nothing in refresh while closed", function()
             assert.has_no.errors(function() ns.Panel.refresh() end)
         end)
+
+        describe("quest names that load later", function()
+            local titles, requests, timers
+
+            before_each(function()
+                titles, requests, timers = {}, {}, {}
+                _G.C_QuestLog = {
+                    GetTitleForQuestID = function(id) return titles[id] end,
+                    RequestLoadQuestByID = function(id) requests[#requests + 1] = id end,
+                }
+                _G.C_Timer = { After = function(delay, callback) timers[#timers + 1] = { delay, callback } end }
+                link({ locations = { [questLocation(784)] = true } })
+            end)
+
+            local function runTimers()
+                local due = timers
+                timers = {}
+                for _, timer in ipairs(due) do
+                    timer[2]()
+                end
+            end
+
+            it("shows the numbered label first, then the title once the game has loaded it", function()
+                ns.Panel.toggle()
+                assert.equals("Quest 784", shownRows()[2].text)
+                assert.same({ 784 }, requests)
+                titles[784] = "Lazy Peons"
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 784, true)
+                runTimers()
+                assert.equals("Lazy Peons", shownRows()[2].text)
+            end)
+
+            it("redraws at once when the client has no C_Timer", function()
+                _G.C_Timer = nil
+                ns.Panel.toggle()
+                titles[784] = "Lazy Peons"
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 784, true)
+                assert.equals("Lazy Peons", shownRows()[2].text)
+            end)
+
+            it("keeps the scroll position on a load redraw but not on a normal refresh", function()
+                ns.Panel.toggle()
+                assert.is_falsy(ns.Panel.create().List.retainScrollPosition)
+                titles[784] = "Lazy Peons"
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 784, true)
+                runTimers()
+                assert.is_true(ns.Panel.create().List.retainScrollPosition)
+                ns.Panel.refresh()
+                assert.is_falsy(ns.Panel.create().List.retainScrollPosition)
+            end)
+
+            it("ignores failed loads and quests this addon never asked for", function()
+                ns.Panel.toggle()
+                titles[784] = "Lazy Peons"
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 784, false)
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 999, true)
+                assert.same({}, timers)
+                assert.equals("Quest 784", shownRows()[2].text)
+            end)
+
+            it("does nothing while the window is closed", function()
+                ns.Panel.toggle()
+                ns.Panel.toggle()
+                titles[784] = "Lazy Peons"
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 784, true)
+                assert.same({}, timers)
+            end)
+
+            it("redraws once for a burst of loads, 0.25 s after the first", function()
+                link({ locations = { [questLocation(784)] = true, [questLocation(788)] = true } })
+                ns.Panel.toggle()
+                titles[784], titles[788] = "Lazy Peons", "Your Place In The World"
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 784, true)
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 788, true)
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 784, true)
+                assert.equals(1, #timers)
+                assert.equals(0.25, timers[1][1])
+                runTimers()
+                local shown = texts(shownRows())
+                assert.is_true(shown[2] == "Lazy Peons" or shown[3] == "Lazy Peons")
+                ns.Events.dispatch("QUEST_DATA_LOAD_RESULT", 784, true)
+                assert.equals(1, #timers) -- a new burst may schedule again
+            end)
+        end)
     end)
 
     describe("rows in the list", function()

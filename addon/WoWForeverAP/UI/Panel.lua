@@ -510,7 +510,7 @@ local function showMessage(snapshot)
     frame.LinkButton:SetShown(message.linkSlotKey ~= nil)
 end
 
-local function showRows(snapshot)
+local function showRows(snapshot, retainScroll)
     local line1, line2 = Panel.headerLines(snapshot)
     frame.Line1:SetText(line1)
     frame.Line2:SetText(line2)
@@ -518,20 +518,25 @@ local function showRows(snapshot)
     frame.LinkButton:Hide()
     showTabs(true)
     frame.List:Show()
-    frame.List:SetDataProvider(CreateDataProvider(Panel.rows(Panel.activeTab, snapshot)))
+    frame.List:SetDataProvider(CreateDataProvider(Panel.rows(Panel.activeTab, snapshot)), retainScroll == true)
 end
 
---- Redraws the window from the current state; does nothing while it is closed.
-function Panel.refresh()
+local function redraw(retainScroll)
     if not (frame and frame:IsShown()) then
         return
     end
     local snapshot = Panel.snapshot()
     if Panel.state(snapshot) == "linked" then
-        showRows(snapshot)
+        showRows(snapshot, retainScroll)
     else
         showMessage(snapshot)
     end
+end
+
+--- Redraws the window from the current state, from the top of the list; does nothing while it is closed.
+--- Takes no argument: the OnShow script passes the frame as its first one.
+function Panel.refresh()
+    redraw(false)
 end
 
 function Panel.selectTab(index)
@@ -554,3 +559,30 @@ function Panel.toggle()
     end
     frame:SetShown(not frame:IsShown())
 end
+
+local NAME_REFRESH_DELAY = 0.25 * SECOND -- one redraw per burst of loaded quests
+local nameRefreshPending = false
+
+local function refreshNames()
+    nameRefreshPending = false
+    redraw(true) -- names change, the list must not jump to the top while the player scrolls
+end
+
+--- QUEST_DATA_LOAD_RESULT: redraws the open window once a quest we asked for is loaded, so its title replaces
+--- "Quest <id>". Loads the Blizzard UI asked for and failed loads change nothing here.
+function Panel.onQuestDataLoaded(questId, success)
+    if success ~= true or not ns.Names.isRequested(questId) or nameRefreshPending then
+        return
+    end
+    if not (frame and frame:IsShown()) then
+        return -- the next OnShow draws the loaded names anyway
+    end
+    if type(C_Timer) == "table" and type(C_Timer.After) == "function" then
+        nameRefreshPending = true
+        C_Timer.After(NAME_REFRESH_DELAY, refreshNames)
+    else
+        refreshNames()
+    end
+end
+
+ns.Events.tryRegister("QUEST_DATA_LOAD_RESULT", Panel.onQuestDataLoaded)
