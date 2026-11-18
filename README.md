@@ -101,6 +101,74 @@ Client facts (D2):
   defaults); the events `ZONE_CHANGED_NEW_AREA` and `PLAYER_ENTERING_WORLD`. Also unconfirmed: the frame level of
   the map overlay (above the map art, below pins) and that the window may open in combat (it has no protected
   frames).
+- **Map overlay zone shapes (plans 010, 013).** Checked against the 12.1.5 UI source, unconfirmed for the Forever
+  client: `C_Map.GetMapInfoAtPosition(mapID, x, y)` (the zone under a point; the addon samples a 480 x 321 grid
+  once per continent and session, about 154,000 calls, and calls it again for the tooltip on every frame the
+  cursor is over the map) and `debugprofilestop()` (only differences between two calls are used, never
+  `debugprofilestart`). The sampling is spread over frames: each frame of the map's data-provider `OnUpdate`
+  (`RegisterDataProviderOnUpdate`) samples rows until `MapShapes.FRAME_BUDGET_MS` (4 ms) has passed, at least one
+  row, or `FALLBACK_ROWS_PER_STEP` (4) rows when the clock is missing; without the per-frame hook it is sampled
+  at once. Nothing is drawn until a continent is finished. Without the APIs the overlay draws nothing. The zone
+  highlight art (`C_Map.GetMapHighlightInfoAtPosition`) was removed after the 1.60.1 check, where it rendered
+  as dark rectangles (plan 013). Open points for the live check: the time until the fills appear on the first
+  open (estimate 1-4 s) and whether the map stays smooth while sampling (lower `FRAME_BUDGET_MS` if not, raise it
+  if the wait is too long); that closing the map or switching continents mid-sampling resumes without errors; that
+  the finer edges (about 0.2 % of the map) are visible and never overlap; holes over cities and sub-zones the zone
+  lookup reports instead of the zone, and fills over coastal water (known); whether the tooltip matches the zone
+  under the cursor; and the banners on a locked and a not-in-seed zone map.
+- **Extra check categories (plan 004).** `instances.csv`: instance ids and names from the Classic Map table
+  (Hoizame), entrance zone and entry level from the Forever dungeon files of AllTheThings (`.contrib/.db/forever/dungeons & raids`).
+  `discoveries.csv`: the exploration areas of the AllTheThings Forever database (`.config/exploration/*` and the
+  `.config/.wago` AreaTable and UiMapAssignment exports). `reputations.csv`: Classic Faction table (Hoizame).
+  `pvp.csv`: battleground map ids and minimum levels from the Classic Map and BattlemasterList tables (Hoizame).
+  `encounters.csv` has no rows: no public source lists the encounter ids of the Classic dungeon bosses.
+- Zone level ranges and profession tier limits are commonly published Classic Era values.
+
+`addon/WoWForeverAP/Data/Generated.lua` is generated from these CSVs by `tools/gen_addon_data.py`; never edit
+it by hand. The same tool writes the "Item reference" section of the game guide between its generated markers
+(`apworld/wow_forever/docs/`); never edit that part by hand.
+
+## Unconfirmed
+
+Everything below was set without access to the live Forever client and **must be confirmed there before the
+first release** (plan 001, decisions D1 and D2). Nothing here is hidden behaviour: each item is a value or a
+data file that may turn out wrong.
+
+Client facts (D2):
+
+- Confirmed 2026-11-17 by the programmer: the Forever game folder is `_forever_` inside the World of Warcraft
+  install (for example `D:\World of Warcraft\_forever_`). No code depends on it; the client uses the folder set with `/wowpath`.
+- Confirmed 2026-11-17 by the programmer in the live Forever client: `GetBuildInfo()` returns "1.60.1", "70938",
+  "Nov 12 2026", 16001, so both TOCs declare `## Interface: 16001` (the addon targets Forever only). `GetProfessions()`
+  exists and returned 5 slot indices (the addon reads up to 6 positions).
+- Confirmed 2026-11-17 by the programmer in the live Forever client: `GetProfessionInfo(index)` returns the rank as
+  3rd and the skill line id as 7th value (e.g. Tailoring: rank 135, skill line 197), as the addon reads them.
+- **Rest of the API.** Forever (build 1.60.1, interface 16001) shares the Mainline API shape; every call was checked
+  against Blizzard's 12.1.5 UI source. `GetProfessions` and `GetProfessionInfo` are confirmed in the live client (above);
+  still unconfirmed there: `C_TradeSkillUI.GetProfessionInfoBySkillLineID` (profession fallback and localised
+  profession names), `C_Map.GetMapInfo` (localised zone names), `C_QuestLog.GetTitleForQuestID`, `C_Map.GetMapLevels` and
+  `C_Map.GetBestMapForUnit` (capture mode), and the events `QUEST_TURNED_IN`, `PLAYER_LEVEL_UP`,
+  `SKILL_LINES_CHANGED`. A missing profession API shows one chat warning; if the client is Classic-style, the
+  `Detect/*` files change (`GetSkillLineInfo` is not implemented: it does not exist in 12.x).
+- **Economy warnings (plan 002).** Checked against the Gethe/wow-ui-source mirror (live branch, 12.x),
+  unconfirmed for the Forever client: the event `PLAYER_INTERACTION_MANAGER_FRAME_SHOW` and
+  `Enum.PlayerInteractionType` members `Auctioneer`, `MailInfo`, `TradePartner`, `GuildBanker` and
+  `AccountBanker`; `C_EventUtils.IsEventValid`; `UIErrorsFrame:AddMessage`. When the enum or the event is
+  missing the addon falls back to `AUCTION_HOUSE_SHOW`, `MAIL_SHOW`, `TRADE_SHOW` and `GUILDBANKFRAME_OPENED`
+  (no fallback exists for the account bank) and skips an event the client refuses to register.
+- **In-game UI (plan 003).** Checked against the same 12.x mirror, unconfirmed for the Forever client:
+  `ButtonFrameTemplate`, `PanelTabButtonTemplate`, `WowScrollBoxList`, `MinimalScrollBar`, `UIPanelButtonTemplate`,
+  `CreateScrollBoxListLinearView`, `ScrollUtil.InitScrollBoxListWithScrollBar`, `CreateDataProvider`,
+  `PanelTemplates_SetNumTabs` / `PanelTemplates_SetTab`, `ButtonFrameTemplate_HidePortrait` (a missing template
+  makes `/wfap` print one chat line instead of opening the window); `WorldMapFrame:AddDataProvider` with
+  `MapCanvasDataProviderMixin` and `RegisterDataProviderOnUpdate`, `C_Map.GetMapInfo`, `Enum.UIMapType` (the
+  overlay is skipped when one is missing; zone shapes: see "Map overlay zone shapes" below);
+  `RaidWarningUtil.AddMessage` (falls back to the deprecated `RaidNotice_AddMessage`, then `UIErrorsFrame`, then
+  chat); `Settings.RegisterVerticalLayoutCategory` / `RegisterProxySetting` /
+  `CreateCheckbox` / `RegisterAddOnCategory` / `OpenToCategory` (without them the options stay at their
+  defaults); the events `ZONE_CHANGED_NEW_AREA` and `PLAYER_ENTERING_WORLD`. Also unconfirmed: the frame level of
+  the map overlay (above the map art, below pins) and that the window may open in combat (it has no protected
+  frames).
 - **Map overlay zone shapes (plan 010).** Checked against the 12.1.5 UI source, unconfirmed for the Forever client:
   `C_Map.GetMapInfoAtPosition(mapID, x, y)` (the zone under a point; the addon samples a 160 x 107 grid once per
   continent and session, about 17,000 calls on the first open, and calls it again for the tooltip on every

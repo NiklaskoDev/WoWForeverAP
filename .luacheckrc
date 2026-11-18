@@ -26,6 +26,7 @@ read_globals = {
     "CreateFrame",
     "CreateFromMixins",
     "CreateScrollBoxListLinearView",
+    "debugprofilestop",
     "Enum",
     "GameTooltip",
     "GetBattlefieldWinner",

@@ -7,8 +7,14 @@ Sections per version: Added, Changed, Fixed, Removed, Security.
 ### Added
 - Item descriptions (plan 011): every item has a short description generated from the game data, as the world's item descriptions and as an "Item reference" section of the game guide, kept in sync by `tools/gen_addon_data.py --check`.
 
+### Changed
+- World map overlay (plan 013): zone fills follow borders three times as finely (480 x 321 grid) and are sampled over several frames, so opening a continent map does not stutter; fills appear once sampling finishes (first open per session).
+
 ### Fixed
 - The world map overlay draws zone-shaped fills (strips) by default instead of dark rectangles from the zone highlight art.
+
+### Removed
+- The unused zone highlight art option of the map overlay (`Style.MAP_SHAPE_SOURCE`, plan 013); strips are the only shape source.
 
 ## [0.2.0] - 2026-11-18
 ### Added
