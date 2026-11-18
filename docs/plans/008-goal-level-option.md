@@ -1,6 +1,6 @@
 # 008 — Goal level option (level cap slider)
 
-Status: approved
+Status: implemented
 Type: feature
 Version impact: minor — new option, backward compatible (default keeps today's seeds); together with 009 and 010 the next release would be 0.2.0. No release without the programmer's word.
 
@@ -72,5 +72,6 @@ Resolved 2026-11-18: the programmer accepted every recommendation below (D1 rang
 - **D3 Zones above the cap in the addon.** (a) "Not in your seed": no warning when entering, dark map tint (they are not in the seed). (b) "Locked": warnings and red tint, although no item will ever unlock them. **Recommend (a)**.
 
 ## Risks / follow-ups
+- Implemented addition (review, accepted): an explicit `start_zone` whose `min_level` is above `goal_level` raises `OptionError` ("start zone <name> starts above the goal level <n>"); `faction_random` only picks start zones within the goal and raises the existing "no start zone exists … and below the goal level" error when none is left. Pinned by `TestStartZoneAboveTheGoal` in `tests/test_goal_level.py`.
 - Low caps on a small faction set may leave few locations; `items.build_pool` already raises a clear `OptionError` when items do not fit. The range-start test guards it.
 - The addon's Data still lists all four tiers; it only ever indexes the first n received, so a capped seed simply never reaches Artisan. The panel shows no "x of 4" tier total today; if it ever does, it must use the slot's tier count.
