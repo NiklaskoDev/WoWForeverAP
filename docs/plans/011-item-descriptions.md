@@ -1,6 +1,6 @@
 # 011 — Item descriptions generated from the game data
 
-Status: approved
+Status: implemented
 Type: feature
 Version impact: minor — user-visible addition (item descriptions, a new guide section), no gameplay, logic, slot-data, inbox or item-id change. No release without the programmer's word.
 
@@ -194,6 +194,8 @@ Resolved 2026-11-18: the programmer accepted every recommendation below (D1 ship
 - **D5 — Detail in the item info.** Options: (a) as specified: honor rule, ranks with skill cap and trainer level, logic levels, goal_level cut, profession_mode, self-found materials (professions about 5 sentences); (b) short: ranks, caps and trainer levels only, logic and self-found details only in the guide. Recommendation: (a) — the request asks where each item sits in the progression.
 
 ## Risks / follow-ups
+- Implemented deviation (review, accepted): `splice_guide` writes a blank line on both sides of the generated section (`"\n\n" + section + "\n\n"`) so Markdown renderers do not fold the last table row into the end-marker comment; text outside the markers stays byte-identical and the splice is idempotent.
+- Follow-up (review): `profession_description` silently leaves a tier without a covering material bracket out of the "character level" list; shipped data has none and `allowed_tiers` drops such tiers from seeds — revisit if brackets ever become incomplete.
 - Descriptions are seed-independent: they cannot say whether an item is in a given seed (faction, goal_level, professions, profession_mode). They name the option instead.
 - The level ranges, tiers and material rows are provisional; the text only restates them and the guide section points to "Unconfirmed content". Wording of the honor rule mirrors the existing "The honor system" section; if that section changes, the template in `descriptions.py` must change with it (not caught by `--check`).
 - Material sentences use rows of all releases; once a later release adds rows, a description could name a source that only exists in that release. Revisit when a second release is added.
