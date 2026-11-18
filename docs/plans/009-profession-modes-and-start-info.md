@@ -91,5 +91,6 @@ Resolved 2026-11-18: the programmer accepted every recommendation below (D1 star
 - **D5 Slot data.** (a) No new keys: the commands show the resulting professions, not the mode. (b) Add `profession_mode` / `team_size` as optional keys (read with defaults so v0.1.0 seeds still load; `inbox.build` must not require them). **Recommend (a)**: nothing in the addon needs the mode.
 
 ## Risks / follow-ups
+- Implemented deviations (accepted): the slot-faction helper is `Names.side(key)` because `Names.faction` already resolves reputation faction ids (used by `UI/Panel.lua`); locale keys `SIDE_ALLIANCE`/`SIDE_HORDE` as planned. `start_info_lines` lives in `apworld/wow_forever/start_info.py`, shared by the client `/start` and the spoiler header (D4 = yes).
 - In team mode nothing says which member takes which primaries; players sort that out themselves.
 - `/start` is a short command name; `CommonClient` has none today. If Archipelago adds one, this client's processor shadows it for this client only.
