@@ -4,6 +4,8 @@ Versions follow `{major}.{minor}.{hotfix}[-prN]` — see `docs/ai/versioning.md`
 Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
+
+## [0.3.1] - 2026-11-18
 ### Fixed
 - Checks tab shows quest names instead of "Quest <id>" for quests the character has never seen; names appear once the game has loaded them.
 
