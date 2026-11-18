@@ -1,6 +1,6 @@
 # 014 — hotfix: quest names in the Checks tab
 
-Status: draft
+Status: implemented (live-client check pending)
 Version: 0.3.0 → 0.3.1
 Gate (fix only · no API/format change · no migration or new dependency · ≤ 3 source files · no critical decision): holds (2 source files; no data-format, SavedVariables or generated-data change)
 
