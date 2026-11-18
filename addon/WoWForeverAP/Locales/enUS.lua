@@ -60,6 +60,17 @@ ns.locales.enUS = {
     STATUS_UNSYNCED = "Checks waiting to be sent: %d",
     STATUS_SLOTS = "Slots in the inbox: %d",
 
+    -- start info
+    SIDE_ALLIANCE = "Alliance",
+    SIDE_HORDE = "Horde",
+    START_FACTION = "Faction: %s",
+    START_ZONE = "Start zone: %s",
+    START_GOAL = "Goal level: %d",
+    START_PRIMARY = "Primary professions: %s",
+    START_SECONDARY = "Secondary professions: %s",
+    START_NONE = "none",
+    START_SLOT_HEADER = "%d. %s",
+
     -- problems
     SLOT_MISSING = "Slot %s is not in the inbox. Start the client for it, then /reload.",
     INBOX_INVALID = "The inbox is missing or damaged. Check that the client is running and /reload.",
@@ -157,6 +168,7 @@ ns.locales.enUS = {
     -- help
     HELP_HEADER = "WoWForeverAP commands:",
     HELP_STATUS = "/wfap status - linked slot, items and checks",
+    HELP_START = "/wfap start - faction, start zone, goal and professions of your slot(s)",
     HELP_LINK = "/wfap link [number] - link this character to a slot",
     HELP_UNLINK = "/wfap unlink - unlink this character",
     HELP_ITEMS = "/wfap items - list received items",

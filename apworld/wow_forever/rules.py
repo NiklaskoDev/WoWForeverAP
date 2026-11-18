@@ -1,4 +1,5 @@
 """Access rules: pure functions of ``(state, world)``; the only place that knows the logic."""
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from BaseClasses import CollectionState
@@ -100,23 +101,33 @@ def has_material_access(state: CollectionState, world: "WoWForeverWorld", skill_
     return any(_has_material_source(state, world, source) for source in sources)
 
 
+def missing_gatherers(professions: Iterable[Profession],
+                      material_sources: dict[tuple[int, int], tuple[ProfessionMaterial, ...]],
+                      data: GameData) -> dict[Profession, list[Profession]]:
+    """Crafting professions among `professions` that could not get materials by themselves: profession -> the
+    gathering professions outside the set they would need."""
+    selected = tuple(professions)
+    selected_ids = {profession.skill_line_id for profession in selected}
+    missing: dict[Profession, list[Profession]] = {}
+    for profession in selected:
+        needed: list[Profession] = []
+        for (crafting_line, _), sources in material_sources.items():
+            if crafting_line != profession.skill_line_id or any(s.source != "gather" for s in sources):
+                continue
+            gatherers = [data.professions_by_id[s.gather_skill_line_id] for s in sources]
+            if all(g.skill_line_id not in selected_ids for g in gatherers):
+                needed.extend(g for g in gatherers if g not in needed)
+        if needed:
+            missing[profession] = needed
+    return missing
+
+
 def unreachable_material_sources(world: "WoWForeverWorld") -> dict[Profession, list[Profession]]:
     """Selected crafting professions that cannot get materials by themselves: profession -> the unselected
     gathering professions they would need. Empty with market access."""
     if has_market_access(world):
         return {}
-    missing: dict[Profession, list[Profession]] = {}
-    for profession in world.selected_professions:
-        needed: list[Profession] = []
-        for (crafting_line, _), sources in world.material_sources.items():
-            if crafting_line != profession.skill_line_id or any(s.source != "gather" for s in sources):
-                continue
-            gatherers = [world.data.professions_by_id[s.gather_skill_line_id] for s in sources]
-            if all(g.skill_line_id not in world.selected_skill_line_ids for g in gatherers):
-                needed.extend(g for g in gatherers if g not in needed)
-        if needed:
-            missing[profession] = needed
-    return missing
+    return missing_gatherers(world.selected_professions, world.material_sources, world.data)
 
 
 def _quest_rule(world: "WoWForeverWorld", spec: LocationSpec):

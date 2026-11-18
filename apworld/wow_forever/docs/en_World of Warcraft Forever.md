@@ -29,6 +29,27 @@ one is cut, never the other way round, so a low goal level may leave only the fi
 spans the goal level stays, with its lower quests. In the game, zones above the goal level show as "not in your
 seed".
 
+### Profession modes
+
+`profession_mode` limits how many **primary** professions (Alchemy, Blacksmithing, Enchanting, Engineering,
+Herbalism, Leatherworking, Mining, Skinning, Tailoring) the seed has. Secondary professions (Cooking, First Aid,
+Fishing) are never limited: every one listed in `professions` is in.
+
+| Mode | Primary professions |
+|---|---|
+| `all` (default) | every one listed in `professions` |
+| `solo` | at most 2, what one character can learn |
+| `team` | at most 2 per team member, `team_size` 2-4 (so 4, 6 or 8) |
+
+`professions` stays the pool. When it lists no more primaries than the mode allows, those are used as listed, so
+you can pick them yourself. When it lists more, the seed picks them at random. With the Auction House, trading,
+mail and shared banks all off, only picks whose crafting professions can reach their gathering profession are
+possible, and generation stops with a message when there is none. In team mode the seed does not say who takes
+which profession: sort that out among yourselves.
+
+`/start` in the client and `/wfap start` in the game show your faction, start zone, goal level and professions;
+the spoiler log lists the same lines for every slot.
+
 Your start zone is unlocked from the beginning (`start_zone`), and one more zone of your faction that covers
 level 11 is sent early so you are never stuck. The logic assumes a character needs a zone that covers every five levels
 on the way up (levels 1-5, 6-10, 11-15, and so on), so a gap in the zones you own blocks the levels above it.

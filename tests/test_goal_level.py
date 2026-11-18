@@ -59,6 +59,13 @@ class TestDefaultGoalLevel(GoalWorldBase):
         counts, digest = seed_digest(self)
         self.assertEqual(counts, DEFAULT_SEED_COUNTS)
         self.assertEqual(digest, DEFAULT_SEED_DIGEST)
+        # Plan 009: the profession modes must not change what the default mode draws or selects.
+        self.assertEqual([p.key for p in self.world.selected_professions],
+                         [p.key for p in load_game_data().professions])
+
+    def test_the_explicit_default_profession_mode_gives_the_same_seed(self):
+        self.generate(seed=DEFAULT_SEED, profession_mode="all", team_size=4)
+        self.assertEqual(seed_digest(self), (DEFAULT_SEED_COUNTS, DEFAULT_SEED_DIGEST))
 
     def test_an_explicit_60_gives_the_same_seed_as_the_default(self):
         self.generate(seed=DEFAULT_SEED)

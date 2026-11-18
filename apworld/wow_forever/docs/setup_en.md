@@ -44,6 +44,8 @@ the addon asks whether to link the character. Otherwise use:
 - `/wfap link` to link to the only slot, or `/wfap link <number>` to pick one from the list,
 - `/wfap unlink` to remove the link,
 - `/wfap status` for the linked slot, received items and open checks,
+- `/wfap start` for the faction, start zone, goal level and professions of the slot (works on any character,
+  linked or not, once the inbox has the slot; unlinked, it lists every slot in the inbox),
 - `/wfap rules` for the economy rules of the slot (Auction House, trading, mail, shared banks, boosts),
 - `/wfap care` for your Care Packages, and `/wfap care use` to spend one,
 - `/wfap options` opens the addon options (also under Options > AddOns).
@@ -81,6 +83,8 @@ map tint and the warnings off. Hints show in the window after the client has wri
 - `/wowpath [folder]` shows or sets the game folder.
 - `/sync` reads the addon's saved data and rewrites the inbox now.
 - `/status` shows linked characters, checks waiting to be sent and the inbox file.
+- `/start` shows the faction, start zone, goal level and professions of the connected slot. It works as soon as the
+  client is connected, before the game is started: use it to pick the faction and the character to start with.
 
 ## Troubleshooting
 
