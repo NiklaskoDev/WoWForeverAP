@@ -18,8 +18,9 @@ Style.ACCENT_HEX = "d4a017" -- chat prefix, window headers
 
 Style.COLORS = {
     accent = color("D4A017"),
-    locked = color("8C2A2A", 0.35), -- map tint of a locked zone
-    unavailable = color("000000", 0.55), -- map tint of a zone that is not part of the seed
+    locked = color("8C2A2A", 0.45), -- map fill of a locked zone: red = "you will get it"; one layer, so it reads alone
+    unavailable = color("141414", 0.65), -- map fill of a zone outside the seed: colourless dark = "not in this game"
+    unavailableBanner = color("141414"), -- background of the "Not in your seed" banner (alpha: BANNER_ALPHA)
     checked = color("9D9D9D"), -- text of something already done
     text = color("FFFFFF"), -- text of an open row (GameFontHighlight's own colour)
 }
@@ -32,7 +33,11 @@ Style.FONTS = {
     meta = "GameFontHighlightSmall",
 }
 
-Style.BANNER_ALPHA = 0.85 -- the "Locked" banner on a zone map is more opaque than the map tint, so its text reads
+-- Where the map overlay takes zone shapes from: "art" (the game's zone highlight art, strips for zones without
+-- any) or "runs" (strips sampled from the zone lookup only). Switch to "runs" if the art does not read as a fill.
+Style.MAP_SHAPE_SOURCE = "art"
+
+Style.BANNER_ALPHA = 0.85 -- the banner on a zone map is more opaque than the map tint, so its text reads
 
 Style.SPACING = { xs = 4, sm = 8, md = 12, lg = 16, xl = 24 }
 Style.ROW_HEIGHT = 20

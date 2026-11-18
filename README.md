@@ -92,14 +92,25 @@ Client facts (D2):
   `CreateScrollBoxListLinearView`, `ScrollUtil.InitScrollBoxListWithScrollBar`, `CreateDataProvider`,
   `PanelTemplates_SetNumTabs` / `PanelTemplates_SetTab`, `ButtonFrameTemplate_HidePortrait` (a missing template
   makes `/wfap` print one chat line instead of opening the window); `WorldMapFrame:AddDataProvider` with
-  `MapCanvasDataProviderMixin` and `RegisterDataProviderOnUpdate`, `C_Map.GetMapChildrenInfo`,
-  `C_Map.GetMapRectOnMap` (returns left, right, top, bottom), `Enum.UIMapType` (the overlay is skipped when
-  one is missing); `RaidWarningUtil.AddMessage` (falls back to the deprecated `RaidNotice_AddMessage`, then
+  `MapCanvasDataProviderMixin` and `RegisterDataProviderOnUpdate`, `C_Map.GetMapInfo`, `Enum.UIMapType` (the
+  overlay is skipped when one is missing; zone shapes: see "Map overlay zone shapes" below); `RaidWarningUtil.AddMessage` (falls back to the deprecated `RaidNotice_AddMessage`, then
   `UIErrorsFrame`, then chat); `Settings.RegisterVerticalLayoutCategory` / `RegisterProxySetting` /
   `CreateCheckbox` / `RegisterAddOnCategory` / `OpenToCategory` (without them the options stay at their
-  defaults); the events `ZONE_CHANGED_NEW_AREA` and `PLAYER_ENTERING_WORLD`. Also unconfirmed: how the map
-  tints look (zone rectangles overlap at borders, frame level above the map art and below pins) and that the
-  window may open in combat (it has no protected frames).
+  defaults); the events `ZONE_CHANGED_NEW_AREA` and `PLAYER_ENTERING_WORLD`. Also unconfirmed: the frame level of
+  the map overlay (above the map art, below pins) and that the window may open in combat (it has no protected
+  frames).
+- **Map overlay zone shapes (plan 010).** Checked against the 12.1.5 UI source, unconfirmed for the Forever client:
+  `C_Map.GetMapInfoAtPosition(mapID, x, y)` (the zone under a point; the addon samples a 160 x 107 grid once per
+  continent and session, about 17,000 calls on the first open, and calls it again for the tooltip on every
+  frame the cursor is over the map), `C_Map.GetMapHighlightInfoAtPosition(mapID, x, y)` (returns fileDataID,
+  atlasID, texPercentageX, texPercentageY, textureX, textureY, scrollChildX, scrollChildY; placed like
+  `MapHighlightPinMixin:Refresh`), and the texture methods `SetAtlas`, `SetTexCoord`, `SetVertexColor`,
+  `SetDesaturated`, `SetBlendMode`. Without them the overlay draws nothing. Open points for the live check: whether
+  the highlight art (made for additive blending, alpha channel unknown) reads as a flat fill when desaturated and
+  tinted under `BLEND`, otherwise set `Style.MAP_SHAPE_SOURCE = "runs"`; whether the first open of a continent
+  hitches; holes over cities and sub-zones the zone lookup reports instead of the zone; whether the fills follow
+  the zone borders without overlapping; whether the tooltip matches the zone under the cursor; and the banners on
+  a locked and a not-in-seed zone map.
 - **Extra check categories (plan 004).** Checked against the Gethe/wow-ui-source mirror (live branch, 12.1.5),
   unconfirmed for the Forever client: the event `ENCOUNTER_END` (payload encounterID, encounterName,
   difficultyID, groupSize, success; the addon reads encounterID and success and ignores anything that is not a

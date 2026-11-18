@@ -152,10 +152,11 @@ ns.locales.deDE = {
 
     -- world map and options
     MAP_LOCKED_BANNER = "Gesperrt: nur durchreisen",
+    MAP_UNAVAILABLE_BANNER = "Nicht in deinem Seed",
     MAP_OPEN_CHECKS = "%d offene Checks",
     MAP_NO_OPEN_CHECKS = "Keine offenen Checks",
     OPT_MAP_OVERLAY = "Gesperrte Zonen auf der Weltkarte zeigen",
-    OPT_MAP_OVERLAY_TIP = "Färbt gesperrte Zonen rot und Zonen außerhalb deines Seeds dunkel auf Kontinentkarten.",
+    OPT_MAP_OVERLAY_TIP = "Füllt gesperrte Zonen rot und Zonen außerhalb deines Seeds dunkel auf Kontinentkarten.",
     OPT_WARNINGS = "Vor gesperrten Zonen und Berufen warnen",
     OPT_WARNINGS_TIP = "Zeigt eine Warnung, wenn du eine gesperrte Zone betrittst, einen gesperrten Beruf erlernst oder über deiner freigeschalteten Stufe trainierst. Das Addon warnt nur und hält dich nie auf.",
     OPTIONS_UNAVAILABLE = "Das Optionsfenster des Spiels ist in diesem Client nicht verfügbar. Die Standardwerte bleiben aktiv.",

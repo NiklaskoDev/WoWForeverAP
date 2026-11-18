@@ -33,6 +33,7 @@ Detect\Capture.lua
 Rules\Economy.lua
 Rules\Warnings.lua
 UI\Panel.lua
+UI\MapShapes.lua
 UI\MapOverlay.lua
 UI\Settings.lua
 Commands.lua

@@ -152,10 +152,11 @@ ns.locales.enUS = {
 
     -- world map and options
     MAP_LOCKED_BANNER = "Locked: travel only",
+    MAP_UNAVAILABLE_BANNER = "Not in your seed",
     MAP_OPEN_CHECKS = "%d open checks",
     MAP_NO_OPEN_CHECKS = "No open checks",
     OPT_MAP_OVERLAY = "Show locked zones on the world map",
-    OPT_MAP_OVERLAY_TIP = "Tints locked zones red and zones outside your seed dark on continent maps.",
+    OPT_MAP_OVERLAY_TIP = "Fills locked zones red and zones outside your seed dark on continent maps.",
     OPT_WARNINGS = "Warn about locked zones and professions",
     OPT_WARNINGS_TIP = "Shows a warning when you enter a locked zone, learn a locked profession or train above your unlocked tier. The addon only warns, it never stops you.",
     OPTIONS_UNAVAILABLE = "The game's options panel is not available in this client. The defaults stay on.",

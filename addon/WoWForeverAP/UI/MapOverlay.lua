@@ -1,12 +1,12 @@
--- World map overlay: on a continent map every zone of the data gets a flat colour tint for its state (locked: red,
--- not in the seed: dark, unlocked and start: none), a tooltip with name, state and open checks, and a "Locked"
--- banner on the map of a locked zone. Zone shapes are the rectangles C_Map.GetMapRectOnMap reports, so tints
--- overlap a little at borders (plan 003, decision "map overlay precision": rectangles first).
--- APIs (checked against the 12.x UI source): WorldMapFrame:AddDataProvider, MapCanvasDataProviderMixin (OnAdded,
+-- World map overlay (plans 003, 010): on a continent map every zone of the data that is locked or not in the seed
+-- is filled in its real shape (locked: red, not in the seed: dark; unlocked and start: no fill), with a tooltip
+-- (name, state, open checks); the map of a locked or not-in-the-seed zone gets a banner. Shapes come from
+-- MapShapes: the zone's highlight art, or strips sampled from the zone lookup when there is none.
+-- APIs (checked against the 12.1.5 UI source): WorldMapFrame:AddDataProvider, MapCanvasDataProviderMixin (OnAdded,
 -- RemoveAllData, RefreshAllData, OnCanvasSizeChanged, OnUpdate, GetMap), map:GetCanvas / GetCanvasContainer /
--- GetMapID / GetNormalizedCursorPosition / IsCanvasMouseFocus / RegisterDataProviderOnUpdate,
--- C_Map.GetMapChildrenInfo, C_Map.GetMapRectOnMap (returns left, right, top, bottom), Enum.UIMapType.
--- Whatever is missing leaves the map as it is.
+-- GetMapID / GetNormalizedCursorPosition / IsCanvasMouseFocus / RegisterDataProviderOnUpdate, C_Map.GetMapInfo,
+-- Enum.UIMapType, texture SetColorTexture / SetAtlas / SetTexture / SetTexCoord / SetVertexColor / SetDesaturated /
+-- SetBlendMode (the zone shape APIs are in MapShapes). Whatever is missing leaves the map as it is.
 local _, ns = ...
 
 local MapOverlay = {}
@@ -19,38 +19,6 @@ local function mapType(mapId)
     return type(info) == "table" and info.mapType or nil
 end
 
---- The zone rectangles on a continent map: { { uiMapId, left, right, top, bottom }, ... }, normalised 0..1,
---- for every child zone the addon data lists and the API gives a usable rectangle for.
-function MapOverlay.zoneRects(continentMapId)
-    local rects = {}
-    local children = C_Map and ns.tryCall(C_Map.GetMapChildrenInfo, continentMapId, Enum.UIMapType.Zone)
-    for _, child in ipairs(type(children) == "table" and children or {}) do
-        local uiMapId = type(child) == "table" and child.mapID
-        if ns.Data.zones[uiMapId] then
-            local left, right, top, bottom = ns.tryCall(C_Map.GetMapRectOnMap, uiMapId, continentMapId)
-            if type(left) == "number" and type(right) == "number" and type(top) == "number"
-                and type(bottom) == "number" and right > left and bottom > top then
-                rects[#rects + 1] = { uiMapId = uiMapId, left = left, right = right, top = top, bottom = bottom }
-            end
-        end
-    end
-    return rects
-end
-
---- The zone under the point (x, y): the smallest rectangle containing it, so a small zone inside a big one wins.
-function MapOverlay.zoneAt(zones, x, y)
-    local best, bestArea
-    for _, zone in ipairs(zones) do
-        if x >= zone.left and x <= zone.right and y >= zone.top and y <= zone.bottom then
-            local area = (zone.right - zone.left) * (zone.bottom - zone.top)
-            if not bestArea or area < bestArea then
-                best, bestArea = zone, area
-            end
-        end
-    end
-    return best
-end
-
 local function openCounts(slot, pending)
     local counts = {}
     for _, group in ipairs(ns.Checks.openByZone(slot, pending)) do
@@ -59,8 +27,9 @@ local function openCounts(slot, pending)
     return counts
 end
 
---- What to draw on the map `mapId` for the slot: nil (nothing), { kind = "continent", zones = { { uiMapId, state,
---- tint, left, right, top, bottom, open }, ... } } or { kind = "zone", banner = text } for a locked zone.
+--- What to draw on the map `mapId` for the slot: nil (nothing), { kind = "continent", zones = { [uiMapId] = {
+--- uiMapId, state, tint, open, shape } } } for every zone the continent shows, or { kind = "zone", banner = text,
+--- tone = "locked" | "unavailable" } for a zone map of a locked or not-in-the-seed zone.
 function MapOverlay.view(mapId, slot, pending)
     local types = Enum and Enum.UIMapType
     local kind = types and mapType(mapId)
@@ -69,14 +38,21 @@ function MapOverlay.view(mapId, slot, pending)
     elseif kind == types.Continent then
         local counts = openCounts(slot, pending)
         local zones = {}
-        for _, rect in ipairs(MapOverlay.zoneRects(mapId)) do
-            local state = ns.Checks.zoneState(slot, rect.uiMapId)
-            rect.state, rect.tint, rect.open = state, ns.Style.stateTint(state), counts[rect.uiMapId] or 0
-            zones[#zones + 1] = rect
+        for uiMapId, shape in pairs(ns.MapShapes.forContinent(mapId)) do
+            local state = ns.Checks.zoneState(slot, uiMapId)
+            zones[uiMapId] = {
+                uiMapId = uiMapId, state = state, tint = ns.Style.stateTint(state), open = counts[uiMapId] or 0,
+                shape = shape,
+            }
         end
-        return { kind = "continent", zones = zones }
-    elseif kind == types.Zone and ns.Checks.zoneState(slot, mapId) == "locked" then
-        return { kind = "zone", banner = ns.L.MAP_LOCKED_BANNER }
+        return next(zones) and { kind = "continent", zones = zones } or nil
+    elseif kind == types.Zone then
+        local state = ns.Checks.zoneState(slot, mapId)
+        if state == "locked" then
+            return { kind = "zone", banner = ns.L.MAP_LOCKED_BANNER, tone = "locked" }
+        elseif state == "unavailable" then
+            return { kind = "zone", banner = ns.L.MAP_UNAVAILABLE_BANNER, tone = "unavailable" }
+        end
     end
     return nil
 end
@@ -96,14 +72,39 @@ local function hideTooltip(self)
     self.hovered = nil
 end
 
+--- The art a zone is drawn with, or nil for strips: the art must be there, wanted, and placeable the way
+--- Blizzard places it (a file texture needs a size).
+local function usableArt(shape)
+    local art = shape.art
+    if ns.Style.MAP_SHAPE_SOURCE == "art" and art and (art.atlas or (art.width > 0 and art.height > 0)) then
+        return art
+    end
+    return nil
+end
+
+-- Placement math of Blizzard's MapHighlightPinMixin:Refresh (Blizzard_SharedMapDataProviders/
+-- MapHighlightDataProvider.lua), with the canvas-sized overlay in place of the pin.
+local function placeItem(overlay, item, width, height)
+    local texture, art = item.texture, item.art
+    texture:ClearAllPoints()
+    if item.kind == "atlas" then
+        texture:SetPoint("CENTER", overlay, "CENTER", ((art.left + 0.5 * art.width) - 0.5) * width,
+            -((art.top + 0.5 * art.height) - 0.5) * height)
+    elseif item.kind == "file" then
+        texture:SetSize(art.width * width, art.height * height)
+        texture:SetPoint("TOPLEFT", overlay, "TOPLEFT", art.left * width, -art.top * height)
+    else
+        texture:SetSize((item.last - item.first + 1) / ns.MapShapes.COLUMNS * width, height / ns.MapShapes.ROWS)
+        texture:SetPoint("TOPLEFT", overlay, "TOPLEFT", (item.first - 1) / ns.MapShapes.COLUMNS * width,
+            -(item.row - 1) / ns.MapShapes.ROWS * height)
+    end
+end
+
 local function placeTextures(self)
     local canvas = self:GetMap():GetCanvas()
     local width, height = canvas:GetWidth(), canvas:GetHeight()
-    for index, zone in ipairs(self.zones or {}) do
-        local texture = self.textures[index]
-        texture:ClearAllPoints()
-        texture:SetPoint("TOPLEFT", self.overlay, "TOPLEFT", zone.left * width, -zone.top * height)
-        texture:SetSize((zone.right - zone.left) * width, (zone.bottom - zone.top) * height)
+    for _, item in ipairs(self.items or {}) do
+        placeItem(self.overlay, item, width, height)
     end
 end
 
@@ -118,24 +119,70 @@ local function ensureOverlay(self)
     self.textures = {}
 end
 
+--- Dresses a pooled texture for one piece of a zone's fill; a recycled texture may carry the last zone's art.
+local function dress(texture, item)
+    local tint = item.tint
+    texture:SetDesaturated(false)
+    texture:SetBlendMode("BLEND")
+    if item.kind == "run" then
+        texture:SetTexCoord(0, 1, 0, 1)
+        texture:SetVertexColor(1, 1, 1, 1)
+        texture:SetColorTexture(tint.r, tint.g, tint.b, tint.a)
+        return
+    end
+    -- the art is made for additive blending; as a desaturated, tinted layer it should read as a flat fill
+    local art = item.art
+    texture:SetTexCoord(0, art.texRight, 0, art.texBottom)
+    if item.kind == "atlas" then
+        texture:SetAtlas(art.atlas, true)
+    else
+        texture:SetTexture(art.file)
+    end
+    texture:SetDesaturated(true)
+    texture:SetVertexColor(tint.r, tint.g, tint.b, tint.a)
+end
+
+--- The textures a zone needs: one for its art, or one per strip.
+local function zoneItems(zone, items)
+    local art = usableArt(zone.shape)
+    if art then
+        items[#items + 1] = { kind = art.atlas and "atlas" or "file", art = art, tint = zone.tint }
+        return
+    end
+    for _, run in ipairs(zone.shape.runs) do
+        items[#items + 1] = { kind = "run", row = run[1], first = run[2], last = run[3], tint = zone.tint }
+    end
+end
+
 local function drawZones(self, zones)
     ensureOverlay(self)
     self.zones = zones
-    for index, zone in ipairs(zones) do
-        local texture = self.textures[index] or self.overlay:CreateTexture(nil, "ARTWORK")
-        self.textures[index] = texture
-        local tint = zone.tint
-        if tint then
-            texture:SetColorTexture(tint.r, tint.g, tint.b, tint.a)
-            texture:Show()
-        else
-            texture:Hide()
+    local ids = {}
+    for uiMapId, zone in pairs(zones) do
+        if zone.tint then
+            ids[#ids + 1] = uiMapId
         end
     end
+    table.sort(ids) -- the same order on every redraw
+    local items = {}
+    for _, uiMapId in ipairs(ids) do
+        zoneItems(zones[uiMapId], items)
+    end
+    for index, item in ipairs(items) do
+        local texture = self.textures[index] or self.overlay:CreateTexture(nil, "ARTWORK")
+        self.textures[index] = texture
+        item.texture = texture
+        dress(texture, item)
+        texture:Show()
+    end
+    for index = #items + 1, #self.textures do
+        self.textures[index]:Hide()
+    end
+    self.items = items
     placeTextures(self)
 end
 
-local function drawBanner(self, text)
+local function drawBanner(self, text, tone)
     local map = self:GetMap()
     if not self.banner then
         self.banner = CreateFrame("Frame", nil, map)
@@ -144,11 +191,11 @@ local function drawBanner(self, text)
         self.banner:SetPoint("TOP", map:GetCanvasContainer(), "TOP", 0, -ns.Style.SPACING.sm)
         self.banner.background = self.banner:CreateTexture(nil, "BACKGROUND")
         self.banner.background:SetAllPoints(self.banner)
-        local tint = ns.Style.COLORS.locked
-        self.banner.background:SetColorTexture(tint.r, tint.g, tint.b, ns.Style.BANNER_ALPHA)
         self.banner.text = self.banner:CreateFontString(nil, "OVERLAY", ns.Style.FONTS.title)
         self.banner.text:SetPoint("CENTER")
     end
+    local tint = tone == "unavailable" and ns.Style.COLORS.unavailableBanner or ns.Style.COLORS.locked
+    self.banner.background:SetColorTexture(tint.r, tint.g, tint.b, ns.Style.BANNER_ALPHA)
     self.banner.text:SetText(text)
     self.banner:Show()
 end
@@ -164,7 +211,7 @@ end
 
 function ProviderMethods:RemoveAllData()
     hideTooltip(self)
-    self.zones = nil
+    self.zones, self.items = nil, nil
     for _, texture in ipairs(self.textures or {}) do
         texture:Hide()
     end
@@ -188,7 +235,7 @@ function ProviderMethods:RefreshAllData()
     elseif view.kind == "continent" then
         drawZones(self, view.zones)
     else
-        drawBanner(self, view.banner)
+        drawBanner(self, view.banner, view.tone)
     end
 end
 
@@ -209,7 +256,8 @@ function ProviderMethods:OnUpdate()
         return
     end
     local x, y = map:GetNormalizedCursorPosition()
-    local zone = type(x) == "number" and type(y) == "number" and MapOverlay.zoneAt(self.zones, x, y) or nil
+    local uiMapId = type(x) == "number" and type(y) == "number" and ns.MapShapes.zoneAt(map:GetMapID(), x, y)
+    local zone = uiMapId and self.zones[uiMapId] or nil
     if zone == self.hovered then
         return
     end
