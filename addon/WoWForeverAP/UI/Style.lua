@@ -33,9 +33,10 @@ Style.FONTS = {
     meta = "GameFontHighlightSmall",
 }
 
--- Where the map overlay takes zone shapes from: "art" (the game's zone highlight art, strips for zones without
--- any) or "runs" (strips sampled from the zone lookup only). Switch to "runs" if the art does not read as a fill.
-Style.MAP_SHAPE_SOURCE = "art"
+-- Where the map overlay takes zone shapes from: "runs" (strips sampled from the zone lookup only) or "art" (the
+-- game's zone highlight art, strips for zones without any). "art" is kept but does not read as a fill on the live
+-- client: the game draws that art additively over an opaque black background, so under BLEND it is dark rectangles.
+Style.MAP_SHAPE_SOURCE = "runs"
 
 Style.BANNER_ALPHA = 0.85 -- the banner on a zone map is more opaque than the map tint, so its text reads
 
