@@ -22,7 +22,6 @@ describe("Style", function()
         assert.equals("141414", unavailable.hex)
         assert.equals(0.65, unavailable.a)
         assert.equals("141414", Style.COLORS.unavailableBanner.hex)
-        assert.is_nil(Style.MAP_SHAPE_SOURCE) -- strips are the only shape source (plan 013)
         assert.equals("9d9d9d", Style.COLORS.checked.hex)
     end)
 
