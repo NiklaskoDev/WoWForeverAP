@@ -1,6 +1,6 @@
 # 010 — World map overlay with real zone shapes
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: minor — visual overhaul of an existing addon feature, no format change. Part of 0.2.0 with 008 and 009; no release without the programmer's word.
 Depends on: 008 only for the "above the goal level" state, which already arrives as `"unavailable"` from `Checks.zoneState`; can be built in parallel otherwise.
@@ -91,6 +91,7 @@ States handled: overlay off (nothing drawn), not linked / no slot (nothing), API
 - Overlay off / not linked / `Enum` or `C_Map` missing → nothing drawn, no error.
 
 ## Decisions for the programmer
+Resolved 2026-11-18: the programmer accepted every recommendation below (D1 visual language (a): unlocked and start zone clear, locked #8C2A2A at 45 %, not-in-seed #141414 at 65 %, "Not in your seed" banner; D2 highlight art with strip fallback and a switch to strips if the live check fails; D3 sample once and cache, spread over frames only if the live check shows a stutter).
 - **D1 Visual language (needs approval per `docs/ai/ui.md`).** (a) As proposed under UI: unlocked/start clear, locked red `#8C2A2A` 45 %, not-in-seed neutral `#141414` 65 %, plus a "Not in your seed" banner on zone maps. (b) "Spotlight": no red at all — locked `#141414` 40 %, not-in-seed `#141414` 70 %; only playable zones are bright, the label in the tooltip tells locked from absent. (c) Keep today's colours (red 35 %, black 55 %) and only fix the shapes. **Recommend (a)**: one meaning per colour, red = "you will get it", dark = "not in this game".
 - **D2 Shape source.** (a) Zone highlight art (exact, soft edges like Blizzard's hover), with runs only for zones the API gives no art for; the constant switches to runs if the live check fails. (b) Sampled runs only (exact partition, cannot overlap by construction, edges stepped at about 0.6 % of the map; no dependence on how the art blends). (c) Art only, no runs (less code; zones without art stay unfilled). **Recommend (a)**: best look, and the runs path guarantees a clean result whatever the art turns out to be. If (b) or (c) is chosen, drop the unused path from steps 2–4 and its tests.
 - **D3 Sampling cost.** 160 × 107 ≈ 17 000 `GetMapInfoAtPosition` calls on the first open of each continent per session. (a) Synchronous, once, cached. (b) Spread over several frames (draw when done). **Recommend (a)**, and switch to (b) only if the live check shows a hitch; it keeps the code simple.

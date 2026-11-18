@@ -1,6 +1,6 @@
 # 009 — Solo / team profession modes and a "start info" command
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: minor — new options and commands, backward compatible (defaults keep today's seeds; no slot-data or inbox format change). Part of 0.2.0 together with 008 and 010; no release without the programmer's word.
 Depends on: 008 (the start info shows the goal level, and the options sit next to `goal_level`).
@@ -83,6 +83,7 @@ Chat output only (client log and addon chat), same format as `/status` and `/wfa
 - `addon/spec/locale_spec.lua` (existing key parity) passes with the new keys.
 
 ## Decisions for the programmer
+Resolved 2026-11-18: the programmer accepted every recommendation below (D1 start info in both client `/start` and addon `/wfap start`; D2 team size 2–4, two primaries per member, secondaries never scaled; D3 `Professions` is the pool (≤ limit → used as is, more → random pick respecting the self-found rule); D4 start info also in the spoiler log; D5 no new slot-data keys).
 - **D1 Where the start info lives.** (a) Client `/start` only — known right after connecting, before logging in. (b) Addon `/wfap start` only — needs the client to have written the inbox and a `/reload`. (c) Both. **Recommend (c)**: the client answers before a character exists (needed to pick the faction), the addon answers in game on any character.
 - **D2 Team size range and scaling.** (a) `team_size` 2–4, 2 primaries per member (4/6/8; only 9 primaries exist, so 5+ would mean "all"). (b) 2–6, values ≥5 meaning all primaries. **Recommend (a)**. Secondaries are not scaled: every selected secondary is in, as in solo.
 - **D3 Which primaries and how modes combine with `Professions`.** (a) `Professions` is the pool: as many or fewer primaries than the limit → used as listed (player-chosen); more → random pick by the seed that respects the self-found rule. Secondaries: those selected in `Professions` (default all). (b) Always random among all primaries, ignoring `Professions` for primaries. (c) Player must list exactly the limit; more is an error. **Recommend (a)**: covers both "I choose" and "surprise me" and keeps `Professions` meaningful.

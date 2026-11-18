@@ -1,6 +1,6 @@
 # 008 — Goal level option (level cap slider)
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: minor — new option, backward compatible (default keeps today's seeds); together with 009 and 010 the next release would be 0.2.0. No release without the programmer's word.
 
@@ -66,6 +66,7 @@ None.
 - `addon/spec/checks_spec.lua`: zone with `min` 30, `goalLevel` 20 → `"unavailable"` even when its item was received; `goalLevel` missing → old behaviour; start zone stays `"start"`.
 
 ## Decisions for the programmer
+Resolved 2026-11-18: the programmer accepted every recommendation below (D1 range 10–60, default 60; D2 drop all content above the cap (tiers whose trainer or material level is above it included), zones spanning the cap stay; D3 zones above the cap show as "not in your seed").
 - **D1 Range and default.** (a) 10–60, default 60: old YAMLs without the key behave exactly as in v0.1.0. (b) 10–60, default 40: shorter runs by default, but an old YAML silently gets a different game. (c) A higher lower bound (e.g. 20) for more varied seeds at the bottom end. **Recommend (a)**; people who want a shorter run move the slider.
 - **D2 Content above the cap.** (a) Leave out everything whose level need is above the goal: zones with `min_level > goal`, quests with `effective_level > goal`, tiers whose trainer level or material bracket is above the goal (longest prefix), bosses/reputations/PvP above it. Zones that span the goal stay, with their low quests. (b) As (a), but clamp material-bracket levels to the goal instead of dropping those tiers (more profession checks, but the logic would expect level-45 materials at level 40). **Recommend (a)**: the logic stays honest.
 - **D3 Zones above the cap in the addon.** (a) "Not in your seed": no warning when entering, dark map tint (they are not in the seed). (b) "Locked": warnings and red tint, although no item will ever unlock them. **Recommend (a)**.
