@@ -4,6 +4,8 @@ Versions follow `{major}.{minor}.{hotfix}[-prN]` — see `docs/ai/versioning.md`
 Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
+### Fixed
+- The world map overlay draws zone-shaped fills (strips) by default instead of dark rectangles from the zone highlight art.
 
 ## [0.2.0] - 2026-11-18
 ### Added

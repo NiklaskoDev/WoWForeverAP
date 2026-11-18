@@ -106,12 +106,12 @@ Client facts (D2):
   frame the cursor is over the map), `C_Map.GetMapHighlightInfoAtPosition(mapID, x, y)` (returns fileDataID,
   atlasID, texPercentageX, texPercentageY, textureX, textureY, scrollChildX, scrollChildY; placed like
   `MapHighlightPinMixin:Refresh`), and the texture methods `SetAtlas`, `SetTexCoord`, `SetVertexColor`,
-  `SetDesaturated`, `SetBlendMode`. Without them the overlay draws nothing. Open points for the live check: whether
-  the highlight art (made for additive blending, alpha channel unknown) reads as a flat fill when desaturated and
-  tinted under `BLEND`, otherwise set `Style.MAP_SHAPE_SOURCE = "runs"`; whether the first open of a continent
-  hitches; holes over cities and sub-zones the zone lookup reports instead of the zone; whether the fills follow
-  the zone borders without overlapping; whether the tooltip matches the zone under the cursor; and the banners on
-  a locked and a not-in-seed zone map.
+  `SetDesaturated`, `SetBlendMode`. Without them the overlay draws nothing. Live result on client 1.60.1: the
+  highlight art renders as dark rectangles (Blizzard draws it with `alphaMode="ADD"`), so the default is
+  `Style.MAP_SHAPE_SOURCE = "runs"`; strips draw non-overlapping zone-shaped fills on Eastern Kingdoms. Open points
+  for the live check: whether the first open of a continent hitches; holes over cities and sub-zones the zone
+  lookup reports instead of the zone; whether the tooltip matches the zone under the cursor; and the banners on a
+  locked and a not-in-seed zone map.
 - **Extra check categories (plan 004).** Checked against the Gethe/wow-ui-source mirror (live branch, 12.1.5),
   unconfirmed for the Forever client: the event `ENCOUNTER_END` (payload encounterID, encounterName,
   difficultyID, groupSize, success; the addon reads encounterID and success and ignores anything that is not a

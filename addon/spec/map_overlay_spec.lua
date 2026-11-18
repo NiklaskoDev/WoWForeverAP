@@ -273,6 +273,7 @@ describe("MapOverlay", function()
         end)
 
         it("draws the zone's art as one desaturated, tinted texture (atlas)", function()
+            ns.Style.MAP_SHAPE_SOURCE = "art"
             arts[DUN_MOROGH] = { 0, "MapHighlight-DunMorogh", 1, 1, 0.2, 0.3, 0.1, 0.4 }
             install()
             provider():RefreshAllData()
@@ -295,6 +296,7 @@ describe("MapOverlay", function()
         end)
 
         it("draws the zone's art as one desaturated, tinted texture (file) and re-places it", function()
+            ns.Style.MAP_SHAPE_SOURCE = "art"
             arts[DUROTAR] = { 12345, nil, 0.5, 0.75, 0.25, 0.5, 0.125, 0.25 }
             install()
             provider():RefreshAllData()
@@ -314,7 +316,22 @@ describe("MapOverlay", function()
             assert.same({ 500, 500 }, { texture.width, texture.height })
         end)
 
+        it("draws strips, not art, with the default style even where the game has art", function()
+            arts[DUN_MOROGH] = { 0, "MapHighlight-DunMorogh", 1, 1, 0.2, 0.3, 0.1, 0.4 }
+            arts[DUROTAR] = { 12345, nil, 0.5, 0.75, 0.25, 0.5, 0.125, 0.25 }
+            install()
+            provider():RefreshAllData()
+            for _, item in ipairs(provider().items) do
+                assert.equals("run", item.kind)
+            end
+            assert.equals(runCount(), #shownTextures())
+            for _, texture in ipairs(shownTextures()) do
+                assert.is_false(texture.desaturated)
+            end
+        end)
+
         it("falls back to strips for art without a size and everywhere when the source is runs", function()
+            ns.Style.MAP_SHAPE_SOURCE = "art"
             arts[DUROTAR] = { 12345, nil, 1, 1, 0, 0, 0.1, 0.1 }
             arts[DUN_MOROGH] = { 0, "MapHighlight-DunMorogh", 1, 1, 0.2, 0.3, 0.1, 0.4 }
             install()

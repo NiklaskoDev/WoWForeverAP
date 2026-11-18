@@ -22,7 +22,7 @@ describe("Style", function()
         assert.equals("141414", unavailable.hex)
         assert.equals(0.65, unavailable.a)
         assert.equals("141414", Style.COLORS.unavailableBanner.hex)
-        assert.equals("art", Style.MAP_SHAPE_SOURCE)
+        assert.equals("runs", Style.MAP_SHAPE_SOURCE)
         assert.equals("9d9d9d", Style.COLORS.checked.hex)
     end)
 
