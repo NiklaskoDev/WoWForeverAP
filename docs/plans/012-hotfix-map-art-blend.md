@@ -1,6 +1,6 @@
 # 012 — hotfix: map overlay draws dark rectangles with the default "art" shape source
 
-Status: draft
+Status: implemented (live-client check of the default strips pending)
 Version: 0.2.0 → 0.2.1
 Gate (fix only · no API/format change · no migration or new dependency · ≤ 3 source files · no critical decision): holds — one source file (`Style.lua`); the switch to strips is the pre-approved fallback of plan 010 D2 ("highlight art with strip fallback and a switch to strips if the live check fails"); the live check failed.
 
