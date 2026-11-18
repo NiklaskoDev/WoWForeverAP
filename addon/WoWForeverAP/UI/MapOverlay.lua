@@ -1,12 +1,13 @@
--- World map overlay (plans 003, 010): on a continent map every zone of the data that is locked or not in the seed
--- is filled in its real shape (locked: red, not in the seed: dark; unlocked and start: no fill), with a tooltip
--- (name, state, open checks); the map of a locked or not-in-the-seed zone gets a banner. Shapes come from
--- MapShapes: the zone's highlight art, or strips sampled from the zone lookup when there is none.
+-- World map overlay (plans 003, 010, 013): on a continent map every zone of the data that is locked or not in the
+-- seed is filled in its real shape (locked: red, not in the seed: dark; unlocked and start: no fill), with a
+-- tooltip (name, state, open checks); the map of a locked or not-in-the-seed zone gets a banner. Shapes are strips
+-- from MapShapes, sampled over several frames in the provider's OnUpdate (the first open of a continent per session
+-- draws nothing until the sampling is finished; without the per-frame hook it is sampled at once).
 -- APIs (checked against the 12.1.5 UI source): WorldMapFrame:AddDataProvider, MapCanvasDataProviderMixin (OnAdded,
 -- RemoveAllData, RefreshAllData, OnCanvasSizeChanged, OnUpdate, GetMap), map:GetCanvas / GetCanvasContainer /
 -- GetMapID / GetNormalizedCursorPosition / IsCanvasMouseFocus / RegisterDataProviderOnUpdate, C_Map.GetMapInfo,
--- Enum.UIMapType, texture SetColorTexture / SetAtlas / SetTexture / SetTexCoord / SetVertexColor / SetDesaturated /
--- SetBlendMode (the zone shape APIs are in MapShapes). Whatever is missing leaves the map as it is.
+-- Enum.UIMapType, texture SetColorTexture (the zone and clock APIs are in MapShapes). Whatever is missing leaves
+-- the map as it is.
 local _, ns = ...
 
 local MapOverlay = {}
@@ -27,18 +28,23 @@ local function openCounts(slot, pending)
     return counts
 end
 
---- What to draw on the map `mapId` for the slot: nil (nothing), { kind = "continent", zones = { [uiMapId] = {
---- uiMapId, state, tint, open, shape } } } for every zone the continent shows, or { kind = "zone", banner = text,
---- tone = "locked" | "unavailable" } for a zone map of a locked or not-in-the-seed zone.
+--- What to draw on the map `mapId` for the slot: nil (nothing), { kind = "sampling" } for a continent whose shapes
+--- are not sampled yet, { kind = "continent", zones = { [uiMapId] = { uiMapId, state, tint, open, shape } } } for
+--- every zone the continent shows, or { kind = "zone", banner = text, tone = "locked" | "unavailable" } for a zone
+--- map of a locked or not-in-the-seed zone.
 function MapOverlay.view(mapId, slot, pending)
     local types = Enum and Enum.UIMapType
     local kind = types and mapType(mapId)
     if kind == nil then
         return nil
     elseif kind == types.Continent then
+        local shapes = ns.MapShapes.cached(mapId)
+        if not shapes then
+            return { kind = "sampling" }
+        end
         local counts = openCounts(slot, pending)
         local zones = {}
-        for uiMapId, shape in pairs(ns.MapShapes.forContinent(mapId)) do
+        for uiMapId, shape in pairs(shapes) do
             local state = ns.Checks.zoneState(slot, uiMapId)
             zones[uiMapId] = {
                 uiMapId = uiMapId, state = state, tint = ns.Style.stateTint(state), open = counts[uiMapId] or 0,
@@ -72,32 +78,13 @@ local function hideTooltip(self)
     self.hovered = nil
 end
 
---- The art a zone is drawn with, or nil for strips: the art must be there, wanted, and placeable the way
---- Blizzard places it (a file texture needs a size).
-local function usableArt(shape)
-    local art = shape.art
-    if ns.Style.MAP_SHAPE_SOURCE == "art" and art and (art.atlas or (art.width > 0 and art.height > 0)) then
-        return art
-    end
-    return nil
-end
-
--- Placement math of Blizzard's MapHighlightPinMixin:Refresh (Blizzard_SharedMapDataProviders/
--- MapHighlightDataProvider.lua), with the canvas-sized overlay in place of the pin.
+--- Sizes and places the texture of one strip on the canvas-sized overlay.
 local function placeItem(overlay, item, width, height)
-    local texture, art = item.texture, item.art
+    local texture = item.texture
     texture:ClearAllPoints()
-    if item.kind == "atlas" then
-        texture:SetPoint("CENTER", overlay, "CENTER", ((art.left + 0.5 * art.width) - 0.5) * width,
-            -((art.top + 0.5 * art.height) - 0.5) * height)
-    elseif item.kind == "file" then
-        texture:SetSize(art.width * width, art.height * height)
-        texture:SetPoint("TOPLEFT", overlay, "TOPLEFT", art.left * width, -art.top * height)
-    else
-        texture:SetSize((item.last - item.first + 1) / ns.MapShapes.COLUMNS * width, height / ns.MapShapes.ROWS)
-        texture:SetPoint("TOPLEFT", overlay, "TOPLEFT", (item.first - 1) / ns.MapShapes.COLUMNS * width,
-            -(item.row - 1) / ns.MapShapes.ROWS * height)
-    end
+    texture:SetSize((item.last - item.first + 1) / ns.MapShapes.COLUMNS * width, height / ns.MapShapes.ROWS)
+    texture:SetPoint("TOPLEFT", overlay, "TOPLEFT", (item.first - 1) / ns.MapShapes.COLUMNS * width,
+        -(item.row - 1) / ns.MapShapes.ROWS * height)
 end
 
 local function placeTextures(self)
@@ -119,38 +106,10 @@ local function ensureOverlay(self)
     self.textures = {}
 end
 
---- Dresses a pooled texture for one piece of a zone's fill; a recycled texture may carry the last zone's art.
-local function dress(texture, item)
-    local tint = item.tint
-    texture:SetDesaturated(false)
-    texture:SetBlendMode("BLEND")
-    if item.kind == "run" then
-        texture:SetTexCoord(0, 1, 0, 1)
-        texture:SetVertexColor(1, 1, 1, 1)
-        texture:SetColorTexture(tint.r, tint.g, tint.b, tint.a)
-        return
-    end
-    -- the art is made for additive blending; as a desaturated, tinted layer it should read as a flat fill
-    local art = item.art
-    texture:SetTexCoord(0, art.texRight, 0, art.texBottom)
-    if item.kind == "atlas" then
-        texture:SetAtlas(art.atlas, true)
-    else
-        texture:SetTexture(art.file)
-    end
-    texture:SetDesaturated(true)
-    texture:SetVertexColor(tint.r, tint.g, tint.b, tint.a)
-end
-
---- The textures a zone needs: one for its art, or one per strip.
+--- The textures a zone needs: one per strip.
 local function zoneItems(zone, items)
-    local art = usableArt(zone.shape)
-    if art then
-        items[#items + 1] = { kind = art.atlas and "atlas" or "file", art = art, tint = zone.tint }
-        return
-    end
     for _, run in ipairs(zone.shape.runs) do
-        items[#items + 1] = { kind = "run", row = run[1], first = run[2], last = run[3], tint = zone.tint }
+        items[#items + 1] = { row = run[1], first = run[2], last = run[3], tint = zone.tint }
     end
 end
 
@@ -172,7 +131,7 @@ local function drawZones(self, zones)
         local texture = self.textures[index] or self.overlay:CreateTexture(nil, "ARTWORK")
         self.textures[index] = texture
         item.texture = texture
-        dress(texture, item)
+        texture:SetColorTexture(item.tint.r, item.tint.g, item.tint.b, item.tint.a)
         texture:Show()
     end
     for index = #items + 1, #self.textures do
@@ -205,13 +164,14 @@ local ProviderMethods = {}
 function ProviderMethods:OnAdded(map)
     MapCanvasDataProviderMixin.OnAdded(self, map)
     if type(map.RegisterDataProviderOnUpdate) == "function" then
-        map:RegisterDataProviderOnUpdate(self) -- the tooltip follows the cursor
+        map:RegisterDataProviderOnUpdate(self) -- the tooltip follows the cursor, and the sampling steps
+        self.ticking = true
     end
 end
 
 function ProviderMethods:RemoveAllData()
     hideTooltip(self)
-    self.zones, self.items = nil, nil
+    self.zones, self.items, self.sampling = nil, nil, nil
     for _, texture in ipairs(self.textures or {}) do
         texture:Hide()
     end
@@ -229,7 +189,20 @@ function ProviderMethods:RefreshAllData()
     if not slot then
         return
     end
-    local view = MapOverlay.view(self:GetMap():GetMapID(), slot, ns.DB.outboxIds(ns.db, slotKey))
+    local mapId = self:GetMap():GetMapID()
+    local pending = ns.DB.outboxIds(ns.db, slotKey)
+    local view = MapOverlay.view(mapId, slot, pending)
+    if view and view.kind == "sampling" then
+        if self.ticking then
+            self.sampling = mapId -- OnUpdate steps it; nothing is drawn until it is done
+            return
+        end
+        ns.MapShapes.step(mapId) -- no per-frame hook: sample at once
+        view = MapOverlay.view(mapId, slot, pending)
+        if view and view.kind == "sampling" then
+            return -- failed; the next refresh tries again
+        end
+    end
     if not view then
         return
     elseif view.kind == "continent" then
@@ -250,6 +223,16 @@ function ProviderMethods:OnHide()
 end
 
 function ProviderMethods:OnUpdate()
+    if self.sampling then
+        local status = ns.MapShapes.step(self.sampling, ns.MapShapes.FRAME_BUDGET_MS)
+        if status ~= "pending" then
+            self.sampling = nil
+            if status == "done" then
+                self:RefreshAllData()
+            end
+        end
+        return
+    end
     local map = self:GetMap()
     if not (self.zones and map:IsCanvasMouseFocus()) then
         hideTooltip(self)

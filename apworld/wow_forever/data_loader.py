@@ -248,6 +248,15 @@ class GameData:
         return next(item for item in self.misc_items if item.kind == "care_package")
 
 
+def tier_logic_level(data: GameData, tier: ProfessionTier) -> int | None:
+    """The character level the logic needs at the top of ``tier``: its trainer level or the level of the material
+    bracket that covers its skill cap, whichever is higher. It is also the lowest goal level that keeps the tier.
+    None when no bracket covers the tier."""
+    bracket = next((b for b in sorted(data.material_brackets, key=lambda b: b.max_skill)
+                    if tier.max_skill <= b.max_skill), None)
+    return None if bracket is None else max(tier.required_level, bracket.required_level)
+
+
 # --- CSV reading -----------------------------------------------------------------------------
 
 Row = tuple[int, dict[str, str]]  # (physical line number, column -> text)

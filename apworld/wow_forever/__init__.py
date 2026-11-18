@@ -10,6 +10,7 @@ from worlds.LauncherComponents import Component, Type, components, launch
 
 from . import items, locations, regions, rules
 from .data_loader import GameData, Profession, ProfessionMaterial, ProfessionTier, Zone, load_game_data
+from .descriptions import build_item_descriptions
 from .items import CARE_PACKAGE_ITEM_NAME, FILLER_ITEM_NAME, GAME_NAME, ITEM_NAME_TO_ID, ITEM_TABLE, WoWForeverItem
 from .locations import LocationSpec, build_location_name_to_id
 from .options import RANDOM_START_ZONE, WoWForeverOptions, category_switches, category_weights, primary_limit
@@ -43,6 +44,7 @@ class WoWForeverWeb(WebWorld):
         ["WoWForeverAP contributors"],
     )
     tutorials = [setup_en]
+    item_descriptions = build_item_descriptions(load_game_data())
 
 
 class WoWForeverWorld(World):

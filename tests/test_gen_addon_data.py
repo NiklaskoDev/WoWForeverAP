@@ -1,8 +1,11 @@
+import shutil
+
 import gen_addon_data as gen
 import pytest
 from worlds.wow_forever import data_loader, ids
 from worlds.wow_forever.client.lua_table import parse_assignments
 from worlds.wow_forever.data_loader import load_game_data, parse_game_data, read_shipped_files
+from worlds.wow_forever.items import ITEM_NAME_TO_ID
 
 DATA_PREFIX = "ns.Data = "
 
@@ -15,7 +18,16 @@ def output_paths(tmp_path, monkeypatch):
     monkeypatch.setattr(gen, "GENERATED_FILE", generated)
     monkeypatch.setattr(gen, "IDS_FIXTURE_FILE", fixture)
     monkeypatch.setattr(gen, "INBOX_FIXTURE_FILE", tmp_path / "fixtures" / "inbox_from_client.lua")
+    guide = tmp_path / "docs" / "guide.md"
+    guide.parent.mkdir()
+    shutil.copyfile(gen.GUIDE_FILE, guide)
+    monkeypatch.setattr(gen, "GUIDE_FILE", guide)
     return generated, fixture
+
+
+@pytest.fixture
+def guide_file(output_paths):
+    return gen.GUIDE_FILE
 
 
 def generated_data() -> dict:
@@ -124,3 +136,92 @@ def test_check_fails_when_a_csv_changed_and_the_lua_was_not_regenerated(output_p
     assert gen.main([]) == 0
     assert "Elwynn Forest Renamed" in generated.read_text(encoding="utf-8")
     assert gen.main(["--check"]) == 0
+
+
+GUIDE_TEXT = f"intro\n\n{gen.GUIDE_BEGIN}\nold\n{gen.GUIDE_END}\n\noutro\n"
+
+
+def test_guide_section_names_every_item_and_the_rank_and_material_rows():
+    section = gen.build_guide_section(load_game_data())
+    for name in ITEM_NAME_TO_ID:
+        assert name in section
+    assert "| 1 | Apprentice | 75 | 5 | 5 | Launch |" in section
+    assert "| 4 | Artisan | 300 | 35 | 45 | Launch |" in section
+    assert "| Progressive Alchemy | primary | Herbalism |" in section
+    assert "| Progressive Mining | primary | supplies Blacksmithing and Engineering |" in section
+    assert "| Zone: Westfall | Alliance | 10-20 |  | The Deadmines | Launch |" in section
+    assert "| Zone: Elwynn Forest | Alliance | 1-10 | yes |  | Launch |" in section
+    assert gen.GUIDE_BEGIN not in section and gen.GUIDE_END not in section
+
+
+def test_the_guide_section_is_deterministic():
+    assert gen.build_guide_section(load_game_data()) == gen.build_guide_section(load_game_data())
+
+
+def test_splice_replaces_only_between_the_markers_and_is_idempotent():
+    once = gen.splice_guide(GUIDE_TEXT, "NEW")
+    assert once == f"intro\n\n{gen.GUIDE_BEGIN}\n\nNEW\n\n{gen.GUIDE_END}\n\noutro\n"
+    assert once.startswith("intro\n\n" + gen.GUIDE_BEGIN) and once.endswith(gen.GUIDE_END + "\n\noutro\n")
+    assert gen.splice_guide(once, "NEW") == once
+    assert gen.splice_guide(once, "NEWER").count("NEWER") == 1 and "NEW\n" not in gen.splice_guide(once, "NEWER")
+
+
+@pytest.mark.parametrize("text", [
+    "no markers",
+    f"{gen.GUIDE_BEGIN}\nonly begin",
+    f"only end\n{gen.GUIDE_END}",
+    f"{gen.GUIDE_END}\n{gen.GUIDE_BEGIN}",
+    f"{gen.GUIDE_BEGIN}\n{gen.GUIDE_BEGIN}\n{gen.GUIDE_END}",
+    f"{gen.GUIDE_BEGIN}\n{gen.GUIDE_END}\n{gen.GUIDE_END}",
+])
+def test_splice_refuses_missing_doubled_or_misordered_markers(text):
+    with pytest.raises(gen.GuideMarkerError, match="exactly once|BEGIN|must contain"):
+        gen.splice_guide(text, "NEW")
+
+
+def test_check_reports_a_guide_without_markers_and_leaves_it_alone(guide_file, capsys):
+    guide_file.write_text("# No markers here\n", encoding="utf-8")
+    assert gen.main(["--check"]) == 1
+    assert "error:" in capsys.readouterr().err
+    assert gen.main([]) == 1
+    assert guide_file.read_text(encoding="utf-8") == "# No markers here\n"
+
+
+def test_a_missing_guide_is_a_marker_error(guide_file):
+    guide_file.unlink()
+    with pytest.raises(gen.GuideMarkerError, match="missing"):
+        gen.expected_outputs()
+
+
+def test_check_fails_for_a_stale_guide_and_write_fixes_only_the_section(guide_file, monkeypatch, capsys):
+    assert gen.main([]) == 0
+    before = guide_file.read_text(encoding="utf-8")
+    prefix, rest = before.split(gen.GUIDE_BEGIN)
+    suffix = rest.split(gen.GUIDE_END)[1]
+    files = read_shipped_files()
+    files["zones.csv"] = files["zones.csv"].replace("Elwynn Forest", "Elwynn Forest Renamed", 1)
+    monkeypatch.setattr(gen.data_loader, "load_game_data", lambda: parse_game_data(files))
+    assert gen.main(["--check"]) == 1
+    assert gen.display_path(guide_file) in capsys.readouterr().err
+    assert guide_file.read_text(encoding="utf-8") == before
+    assert gen.main([]) == 0
+    after = guide_file.read_text(encoding="utf-8")
+    assert "Zone: Elwynn Forest Renamed" in after
+    assert after.startswith(prefix + gen.GUIDE_BEGIN) and after.endswith(gen.GUIDE_END + suffix)
+    assert gen.main(["--check"]) == 0
+
+
+def test_the_stale_message_names_the_guide(guide_file, capsys):
+    assert gen.main([]) == 0
+    guide_file.write_text(guide_file.read_text(encoding="utf-8").replace("| Zone: Westfall |", "| Zone: Old |"),
+                          encoding="utf-8")
+    assert gen.main(["--check"]) == 1
+    assert gen.display_path(guide_file) in capsys.readouterr().err
+
+
+def test_cell_escapes_pipes_so_a_table_row_keeps_its_columns():
+    assert gen._cell("a|b") == "a\\|b"
+    files = read_shipped_files()
+    files["zones.csv"] = files["zones.csv"].replace("Westfall", "West|fall", 1)
+    section = gen.build_guide_section(parse_game_data(files))
+    assert "| Zone: West\\|fall | Alliance |" in section

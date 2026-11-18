@@ -1,7 +1,8 @@
 local Env = require("helpers.addon_env")
 
 describe("MapOverlay", function()
-    local ns, game, db, map, arts
+    local ns, game, db, map
+    local defaultColumns, defaultRows
 
     local SLOT = "S1:Wow"
     local CONTINENT, ELWYNN, DUN_MOROGH, WESTFALL, DUROTAR, CITY = 1415, 1429, 1426, 1436, 1411, 1453
@@ -26,14 +27,18 @@ describe("MapOverlay", function()
         }
     end
 
-    --- Fake map API: the zone lookup answers from REGIONS (the continent id outside them); `arts[uiMapId]` is the
-    --- list of values GetMapHighlightInfoAtPosition returns inside that zone (nothing when absent).
+    --- Fake map API: the zone lookup answers from REGIONS (the continent id outside them).
     local function installMapApi()
         local types = {
             [CONTINENT] = Enum.UIMapType.Continent, [ELWYNN] = ZONE_TYPE, [DUN_MOROGH] = ZONE_TYPE,
             [WESTFALL] = ZONE_TYPE, [DUROTAR] = ZONE_TYPE, [CITY] = ZONE_TYPE,
         }
-        local highlights = {}
+        -- one answer table per zone, shared between calls: the sampling asks ~150,000 times per continent
+        local answers = {}
+        local function answer(id)
+            answers[id] = answers[id] or { mapID = id }
+            return answers[id]
+        end
         local function zoneOn(x, y)
             for id, rect in pairs(REGIONS) do
                 if x >= rect[1] and x < rect[2] and y >= rect[3] and y < rect[4] then return id end
@@ -44,15 +49,9 @@ describe("MapOverlay", function()
             GetMapInfo = function(mapId) return types[mapId] and { mapID = mapId, mapType = types[mapId] } end,
             GetMapInfoAtPosition = function(mapId, x, y)
                 assert.equals(CONTINENT, mapId)
-                return { mapID = zoneOn(x, y) }
-            end,
-            GetMapHighlightInfoAtPosition = function(mapId, x, y)
-                assert.equals(CONTINENT, mapId)
-                local art = highlights[zoneOn(x, y)]
-                if art then return unpack(art, 1, 8) end
+                return answer(zoneOn(x, y))
             end,
         }
-        return highlights
     end
 
     --- Fake WorldMapFrame with a 1000 x 500 canvas, a cursor and the mixin the game provides.
@@ -95,7 +94,19 @@ describe("MapOverlay", function()
         return provider()
     end
 
-    --- The shown textures of the overlay with their colour (strips) or vertex colour (art).
+    --- Runs the provider's per-frame update until the sampling of the current map is finished.
+    local function finishSampling()
+        for _ = 1, 1000 do
+            if provider().sampling == nil then return end
+            provider():OnUpdate()
+        end
+        error("sampling never finished")
+    end
+
+    --- Samples the continent at once, for the cases that look at the view only.
+    local function sample() assert.equals("done", ns.MapShapes.step(CONTINENT)) end
+
+    --- The shown textures of the overlay with their colour.
     local function shownTextures()
         local shown = {}
         for _, texture in ipairs(provider().textures or {}) do
@@ -110,15 +121,22 @@ describe("MapOverlay", function()
 
     local function colorOf(tint) return { tint.r, tint.g, tint.b, tint.a } end
 
+    after_each(function()
+        _G.debugprofilestop = nil
+    end)
+
     before_each(function()
         ns, game = Env.new()
         ZONE_TYPE = Enum.UIMapType.Zone
         ns.MapShapes.reset()
+        -- a small grid keeps the specs fast (the drawing is the same on any size); one case uses the real grid
+        defaultColumns, defaultRows = ns.MapShapes.COLUMNS, ns.MapShapes.ROWS
+        ns.MapShapes.COLUMNS, ns.MapShapes.ROWS = 60, 40
         db = ns.DB.init(nil)
         ns.db, ns.ready = db, true
         ns.DB.touchCharacter(db, game.guid, "Arthas", "Alliance", "PALADIN")
         REGIONS = freshRegions()
-        arts = installMapApi()
+        installMapApi()
         installWorldMap()
         link({ items = { { id = zoneItem(WESTFALL), sender = "Ben", loc = 1 } },
                locations = { [questLocation(170)] = true, [questLocation(7)] = true, [questLocation(15)] = true } })
@@ -126,6 +144,8 @@ describe("MapOverlay", function()
 
     describe("view", function()
         local function byId() return ns.MapOverlay.view(CONTINENT, slotOf()).zones end
+
+        before_each(sample)
 
         it("describes every data zone of a continent map with its state, tint, open checks and shape", function()
             local view = ns.MapOverlay.view(CONTINENT, slotOf())
@@ -143,7 +163,7 @@ describe("MapOverlay", function()
             assert.equals(0, zones[WESTFALL].open)
             assert.equals("unavailable", zones[DUROTAR].state)
             assert.equals(ns.Style.COLORS.unavailable, zones[DUROTAR].tint)
-            assert.equals(ns.MapShapes.forContinent(CONTINENT)[DUROTAR], zones[DUROTAR].shape)
+            assert.equals(ns.MapShapes.cached(CONTINENT)[DUROTAR], zones[DUROTAR].shape)
         end)
 
         it("shows a zone above the goal level as not in the seed", function()
@@ -163,10 +183,21 @@ describe("MapOverlay", function()
             assert.is_nil(ns.MapOverlay.view(WESTFALL, slotOf())) -- unlocked
         end)
 
+        it("is sampling for a continent whose shapes are not sampled yet", function()
+            ns.MapShapes.reset()
+            assert.same({ kind = "sampling" }, ns.MapOverlay.view(CONTINENT, slotOf()))
+            assert.equals("pending", ns.MapShapes.step(CONTINENT, 4))
+            assert.same({ kind = "sampling" }, ns.MapOverlay.view(CONTINENT, slotOf()))
+            sample()
+            assert.equals("continent", ns.MapOverlay.view(CONTINENT, slotOf()).kind)
+        end)
+
         it("shows nothing for unknown maps, a continent without data zones or a missing API", function()
             assert.is_nil(ns.MapOverlay.view(99999, slotOf()))
             assert.is_nil(ns.MapOverlay.view(nil, slotOf()))
+            ns.MapShapes.reset()
             for id in pairs(REGIONS) do REGIONS[id] = { 5, 6, 5, 6 } end
+            sample()
             assert.is_nil(ns.MapOverlay.view(CONTINENT, slotOf()))
             _G.C_Map = nil
             assert.is_nil(ns.MapOverlay.view(CONTINENT, slotOf()))
@@ -227,13 +258,19 @@ describe("MapOverlay", function()
 
     describe("drawing zone shapes on a continent map", function()
         -- Dun Morogh (locked) and Durotar (unavailable) are the tinted zones; the others stay clear.
-        local function strips(zoneId) return ns.MapShapes.forContinent(CONTINENT)[zoneId].runs end
+        local function strips(zoneId) return ns.MapShapes.cached(CONTINENT)[zoneId].runs end
 
         local function runCount() return #strips(DUN_MOROGH) + #strips(DUROTAR) end
 
-        it("fills with strips where the game has no art: one texture per run, in the state's colour", function()
+        --- Opens the continent map and waits for the sampling, as the game does on show.
+        local function open()
             install()
             provider():RefreshAllData()
+            finishSampling()
+        end
+
+        it("fills with strips: one texture per run, in the state's colour", function()
+            open()
             local shown = shownTextures()
             assert.equals(runCount(), #shown)
             local locked, dark = colorOf(ns.Style.COLORS.locked), colorOf(ns.Style.COLORS.unavailable)
@@ -250,12 +287,30 @@ describe("MapOverlay", function()
             assert.same({ red = #strips(DUN_MOROGH), dark = #strips(DUROTAR) }, counts)
         end)
 
+        it("draws plain colour strips only: every item is a run and a texture carries nothing but its colour",
+            function()
+                open()
+                for _, item in ipairs(provider().items) do
+                    assert.is_number(item.row)
+                    assert.is_number(item.first)
+                    assert.is_number(item.last)
+                    assert.is_nil(item.kind)
+                    assert.is_nil(item.art)
+                end
+                for _, texture in ipairs(provider().textures) do
+                    assert.is_nil(texture.atlas)
+                    assert.is_nil(texture.texture)
+                    assert.is_nil(texture.vertexColor)
+                    assert.is_nil(texture.desaturated)
+                    assert.is_nil(texture.blendMode)
+                    assert.is_nil(texture.texCoord)
+                end
+            end)
+
         it("places a strip from the run and the canvas size, and re-places it when the canvas changes", function()
-            install()
-            provider():RefreshAllData()
+            open()
             local item = provider().items[1] -- zones are drawn in uiMapId order: Durotar first
             local run = strips(DUROTAR)[1]
-            assert.equals("run", item.kind)
             local columns, rows = ns.MapShapes.COLUMNS, ns.MapShapes.ROWS
             local function check(width, height)
                 local point = item.texture.points[1]
@@ -272,95 +327,193 @@ describe("MapOverlay", function()
             check(2000, 1000)
         end)
 
-        it("draws the zone's art as one desaturated, tinted texture (atlas)", function()
-            ns.Style.MAP_SHAPE_SOURCE = "art"
-            arts[DUN_MOROGH] = { 0, "MapHighlight-DunMorogh", 1, 1, 0.2, 0.3, 0.1, 0.4 }
-            install()
-            provider():RefreshAllData()
-            local item
-            for _, candidate in ipairs(provider().items) do
-                if candidate.kind == "atlas" then item = candidate end
-            end
-            local texture = item.texture
-            assert.equals("MapHighlight-DunMorogh", texture.atlas)
-            assert.is_true(texture.atlasSize)
-            assert.equals("BLEND", texture.blendMode)
-            assert.is_true(texture.desaturated)
-            assert.same(colorOf(ns.Style.COLORS.locked), texture.vertexColor)
-            assert.same({ 0, 1, 0, 1 }, texture.texCoord)
-            assert.equals(runCount() - #strips(DUN_MOROGH) + 1, #shownTextures()) -- art replaces the strips
-            -- centre of the art: ((0.1 + 0.5 * 0.2) - 0.5) * 1000, -((0.4 + 0.5 * 0.3) - 0.5) * 500
-            local point = texture.points[1]
-            assert.same({ "CENTER", provider().overlay, "CENTER" }, { point[1], point[2], point[3] })
-            assert.is_true(near(-300, point[4]) and near(-25, point[5]))
-        end)
-
-        it("draws the zone's art as one desaturated, tinted texture (file) and re-places it", function()
-            ns.Style.MAP_SHAPE_SOURCE = "art"
-            arts[DUROTAR] = { 12345, nil, 0.5, 0.75, 0.25, 0.5, 0.125, 0.25 }
-            install()
-            provider():RefreshAllData()
-            local item = provider().items[1]
-            local texture = item.texture
-            assert.equals("file", item.kind)
-            assert.equals(12345, texture.texture)
-            assert.equals("BLEND", texture.blendMode)
-            assert.is_true(texture.desaturated)
-            assert.same(colorOf(ns.Style.COLORS.unavailable), texture.vertexColor)
-            assert.same({ 0, 0.5, 0, 0.75 }, texture.texCoord)
-            assert.same({ "TOPLEFT", provider().overlay, "TOPLEFT", 125, -125 }, texture.points[1])
-            assert.same({ 250, 250 }, { texture.width, texture.height })
-            map.canvas:SetSize(2000, 1000)
-            provider():OnCanvasSizeChanged()
-            assert.same({ "TOPLEFT", provider().overlay, "TOPLEFT", 250, -250 }, texture.points[1])
-            assert.same({ 500, 500 }, { texture.width, texture.height })
-        end)
-
-        it("draws strips, not art, with the default style even where the game has art", function()
-            arts[DUN_MOROGH] = { 0, "MapHighlight-DunMorogh", 1, 1, 0.2, 0.3, 0.1, 0.4 }
-            arts[DUROTAR] = { 12345, nil, 0.5, 0.75, 0.25, 0.5, 0.125, 0.25 }
-            install()
-            provider():RefreshAllData()
-            for _, item in ipairs(provider().items) do
-                assert.equals("run", item.kind)
-            end
-            assert.equals(runCount(), #shownTextures())
-            for _, texture in ipairs(shownTextures()) do
-                assert.is_false(texture.desaturated)
-            end
-        end)
-
-        it("falls back to strips for art without a size and everywhere when the source is runs", function()
-            ns.Style.MAP_SHAPE_SOURCE = "art"
-            arts[DUROTAR] = { 12345, nil, 1, 1, 0, 0, 0.1, 0.1 }
-            arts[DUN_MOROGH] = { 0, "MapHighlight-DunMorogh", 1, 1, 0.2, 0.3, 0.1, 0.4 }
-            install()
-            provider():RefreshAllData()
-            assert.equals(#strips(DUROTAR) + 1, #shownTextures())
-            ns.Style.MAP_SHAPE_SOURCE = "runs"
-            ns.MapOverlay.refresh()
-            assert.equals(runCount(), #shownTextures())
-            for _, texture in ipairs(shownTextures()) do -- recycled art textures are plain strips again
-                assert.is_false(texture.desaturated)
-                assert.same({ 1, 1, 1, 1 }, texture.vertexColor)
-                assert.same({ 0, 1, 0, 1 }, texture.texCoord)
-            end
-        end)
-
         it("draws nothing for unlocked and start zones", function()
-            arts[ELWYNN] = { 0, "MapHighlight-Elwynn", 1, 1, 0.2, 0.3, 0.1, 0.4 }
-            arts[WESTFALL] = { 0, "MapHighlight-Westfall", 1, 1, 0.2, 0.3, 0.1, 0.4 }
-            install()
-            provider():RefreshAllData()
+            open()
             for _, item in ipairs(provider().items) do
-                assert.equals("run", item.kind)
+                assert.is_not_nil(item.tint)
             end
             assert.equals(runCount(), #shownTextures())
+        end)
+
+        it("registers with the map's per-frame hook", function()
+            install()
+            assert.same({ provider() }, map.updating)
+            assert.is_true(provider().ticking)
+        end)
+
+        it("draws nothing on the first refresh of a continent, then everything once the sampling is finished",
+            function()
+                install()
+                provider():RefreshAllData()
+                assert.same({}, shownTextures())
+                assert.is_nil(provider().zones)
+                assert.equals(CONTINENT, provider().sampling)
+                finishSampling()
+                assert.is_not_nil(provider().zones)
+                assert.is_true(#shownTextures() > 0)
+                assert.equals(runCount(), #shownTextures())
+            end)
+
+        it("draws on the real 480 x 321 grid, sampled over several frames", function()
+            ns.MapShapes.COLUMNS, ns.MapShapes.ROWS = defaultColumns, defaultRows
+            assert.same({ 480, 321 }, { defaultColumns, defaultRows })
+            install()
+            provider():RefreshAllData()
+            local frames = 0
+            while provider().sampling do
+                provider():OnUpdate()
+                frames = frames + 1
+                assert.is_true(frames < 1000)
+            end
+            assert.is_true(#shownTextures() > 0)
+            assert.equals(runCount(), #shownTextures())
+        end)
+
+        it("draws a sampled continent at once on the next refresh", function()
+            open()
+            local pool = #provider().textures
+            provider():RefreshAllData()
+            assert.is_nil(provider().sampling)
+            assert.equals(runCount(), #shownTextures())
+            assert.equals(pool, #provider().textures)
+        end)
+
+        it("samples within a frame budget: a slow clock leaves the sampling pending and nothing drawn", function()
+            local now = 0
+            _G.debugprofilestop = function() now = now + 100 return now end -- every row is over budget
+            install()
+            provider():RefreshAllData()
+            provider():OnUpdate()
+            assert.equals(CONTINENT, provider().sampling)
+            assert.same({}, shownTextures())
+            assert.is_nil(provider().zones)
+            assert.is_nil(ns.MapShapes.cached(CONTINENT))
+            finishSampling()
+            assert.equals(runCount(), #shownTextures())
+        end)
+
+        it("shows no tooltip while sampling", function()
+            local now = 0
+            _G.debugprofilestop = function() now = now + 100 return now end
+            install()
+            provider():RefreshAllData()
+            map.cursor = { 0.45, 0.55 }
+            provider():OnUpdate()
+            assert.equals(CONTINENT, provider().sampling)
+            assert.is_false(game.tooltip.shown)
+        end)
+
+        it("stops sampling when the map changes, and resumes without resampling finished rows", function()
+            local count = 0
+            local lookup = C_Map.GetMapInfoAtPosition
+            _G.C_Map.GetMapInfoAtPosition = function(...)
+                count = count + 1
+                return lookup(...)
+            end
+            local now = 0
+            _G.debugprofilestop = function() now = now + 100 return now end -- one row per frame
+            install()
+            provider():RefreshAllData()
+            provider():OnUpdate()
+            provider():OnUpdate()
+            assert.equals(2 * ns.MapShapes.COLUMNS, count)
+            map.mapId = DUN_MOROGH
+            provider():RefreshAllData()
+            assert.is_nil(provider().sampling)
+            assert.is_true(provider().banner:IsShown())
+            provider():OnUpdate() -- nothing to sample on a zone map
+            assert.equals(2 * ns.MapShapes.COLUMNS, count)
+            map.mapId = CONTINENT
+            provider():RefreshAllData()
+            assert.equals(CONTINENT, provider().sampling)
+            assert.is_false(provider().banner:IsShown())
+            finishSampling()
+            assert.equals(ns.MapShapes.COLUMNS * ns.MapShapes.ROWS, count)
+            assert.equals(runCount(), #shownTextures())
+        end)
+
+        it("resumes where it was when the map is closed and opened again", function()
+            local now = 0
+            _G.debugprofilestop = function() now = now + 100 return now end
+            install()
+            provider():RefreshAllData()
+            provider():OnUpdate()
+            provider():OnHide()
+            provider():RefreshAllData() -- the canvas refreshes everything on show
+            assert.equals(CONTINENT, provider().sampling)
+            finishSampling()
+            assert.equals(runCount(), #shownTextures())
+            assert.same({}, game.errors)
+        end)
+
+        it("turning the overlay off while sampling cancels it, turning it on starts over from the cache", function()
+            install()
+            provider():RefreshAllData()
+            db.ui.mapOverlay = false
+            ns.MapOverlay.refresh()
+            assert.is_nil(provider().sampling)
+            provider():OnUpdate()
+            assert.is_nil(ns.MapShapes.cached(CONTINENT)) -- no sampling without the overlay
+            db.ui.mapOverlay = true
+            ns.MapOverlay.refresh()
+            finishSampling()
+            assert.equals(runCount(), #shownTextures())
+        end)
+
+        it("samples at once and draws when the map has no per-frame hook", function()
+            map.RegisterDataProviderOnUpdate = false -- the fake frame answers every missing key, so nil is not enough
+            install()
+            assert.is_nil(provider().ticking)
+            provider():RefreshAllData()
+            assert.is_nil(provider().sampling)
+            assert.equals(runCount(), #shownTextures())
+        end)
+
+        it("draws nothing without the per-frame hook when the API errors, and tries again on the next refresh",
+            function()
+                map.RegisterDataProviderOnUpdate = false -- the fake frame answers any missing key, nil is not enough
+                install()
+                local lookup = C_Map.GetMapInfoAtPosition
+                _G.C_Map.GetMapInfoAtPosition = function() error("restricted") end
+                assert.has_no.errors(function() provider():RefreshAllData() end)
+                assert.same({}, shownTextures())
+                assert.is_nil(provider().zones)
+                _G.C_Map.GetMapInfoAtPosition = lookup
+                provider():RefreshAllData()
+                assert.equals(runCount(), #shownTextures())
+            end)
+
+        it("drops the sampling and draws nothing when the API errors, and draws once it works again", function()
+            install()
+            local lookup = C_Map.GetMapInfoAtPosition
+            _G.C_Map.GetMapInfoAtPosition = function() error("restricted") end
+            provider():RefreshAllData()
+            assert.equals(CONTINENT, provider().sampling)
+            provider():OnUpdate()
+            assert.is_nil(provider().sampling)
+            assert.same({}, shownTextures())
+            assert.is_nil(provider().zones)
+            assert.same({}, game.errors)
+            provider():OnUpdate() -- nothing keeps retrying every frame
+            assert.is_nil(provider().sampling)
+            _G.C_Map.GetMapInfoAtPosition = lookup
+            provider():RefreshAllData()
+            finishSampling()
+            assert.equals(runCount(), #shownTextures())
+        end)
+
+        it("draws nothing when the zone lookup is missing", function()
+            install()
+            _G.C_Map.GetMapInfoAtPosition = nil
+            provider():RefreshAllData()
+            provider():OnUpdate()
+            assert.is_nil(provider().sampling)
+            assert.same({}, shownTextures())
+            assert.same({}, game.errors)
         end)
 
         it("reuses pooled textures and hides the surplus when fewer zones are tinted", function()
-            install()
-            provider():RefreshAllData()
+            open()
             local pool = #provider().textures
             assert.equals(runCount(), pool)
             link({ items = { { id = zoneItem(WESTFALL), sender = "Ben", loc = 1 },
@@ -374,21 +527,19 @@ describe("MapOverlay", function()
         end)
 
         it("lets clicks through: the overlay frame never takes the mouse", function()
-            install()
-            provider():RefreshAllData()
+            open()
             assert.is_not_true(provider().overlay.mouseEnabled)
             assert.is_nil(provider().overlay.scripts.OnMouseDown)
         end)
 
         it("clears the fill when the player turns the overlay off and brings it back", function()
-            install()
-            provider():RefreshAllData()
+            open()
             db.ui.mapOverlay = false
             ns.MapOverlay.refresh()
             assert.is_nil(provider().zones)
             assert.same({}, shownTextures())
             db.ui.mapOverlay = true
-            ns.MapOverlay.refresh()
+            ns.MapOverlay.refresh() -- shapes are cached
             assert.equals(runCount(), #shownTextures())
         end)
 
@@ -397,6 +548,7 @@ describe("MapOverlay", function()
             db.characters[game.guid].slotKey = nil
             provider():RefreshAllData()
             assert.is_nil(provider().overlay)
+            assert.is_nil(provider().sampling)
         end)
 
         it("draws nothing and raises nothing when the map API is missing", function()
@@ -412,8 +564,7 @@ describe("MapOverlay", function()
         end)
 
         it("redraws for the new map when the map changes", function()
-            install()
-            provider():RefreshAllData()
+            open()
             map.mapId = DUN_MOROGH
             provider():RefreshAllData()
             assert.is_nil(provider().zones)
@@ -484,6 +635,7 @@ describe("MapOverlay", function()
         before_each(function()
             install()
             provider():RefreshAllData()
+            finishSampling()
         end)
 
         it("shows name, state and open checks of the zone under the cursor and hides when it leaves", function()

@@ -1,6 +1,6 @@
 # 011 — Item descriptions generated from the game data
 
-Status: draft
+Status: implemented
 Type: feature
 Version impact: minor — user-visible addition (item descriptions, a new guide section), no gameplay, logic, slot-data, inbox or item-id change. No release without the programmer's word.
 
@@ -186,6 +186,7 @@ Guide page only (markdown table + text, existing guide style: `##`/`###` heading
 - Guide without markers (monkeypatched `GUIDE_FILE`) → `BuildError` naming the file.
 
 ## Decisions for the programmer
+Resolved 2026-11-18: the programmer accepted every recommendation below (D1 ship `item_descriptions` anyway, the guide is the visible copy; D2 per-item only, no new item groups; D3 new "Item reference" section before "Unconfirmed content" plus a pointer in the Items bullet; D4 extend `tools/gen_addon_data.py`; D5 full detail).
 - **D1 — Built-in item info is not shown anywhere in Archipelago 0.6.8.** `WebWorld.item_descriptions` exists, but no WebHost page, launcher or client of 0.6.8 displays it (only some worlds' own clients do; core only tests the names). Options: (a) ship it anyway as planned — cheap, the standard field, ready for tools/future AP versions; the guide is the visible copy; (b) drop it and only do the guide; (c) also show descriptions in our AP client (e.g. a command) — a new feature, not requested. Recommendation: (a).
 - **D2 — Per-item descriptions vs item groups.** The world defines no `item_name_groups`. Adding groups ("Zones", "Professions") would allow group descriptions but adds public names players can use in YAML (`start_inventory`, `local_items`, hints) — a public-interface change. Options: (a) per-item only, no groups; (b) add groups plus group descriptions. Recommendation: (a).
 - **D3 — Where the guide content lives.** Options: (a) new `## Item reference` section before "Unconfirmed content" with generated tables (zones, ranks, professions, other items) plus a pointer sentence in the Items bullet; (b) tables inside "What does randomization do to this game?" (a 41-row zone table in the middle of the rules); (c) the full per-item description texts as a list (long, repetitive). Recommendation: (a).
@@ -193,6 +194,8 @@ Guide page only (markdown table + text, existing guide style: `##`/`###` heading
 - **D5 — Detail in the item info.** Options: (a) as specified: honor rule, ranks with skill cap and trainer level, logic levels, goal_level cut, profession_mode, self-found materials (professions about 5 sentences); (b) short: ranks, caps and trainer levels only, logic and self-found details only in the guide. Recommendation: (a) — the request asks where each item sits in the progression.
 
 ## Risks / follow-ups
+- Implemented deviation (review, accepted): `splice_guide` writes a blank line on both sides of the generated section (`"\n\n" + section + "\n\n"`) so Markdown renderers do not fold the last table row into the end-marker comment; text outside the markers stays byte-identical and the splice is idempotent.
+- Follow-up (review): `profession_description` silently leaves a tier without a covering material bracket out of the "character level" list; shipped data has none and `allowed_tiers` drops such tiers from seeds — revisit if brackets ever become incomplete.
 - Descriptions are seed-independent: they cannot say whether an item is in a given seed (faction, goal_level, professions, profession_mode). They name the option instead.
 - The level ranges, tiers and material rows are provisional; the text only restates them and the guide section points to "Unconfirmed content". Wording of the honor rule mirrors the existing "The honor system" section; if that section changes, the template in `descriptions.py` must change with it (not caught by `--check`).
 - Material sentences use rows of all releases; once a later release adds rows, a description could name a source that only exists in that release. Revisit when a second release is added.

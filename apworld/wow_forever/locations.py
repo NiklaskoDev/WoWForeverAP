@@ -15,6 +15,7 @@ from .data_loader import (
     level_location_name,
     load_game_data,
     profession_location_name,
+    tier_logic_level,
 )
 from .items import GAME_NAME
 
@@ -84,11 +85,10 @@ def allowed_tiers(data: GameData, content_release: int, goal_level: int) -> tupl
     """The profession tiers a seed can use: the longest prefix of the released tiers whose trainer level and
     material bracket both fit under ``goal_level``. It stops at the first tier that fails, because the addon maps
     "n tier items received" to "the first n tiers"."""
-    brackets = sorted(data.material_brackets, key=lambda bracket: bracket.max_skill)
     allowed: list[ProfessionTier] = []
     for tier in sorted((t for t in data.profession_tiers if t.release <= content_release), key=lambda t: t.tier):
-        bracket = next((b for b in brackets if tier.max_skill <= b.max_skill), None)
-        if tier.required_level > goal_level or bracket is None or bracket.required_level > goal_level:
+        level = tier_logic_level(data, tier)
+        if level is None or level > goal_level:
             break
         allowed.append(tier)
     return tuple(allowed)

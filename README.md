@@ -57,7 +57,8 @@ Game data lives in `apworld/wow_forever/data/*.csv`; each file names its sources
 - Zone level ranges and profession tier limits are commonly published Classic Era values.
 
 `addon/WoWForeverAP/Data/Generated.lua` is generated from these CSVs by `tools/gen_addon_data.py`; never edit
-it by hand.
+it by hand. The same tool writes the "Item reference" section of the game guide between its generated markers
+(`apworld/wow_forever/docs/`); never edit that part by hand.
 
 ## Unconfirmed
 
@@ -100,18 +101,21 @@ Client facts (D2):
   defaults); the events `ZONE_CHANGED_NEW_AREA` and `PLAYER_ENTERING_WORLD`. Also unconfirmed: the frame level of
   the map overlay (above the map art, below pins) and that the window may open in combat (it has no protected
   frames).
-- **Map overlay zone shapes (plan 010).** Checked against the 12.1.5 UI source, unconfirmed for the Forever client:
-  `C_Map.GetMapInfoAtPosition(mapID, x, y)` (the zone under a point; the addon samples a 160 x 107 grid once per
-  continent and session, about 17,000 calls on the first open, and calls it again for the tooltip on every
-  frame the cursor is over the map), `C_Map.GetMapHighlightInfoAtPosition(mapID, x, y)` (returns fileDataID,
-  atlasID, texPercentageX, texPercentageY, textureX, textureY, scrollChildX, scrollChildY; placed like
-  `MapHighlightPinMixin:Refresh`), and the texture methods `SetAtlas`, `SetTexCoord`, `SetVertexColor`,
-  `SetDesaturated`, `SetBlendMode`. Without them the overlay draws nothing. Live result on client 1.60.1: the
-  highlight art renders as dark rectangles (Blizzard draws it with `alphaMode="ADD"`), so the default is
-  `Style.MAP_SHAPE_SOURCE = "runs"`; strips draw non-overlapping zone-shaped fills on Eastern Kingdoms. Open points
-  for the live check: whether the first open of a continent hitches; holes over cities and sub-zones the zone
-  lookup reports instead of the zone; whether the tooltip matches the zone under the cursor; and the banners on a
-  locked and a not-in-seed zone map.
+- **Map overlay zone shapes (plans 010, 013).** Checked against the 12.1.5 UI source, unconfirmed for the Forever
+  client: `C_Map.GetMapInfoAtPosition(mapID, x, y)` (the zone under a point; the addon samples a 480 x 321 grid
+  once per continent and session, about 154,000 calls, and calls it again for the tooltip on every frame the
+  cursor is over the map) and `debugprofilestop()` (only differences between two calls are used, never
+  `debugprofilestart`). The sampling is spread over frames: each frame of the map's data-provider `OnUpdate`
+  (`RegisterDataProviderOnUpdate`) samples rows until `MapShapes.FRAME_BUDGET_MS` (4 ms) has passed, at least one
+  row, or `FALLBACK_ROWS_PER_STEP` (4) rows when the clock is missing; without the per-frame hook it is sampled
+  at once. Nothing is drawn until a continent is finished. Without the APIs the overlay draws nothing. The zone
+  highlight art (`C_Map.GetMapHighlightInfoAtPosition`) was removed after the 1.60.1 check, where it rendered
+  as dark rectangles (plan 013). Open points for the live check: the time until the fills appear on the first
+  open (estimate 1-4 s) and whether the map stays smooth while sampling (lower `FRAME_BUDGET_MS` if not, raise it
+  if the wait is too long); that closing the map or switching continents mid-sampling resumes without errors; that
+  the finer edges (about 0.2 % of the map) are visible and never overlap; holes over cities and sub-zones the zone
+  lookup reports instead of the zone, and fills over coastal water (known); whether the tooltip matches the zone
+  under the cursor; and the banners on a locked and a not-in-seed zone map.
 - **Extra check categories (plan 004).** Checked against the Gethe/wow-ui-source mirror (live branch, 12.1.5),
   unconfirmed for the Forever client: the event `ENCOUNTER_END` (payload encounterID, encounterName,
   difficultyID, groupSize, success; the addon reads encounterID and success and ignores anything that is not a
@@ -180,7 +184,7 @@ bash scripts/setup_ap.sh     # clone the pinned Archipelago release into .ap/ an
 pytest                       # Python tests
 ruff check .                 # Python lint
 bash scripts/ci.sh           # Lua lint/tests (luacheck, busted), generated-data check, packaging
-python tools/gen_addon_data.py   # regenerate addon/WoWForeverAP/Data/Generated.lua after changing a CSV
+python tools/gen_addon_data.py   # regenerate Generated.lua and the guide's item reference after changing a CSV
 bash scripts/fetch_att.sh    # clone AllTheThings at the commit in tools/att_version.txt into .att/ (dev only)
 python tools/import_att.py   # regenerate quests.csv from it; the review report goes to data_capture/att_report.txt
 python tools/import_att.py --check   # exit 1 when quests.csv differs from what the import would write
