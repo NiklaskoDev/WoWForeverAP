@@ -33,6 +33,10 @@ describe("Checks", function()
         return Env.inbox(overrides).slots["S1:Wow"]
     end
 
+    local function cappedOptions(goalLevel)
+        return { options = { faction = "alliance", startZone = ELWYNN, contentRelease = 1, goalLevel = goalLevel } }
+    end
+
     before_each(function()
         ns = Env.new()
         Checks = ns.Checks
@@ -71,6 +75,31 @@ describe("Checks", function()
             assert.equals("unavailable", Checks.zoneState(slot(), 9001))
             local newer = slot({}, { options = { faction = "alliance", startZone = ELWYNN, contentRelease = 2 } })
             assert.equals("locked", Checks.zoneState(newer, 9001))
+        end)
+
+        it("marks zones that start above the goal level unavailable, even when their item was received", function()
+            ns.Data.zones[9002] = { faction = "both", min = 30, max = 40, name = "High", release = 1 }
+            local capped = cappedOptions(20)
+            assert.equals("unavailable", Checks.zoneState(slot({}, capped), 9002))
+            assert.equals("unavailable", Checks.zoneState(slot({ zoneItem(9002) }, capped), 9002))
+            assert.equals("locked", Checks.zoneState(slot({}, capped), DUN_MOROGH))
+        end)
+
+        it("keeps a zone that spans the goal level in the seed", function()
+            ns.Data.zones[9002] = { faction = "both", min = 20, max = 30, name = "Spanning", release = 1 }
+            local capped = cappedOptions(20)
+            assert.equals("locked", Checks.zoneState(slot({}, capped), 9002))
+        end)
+
+        it("ignores the goal level when the slot has none", function()
+            ns.Data.zones[9002] = { faction = "both", min = 30, max = 40, name = "High", release = 1 }
+            local legacy = { options = { faction = "alliance", startZone = ELWYNN, contentRelease = 1 } }
+            assert.equals("locked", Checks.zoneState(slot({}, legacy), 9002))
+        end)
+
+        it("keeps the start zone the start zone whatever the goal level", function()
+            local capped = cappedOptions(1)
+            assert.equals("start", Checks.zoneState(slot({}, capped), ELWYNN))
         end)
 
         it("returns nothing for a map the data does not list", function()

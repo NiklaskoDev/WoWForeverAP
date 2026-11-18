@@ -18,7 +18,8 @@ local function releaseOf(slot)
     return type(release) == "number" and release or nil
 end
 
---- "start", "unlocked", "locked" or "unavailable" (another faction, or a later content release) for a zone;
+--- "start", "unlocked", "locked" or "unavailable" (another faction, a later content release, or a zone that starts
+--- above the goal level) for a zone;
 --- nil for a map the data does not list (cities, dungeons, zones Forever added after the data was made).
 function Checks.zoneState(slot, uiMapId)
     local zone = ns.Data.zones[uiMapId]
@@ -33,6 +34,10 @@ function Checks.zoneState(slot, uiMapId)
     local otherFaction = zone.faction ~= "both" and not ns.Link.factionMatches(zone.faction, options.faction)
     if otherFaction or (release and zone.release > release) then
         return "unavailable"
+    end
+    local goal = options.goalLevel
+    if type(goal) == "number" and zone.min > goal then
+        return "unavailable" -- no item will ever unlock it: the seed leaves the zone out
     end
     if ns.Inbox.hasItem(slot, ns.Ids.itemId(ns.Ids.ItemCat.ZONE, uiMapId)) then
         return "unlocked"

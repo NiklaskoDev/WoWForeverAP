@@ -87,7 +87,7 @@ def test_shipped_quests_come_from_the_pinned_att_commit():
 
 
 def test_shipped_quest_levels_are_within_the_game():
-    assert all(1 <= quest.req_level <= data_loader.GOAL_LEVEL for quest in load_game_data().quests)
+    assert all(1 <= quest.req_level <= data_loader.MAX_GOAL_LEVEL for quest in load_game_data().quests)
 
 
 def test_shipped_quests_only_need_zones_of_their_own_faction():

@@ -4,6 +4,8 @@ Versions follow `{major}.{minor}.{hotfix}[-prN]` — see `docs/ai/versioning.md`
 Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
+### Added
+- Option `goal_level` (slider, 10-60, default 60; plan 008): the character level that wins the game. Zones that start above it, and quests, profession tiers (a tier is left out when its trainer level or material level is above it, and every tier after it), bosses, reputations and PvP milestones that need a higher level, are no longer in the seed; the level milestones end at the goal level and raids need it. The default keeps today's seeds. In the addon, zones above the goal level show as "not in your seed" with no lock warning.
 
 ## [0.1.0] - 2026-11-17
 ### Added

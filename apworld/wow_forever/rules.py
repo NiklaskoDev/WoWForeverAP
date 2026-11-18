@@ -5,7 +5,7 @@ from BaseClasses import CollectionState
 from worlds.generic.Rules import set_rule
 
 from .data_loader import GameData, MaterialBracket, Profession, ProfessionMaterial, ProfessionTier, Zone
-from .locations import GOAL_LEVEL, GOAL_LOCATION_NAME, LocationKind, LocationSpec
+from .locations import GOAL_LOCATION_NAME, LocationKind, LocationSpec
 
 if TYPE_CHECKING:
     from . import WoWForeverWorld
@@ -13,11 +13,11 @@ if TYPE_CHECKING:
 LEVEL_BRACKET_SIZE = 5  # logic needs a zone that covers every 5th level on the way up
 
 
-def compute_bracket_zone_ids(zones: tuple[Zone, ...]) -> dict[int, tuple[int, ...]]:
+def compute_bracket_zone_ids(zones: tuple[Zone, ...], goal_level: int) -> dict[int, tuple[int, ...]]:
     """For every level bracket start (1, 6, 11, ...) the zones whose level range contains it."""
     return {
         bracket: tuple(zone.ui_map_id for zone in zones if zone.min_level <= bracket <= zone.max_level)
-        for bracket in range(1, GOAL_LEVEL, LEVEL_BRACKET_SIZE)
+        for bracket in range(1, goal_level, LEVEL_BRACKET_SIZE)
     }
 
 
@@ -128,7 +128,7 @@ def _quest_rule(world: "WoWForeverWorld", spec: LocationSpec):
 def _boss_rule(world: "WoWForeverWorld", spec: LocationSpec):
     """The entrance zone is unlocked and the character is at the instance's level; raids need the goal level."""
     instance = world.data.instances_by_id[world.data.encounters_by_id[spec.native].instance_id]
-    level = max(instance.min_level, GOAL_LEVEL) if instance.kind == "raid" else instance.min_level
+    level = max(instance.min_level, world.goal_level) if instance.kind == "raid" else instance.min_level
     return lambda state: (has_zone(state, world, instance.entrance_ui_map_id)
                           and can_reach_level(state, world, level))
 
@@ -162,5 +162,5 @@ def set_rules(world: "WoWForeverWorld") -> None:
     """Attach rules to every location and set the completion condition."""
     for spec in world.location_specs:
         set_rule(world.get_location(spec.name), _rule_for(world, spec))
-    set_rule(world.get_location(GOAL_LOCATION_NAME), lambda state: can_reach_level(state, world, GOAL_LEVEL))
+    set_rule(world.get_location(GOAL_LOCATION_NAME), lambda state: can_reach_level(state, world, world.goal_level))
     world.multiworld.completion_condition[world.player] = lambda state: state.has("Victory", world.player)

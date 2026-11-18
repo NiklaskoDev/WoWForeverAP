@@ -10,7 +10,7 @@ from worlds.LauncherComponents import Component, Type, components, launch
 from . import items, locations, regions, rules
 from .data_loader import GameData, Profession, ProfessionMaterial, ProfessionTier, Zone, load_game_data
 from .items import CARE_PACKAGE_ITEM_NAME, FILLER_ITEM_NAME, GAME_NAME, ITEM_NAME_TO_ID, ITEM_TABLE, WoWForeverItem
-from .locations import GOAL_LEVEL, LocationSpec, build_location_name_to_id
+from .locations import LocationSpec, build_location_name_to_id
 from .options import RANDOM_START_ZONE, WoWForeverOptions, category_switches, category_weights
 from .settings import WoWForeverSettings
 
@@ -47,7 +47,7 @@ class WoWForeverWorld(World):
     """
     World of Warcraft: Forever as an honor-system multiworld. Zones and profession tiers are the items;
     quest turn-ins, character levels and profession skill milestones are the checks, plus optional dungeon bosses,
-    map-area discoveries, reputation standings and PvP milestones. Reach level 60 to win.
+    map-area discoveries, reputation standings and PvP milestones. Reach the goal level to win.
     """
 
     game = GAME_NAME
@@ -62,6 +62,7 @@ class WoWForeverWorld(World):
 
     data: GameData
     content_release: int
+    goal_level: int
     faction: str
     allowed_zones: tuple[Zone, ...]
     start_zone: Zone
@@ -76,24 +77,27 @@ class WoWForeverWorld(World):
     def generate_early(self) -> None:
         self.data = load_game_data()
         self.content_release = self.options.content_release.value
+        self.goal_level = self.options.goal_level.value
         self.faction = self.options.faction.current_key
         self.allowed_zones = tuple(
             zone for zone in self.data.zones
-            if zone.release <= self.content_release and zone.faction in (self.faction, "both"))
+            if zone.release <= self.content_release and zone.faction in (self.faction, "both")
+            and zone.min_level <= self.goal_level)
         self.start_zone = self._resolve_start_zone()
-        self.allowed_tiers = tuple(tier for tier in self.data.profession_tiers if tier.release <= self.content_release)
+        self.allowed_tiers = locations.allowed_tiers(self.data, self.content_release, self.goal_level)
         self.selected_professions = tuple(
             profession for profession in self.data.professions
             if profession.key in self.options.professions.value and profession.release <= self.content_release)
         self.selected_skill_line_ids = frozenset(profession.skill_line_id for profession in self.selected_professions)
         self.material_sources = rules.compute_material_sources(self.data, self.content_release)
         self._check_self_found_materials()
-        self.bracket_zone_ids = rules.compute_bracket_zone_ids(self.allowed_zones)
+        self.bracket_zone_ids = rules.compute_bracket_zone_ids(self.allowed_zones, self.goal_level)
         self.location_specs = locations.select_locations(
             self.content_release, self.faction, frozenset(zone.ui_map_id for zone in self.allowed_zones),
             frozenset(profession.skill_line_id for profession in self.selected_professions),
             self.options.level_milestone_step.value, self.options.profession_milestone_step.value, self.data,
-            category_weights(self.options), self.random, self.options.quest_weight.value)
+            category_weights(self.options), self.random, self.options.quest_weight.value,
+            goal_level=self.goal_level)
 
     def _check_self_found_materials(self) -> None:
         missing = rules.unreachable_material_sources(self)
@@ -159,7 +163,7 @@ class WoWForeverWorld(World):
             "faction": self.faction,
             "start_zone": self.start_zone.ui_map_id,
             "content_release": self.content_release,
-            "goal_level": GOAL_LEVEL,
+            "goal_level": self.goal_level,
             "professions": [profession.skill_line_id for profession in self.selected_professions],
             "level_step": self.options.level_milestone_step.value,
             "profession_step": self.options.profession_milestone_step.value,

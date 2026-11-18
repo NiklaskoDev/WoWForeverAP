@@ -24,7 +24,9 @@ PVP_KINDS = ("hk_total", "bg_win")
 STANDING_NAMES = {5: "Friendly", 6: "Honored", 7: "Revered", 8: "Exalted"}
 REPUTATION_FACTOR = 10  # native id of a reputation location: faction_id * 10 + standing
 MAX_SKILL_VALUE = ids.PROFESSION_SKILL_FACTOR - 1
-GOAL_LEVEL = 60  # the level that wins the game; here (not in locations.py) so the addon generator needs no Archipelago
+# Highest goal level: bounds the goal_level option and the level data. Here (not in locations.py) so the addon
+# generator needs no Archipelago.
+MAX_GOAL_LEVEL = 60
 
 DATA_FILES = (
     "releases.csv",
@@ -598,8 +600,8 @@ def _parse_instances(text: str, zones: Mapping[int, Zone], release_ids: set[int]
         _require_release(file, line, instance.release, release_ids)
         if instance.entrance_ui_map_id not in zones:
             raise DataError(file, line, f"unknown zone {instance.entrance_ui_map_id}")
-        if not 1 <= instance.min_level <= GOAL_LEVEL:
-            raise DataError(file, line, f"min_level must be 1..{GOAL_LEVEL}, got {instance.min_level}")
+        if not 1 <= instance.min_level <= MAX_GOAL_LEVEL:
+            raise DataError(file, line, f"min_level must be 1..{MAX_GOAL_LEVEL}, got {instance.min_level}")
         if instance.group_size < 1:
             raise DataError(file, line, f"group_size must be at least 1, got {instance.group_size}")
         instances.append(instance)
@@ -654,8 +656,8 @@ def _parse_reputations(text: str, zones: Mapping[int, Zone], release_ids: set[in
         if reputation.standing not in STANDING_NAMES:
             allowed = ", ".join(str(standing) for standing in STANDING_NAMES)
             raise DataError(file, line, f"standing must be one of {allowed}, got {reputation.standing}")
-        if not 1 <= reputation.required_level <= GOAL_LEVEL:
-            raise DataError(file, line, f"required_level must be 1..{GOAL_LEVEL}, got {reputation.required_level}")
+        if not 1 <= reputation.required_level <= MAX_GOAL_LEVEL:
+            raise DataError(file, line, f"required_level must be 1..{MAX_GOAL_LEVEL}, got {reputation.required_level}")
         for zone_id in reputation.required_ui_map_ids:
             if zone_id not in zones:
                 raise DataError(file, line, f"unknown zone {zone_id}")
@@ -678,8 +680,8 @@ def _parse_pvp(text: str, release_ids: set[int]) -> tuple[PvpMilestone, ...]:
         _native_in_range(file, line, ids.location_id, ids.LocCat.PVP, milestone.pvp_id)
         if milestone.param < 1:
             raise DataError(file, line, f"param must be at least 1, got {milestone.param}")
-        if not 1 <= milestone.required_level <= GOAL_LEVEL:
-            raise DataError(file, line, f"required_level must be 1..{GOAL_LEVEL}, got {milestone.required_level}")
+        if not 1 <= milestone.required_level <= MAX_GOAL_LEVEL:
+            raise DataError(file, line, f"required_level must be 1..{MAX_GOAL_LEVEL}, got {milestone.required_level}")
         milestones.append(milestone)
     return tuple(milestones)
 
@@ -688,7 +690,7 @@ def _level_and_profession_names(professions: Iterable[Profession],
                                 tiers: Iterable[ProfessionTier]) -> list[tuple[str, str]]:
     """The (file, name) pairs of the level and profession-skill locations, which have no CSV rows of their own."""
     top_skill = max((tier.max_skill for tier in tiers), default=0)
-    names = [("the level locations", level_location_name(level)) for level in range(2, GOAL_LEVEL + 1)]
+    names = [("the level locations", level_location_name(level)) for level in range(2, MAX_GOAL_LEVEL + 1)]
     names += [("professions.csv", profession_location_name(profession.name, skill))
               for profession in professions for skill in range(1, top_skill + 1)]
     return names

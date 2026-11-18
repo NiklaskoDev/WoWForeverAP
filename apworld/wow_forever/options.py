@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from Options import Choice, DefaultOnToggle, OptionSet, PerGameCommonOptions, Range, Toggle
 
-from .data_loader import load_game_data
+from .data_loader import MAX_GOAL_LEVEL, load_game_data
 
 _DATA = load_game_data()
 RANDOM_START_ZONE = 0  # no ui_map_id is 0, so zone options can use their own id as value
@@ -41,6 +41,15 @@ ContentRelease = type("ContentRelease", (Choice,), {
 })
 
 
+class GoalLevel(Range):
+    """Character level that wins the game. Zones that start above it, and quests, profession ranks, bosses,
+    reputations and PvP checks that need a higher level, are left out of the seed."""
+    display_name = "Goal Level"
+    range_start = 10
+    range_end = MAX_GOAL_LEVEL
+    default = MAX_GOAL_LEVEL
+
+
 class Professions(OptionSet):
     """Professions whose tiers are items and whose skill milestones are locations."""
     display_name = "Professions"
@@ -49,7 +58,7 @@ class Professions(OptionSet):
 
 
 class LevelMilestoneStep(Range):
-    """Every how many character levels there is a 'Reach Level' check. Level 60 is always a check."""
+    """Every how many character levels there is a 'Reach Level' check. The goal level is always a check."""
     display_name = "Level Milestone Step"
     range_start = 1
     range_end = 10
@@ -199,6 +208,7 @@ class WoWForeverOptions(PerGameCommonOptions):
     faction: Faction
     start_zone: StartZone
     content_release: ContentRelease
+    goal_level: GoalLevel
     professions: Professions
     level_milestone_step: LevelMilestoneStep
     profession_milestone_step: ProfessionMilestoneStep
