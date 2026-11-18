@@ -1,6 +1,6 @@
 # 010 — World map overlay with real zone shapes
 
-Status: approved
+Status: implemented (live-client visual check pending)
 Type: feature
 Version impact: minor — visual overhaul of an existing addon feature, no format change. Part of 0.2.0 with 008 and 009; no release without the programmer's word.
 Depends on: 008 only for the "above the goal level" state, which already arrives as `"unavailable"` from `Checks.zoneState`; can be built in parallel otherwise.
@@ -35,7 +35,7 @@ None. Cache lives in a Lua upvalue for the session (not SavedVariables).
 - Constants `MapShapes.COLUMNS = 160`, `MapShapes.ROWS = 107` (continent canvases are about 3:2; cell ≈ 0.6 % of the map).
 - `MapShapes.sampleRuns(continentMapId) -> { [uiMapId] = { { row, first, last }, ... } }` — for every cell centre `x = (col - 0.5) / COLUMNS`, `y = (row - 0.5) / ROWS`: `info = C_Map.GetMapInfoAtPosition(continentMapId, x, y)`; keep `info.mapID` only when `ns.Data.zones[info.mapID]` exists and `info.mapID ~= continentMapId`; consecutive cells of one row with the same id merge into one run. Returns `{}` when the API is missing or errors on the first call (stop sampling).
 - `MapShapes.highlightArt(continentMapId, x, y) -> art | nil` — calls `C_Map.GetMapHighlightInfoAtPosition`; returns nil unless `(fileDataID > 0) or atlasID`; else `{ file = fileDataID or nil, atlas = atlasID or nil, texRight = texPercentageX, texBottom = texPercentageY, width = textureX, height = textureY, left = scrollChildX, top = scrollChildY }` (normalised values exactly as returned).
-- `MapShapes.forContinent(continentMapId) -> { [uiMapId] = { runs = {...}, art = art | nil } }` — cached per continent id. For each zone in `sampleRuns`, the probe point is the centre of its longest run (always inside the zone); `art = highlightArt(continent, probeX, probeY)`. An empty result is not cached (retry next open).
+- `MapShapes.forContinent(continentMapId) -> { [uiMapId] = { runs = {...}, art = art | nil } }` — cached per continent id. For each zone in `sampleRuns`, the probe point is the centre of its longest run (always inside the zone); `art = highlightArt(continent, probeX, probeY)`. A completed sampling is cached even when it finds no data zones; only a missing or erroring API is not cached (retry next open) — amended after review.
 - `MapShapes.zoneAt(continentMapId, x, y) -> uiMapId | nil` — `GetMapInfoAtPosition` at the cursor; nil unless it is a data zone other than the continent.
 - `MapShapes.reset()` — clears the cache (specs only).
 
@@ -77,7 +77,7 @@ States handled: overlay off (nothing drawn), not linked / no slot (nothing), API
 `map_shapes_spec.lua` (stub `GetMapInfoAtPosition`: x < 0.5 → zone 1429, x ≥ 0.5 → 1411, a band at the top → a city id not in Data, bottom row → the continent id itself):
 - `sampleRuns` gives one run per row for each zone, merged across the full half; the city and the continent id produce no runs.
 - API missing, or erroring → `{}`; erroring stops after the first call.
-- `forContinent` caches: a second call makes no API calls; an empty result is not cached.
+- `forContinent` caches: a second call makes no API calls, also for a continent whose sampling worked but found no data zones; a missing or erroring API is not cached and retries.
 - Probe point is the centre of the longest run (assert the coordinates passed to `GetMapHighlightInfoAtPosition`).
 - `highlightArt`: nothing / `fileDataID == 0` without atlas → nil; atlas and file cases map the returned values.
 - `zoneAt`: data zone → id; city, continent, nil info, API error → nil.
