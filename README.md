@@ -93,8 +93,9 @@ Client facts (D2):
   `PanelTemplates_SetNumTabs` / `PanelTemplates_SetTab`, `ButtonFrameTemplate_HidePortrait` (a missing template
   makes `/wfap` print one chat line instead of opening the window); `WorldMapFrame:AddDataProvider` with
   `MapCanvasDataProviderMixin` and `RegisterDataProviderOnUpdate`, `C_Map.GetMapInfo`, `Enum.UIMapType` (the
-  overlay is skipped when one is missing; zone shapes: see "Map overlay zone shapes" below); `RaidWarningUtil.AddMessage` (falls back to the deprecated `RaidNotice_AddMessage`, then
-  `UIErrorsFrame`, then chat); `Settings.RegisterVerticalLayoutCategory` / `RegisterProxySetting` /
+  overlay is skipped when one is missing; zone shapes: see "Map overlay zone shapes" below);
+  `RaidWarningUtil.AddMessage` (falls back to the deprecated `RaidNotice_AddMessage`, then `UIErrorsFrame`, then
+  chat); `Settings.RegisterVerticalLayoutCategory` / `RegisterProxySetting` /
   `CreateCheckbox` / `RegisterAddOnCategory` / `OpenToCategory` (without them the options stay at their
   defaults); the events `ZONE_CHANGED_NEW_AREA` and `PLAYER_ENTERING_WORLD`. Also unconfirmed: the frame level of
   the map overlay (above the map art, below pins) and that the window may open in combat (it has no protected

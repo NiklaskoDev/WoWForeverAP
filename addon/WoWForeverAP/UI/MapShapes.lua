@@ -25,11 +25,12 @@ local function dataZoneId(info, continentMapId)
 end
 
 --- The zone partition of a continent map: { [uiMapId] = { { row, first, last }, ... } }, one run per stretch of
---- consecutive cells of one row that belong to the zone. Empty when the API is missing or fails on the first call.
+--- consecutive cells of one row that belong to the zone. Empty when the API is missing or fails on the first call;
+--- the second result tells a finished sampling (true, even with no zones) from that case (false).
 function MapShapes.sampleRuns(continentMapId)
     local runs = {}
     if not (C_Map and type(C_Map.GetMapInfoAtPosition) == "function") then
-        return runs
+        return runs, false
     end
     local columns, rows = MapShapes.COLUMNS, MapShapes.ROWS
     local firstCall = true
@@ -42,7 +43,7 @@ function MapShapes.sampleRuns(continentMapId)
                 -- pcall rather than ns.tryCall: an error on the first call must stop the whole sampling
                 local ok, info = pcall(C_Map.GetMapInfoAtPosition, continentMapId, (col - 0.5) / columns, y)
                 if not ok and firstCall then
-                    return {}
+                    return {}, false
                 end
                 firstCall = false
                 zoneId = ok and dataZoneId(info, continentMapId) or nil
@@ -57,7 +58,7 @@ function MapShapes.sampleRuns(continentMapId)
             end
         end
     end
-    return runs
+    return runs, true
 end
 
 --- The hover art of the zone at (x, y) on the map: { file | atlas, texRight, texBottom, width, height, left, top }
@@ -97,18 +98,20 @@ local function probePoint(runs)
 end
 
 --- Every data zone on a continent map: { [uiMapId] = { runs = { { row, first, last }, ... }, art = art | nil } }.
---- Sampled once per continent and session; an empty result is not kept, so the next call tries again.
+--- Sampled once per continent and session. An empty result is kept too when the API worked (a continent without
+--- data zones), and not kept when it is missing or failed, so the next call tries again.
 function MapShapes.forContinent(continentMapId)
     local cached = cache[continentMapId]
     if cached then
         return cached
     end
     local zones = {}
-    for uiMapId, runs in pairs(MapShapes.sampleRuns(continentMapId)) do
+    local sampled, completed = MapShapes.sampleRuns(continentMapId)
+    for uiMapId, runs in pairs(sampled) do
         local x, y = probePoint(runs)
         zones[uiMapId] = { runs = runs, art = MapShapes.highlightArt(continentMapId, x, y) }
     end
-    if next(zones) then
+    if completed then
         cache[continentMapId] = zones
     end
     return zones

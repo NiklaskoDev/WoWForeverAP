@@ -59,9 +59,9 @@ describe("MapShapes", function()
 
         it("is empty without the API", function()
             _G.C_Map = nil
-            assert.same({}, Shapes.sampleRuns(CONTINENT))
+            assert.same({ {}, false }, { Shapes.sampleRuns(CONTINENT) })
             _G.C_Map = {}
-            assert.same({}, Shapes.sampleRuns(CONTINENT))
+            assert.same({ {}, false }, { Shapes.sampleRuns(CONTINENT) })
         end)
 
         it("stops after the first call when the API errors", function()
@@ -70,7 +70,7 @@ describe("MapShapes", function()
                 count = count + 1
                 error("restricted")
             end
-            assert.same({}, Shapes.sampleRuns(CONTINENT))
+            assert.same({ {}, false }, { Shapes.sampleRuns(CONTINENT) })
             assert.equals(1, count)
         end)
 
@@ -159,11 +159,25 @@ describe("MapShapes", function()
             assert.equals(after * 2, calls.info)
         end)
 
-        it("does not keep an empty result, so the next open tries again", function()
+        it("does not keep a result from a missing or failing API, so the next open tries again", function()
             _G.C_Map = nil
+            assert.same({}, Shapes.forContinent(CONTINENT))
+            installLookup({ GetMapInfoAtPosition = function() error("restricted") end })
             assert.same({}, Shapes.forContinent(CONTINENT))
             installLookup()
             assert.is_not_nil(Shapes.forContinent(CONTINENT)[ELWYNN])
+        end)
+
+        it("keeps an empty result when the API worked, so a continent without data zones is sampled once", function()
+            local count = 0
+            _G.C_Map.GetMapInfoAtPosition = function()
+                count = count + 1
+                return { mapID = CITY }
+            end
+            assert.same({}, Shapes.forContinent(CONTINENT))
+            assert.equals(COLUMNS * ROWS, count)
+            assert.same({}, Shapes.forContinent(CONTINENT))
+            assert.equals(COLUMNS * ROWS, count)
         end)
     end)
 
