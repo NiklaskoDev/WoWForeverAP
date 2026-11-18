@@ -1,6 +1,6 @@
 # 011 — Item descriptions generated from the game data
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: minor — user-visible addition (item descriptions, a new guide section), no gameplay, logic, slot-data, inbox or item-id change. No release without the programmer's word.
 
@@ -186,6 +186,7 @@ Guide page only (markdown table + text, existing guide style: `##`/`###` heading
 - Guide without markers (monkeypatched `GUIDE_FILE`) → `BuildError` naming the file.
 
 ## Decisions for the programmer
+Resolved 2026-11-18: the programmer accepted every recommendation below (D1 ship `item_descriptions` anyway, the guide is the visible copy; D2 per-item only, no new item groups; D3 new "Item reference" section before "Unconfirmed content" plus a pointer in the Items bullet; D4 extend `tools/gen_addon_data.py`; D5 full detail).
 - **D1 — Built-in item info is not shown anywhere in Archipelago 0.6.8.** `WebWorld.item_descriptions` exists, but no WebHost page, launcher or client of 0.6.8 displays it (only some worlds' own clients do; core only tests the names). Options: (a) ship it anyway as planned — cheap, the standard field, ready for tools/future AP versions; the guide is the visible copy; (b) drop it and only do the guide; (c) also show descriptions in our AP client (e.g. a command) — a new feature, not requested. Recommendation: (a).
 - **D2 — Per-item descriptions vs item groups.** The world defines no `item_name_groups`. Adding groups ("Zones", "Professions") would allow group descriptions but adds public names players can use in YAML (`start_inventory`, `local_items`, hints) — a public-interface change. Options: (a) per-item only, no groups; (b) add groups plus group descriptions. Recommendation: (a).
 - **D3 — Where the guide content lives.** Options: (a) new `## Item reference` section before "Unconfirmed content" with generated tables (zones, ranks, professions, other items) plus a pointer sentence in the Items bullet; (b) tables inside "What does randomization do to this game?" (a 41-row zone table in the middle of the rules); (c) the full per-item description texts as a list (long, repetitive). Recommendation: (a).
