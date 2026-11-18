@@ -5,6 +5,15 @@ Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-18
+### Added
+- Option `goal_level` (slider, 10-60, default 60; plan 008): the character level that wins the game. Zones that start above it, and quests, profession tiers (a tier is left out when its trainer level or material level is above it, and every tier after it), bosses, reputations and PvP milestones that need a higher level, are no longer in the seed; the level milestones end at the goal level and raids need it. The default keeps today's seeds. In the addon, zones above the goal level show as "not in your seed" with no lock warning.
+- Options `profession_mode` (`all` default, `solo`, `team`) and `team_size` (2-4, default 2; plan 009): limit the primary professions of a seed to 2 (solo) or 2 per team member, with every selected secondary profession kept. `professions` stays the pool: as many or fewer primaries than the limit are used as listed, more are drawn by the seed, respecting the self-found rule (generation stops with a message when no pick can get its materials). The default mode keeps today's seeds.
+- Start info (plan 009): client command `/start` and addon command `/wfap start` show the slot's faction, start zone, goal level and primary and secondary professions (the addon works on any character, linked or not, and lists every slot when unlinked); the spoiler log carries the same lines.
+
+### Changed
+- World map overlay (plan 010): locked and not-in-seed zones are filled in their real zone shapes (the game's zone highlight art, or strips sampled from its zone lookup) instead of overlapping rectangles, so fills never overlap; locked zones are red at 45 %, zones outside the seed neutral dark at 65 % (previously black), unlocked and start zones stay clear. The tooltip uses the game's own zone lookup, and the map of a zone outside the seed gets a "Not in your seed" banner next to the red "Locked: travel only" one. `Style.MAP_SHAPE_SOURCE` switches to strips if the art does not look right in the live client.
+
 ## [0.1.0] - 2026-11-17
 ### Added
 - Archipelago apworld "World of Warcraft Forever": zone unlocks and progressive profession tiers as items; quest turn-ins, level milestones and profession-skill milestones as locations; goal is reaching level 60. IDs are derived from Blizzard ids, rows carry a content release, options cover faction, start zone, content release, professions and milestone steps. Quest data is unconfirmed until checked in the live client.

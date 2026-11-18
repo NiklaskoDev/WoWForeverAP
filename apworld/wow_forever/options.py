@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from Options import Choice, DefaultOnToggle, OptionSet, PerGameCommonOptions, Range, Toggle
 
-from .data_loader import load_game_data
+from .data_loader import MAX_GOAL_LEVEL, load_game_data
 
 _DATA = load_game_data()
 RANDOM_START_ZONE = 0  # no ui_map_id is 0, so zone options can use their own id as value
@@ -41,6 +41,15 @@ ContentRelease = type("ContentRelease", (Choice,), {
 })
 
 
+class GoalLevel(Range):
+    """Character level that wins the game. Zones that start above it, and quests, profession ranks, bosses,
+    reputations and PvP checks that need a higher level, are left out of the seed."""
+    display_name = "Goal Level"
+    range_start = 10
+    range_end = MAX_GOAL_LEVEL
+    default = MAX_GOAL_LEVEL
+
+
 class Professions(OptionSet):
     """Professions whose tiers are items and whose skill milestones are locations."""
     display_name = "Professions"
@@ -48,8 +57,32 @@ class Professions(OptionSet):
     default = frozenset(profession.key for profession in _DATA.professions)
 
 
+PRIMARIES_PER_CHARACTER = 2  # what the game lets one character learn
+
+
+class ProfessionMode(Choice):
+    """all: every profession in Professions. solo: at most 2 primary professions (what one character can learn)
+    plus every secondary profession in Professions. team: at most 2 primary professions per team member (Team
+    Size) plus every secondary. When Professions lists more primaries than allowed, the seed picks them at
+    random; list exactly the ones you want to choose them yourself."""
+    display_name = "Profession Mode"
+    option_all = 0
+    option_solo = 1
+    option_team = 2
+    default = 0
+
+
+class TeamSize(Range):
+    """Number of players sharing this slot in team mode; each brings 2 primary professions. Ignored in the
+    other modes."""
+    display_name = "Team Size"
+    range_start = 2
+    range_end = 4
+    default = 2
+
+
 class LevelMilestoneStep(Range):
-    """Every how many character levels there is a 'Reach Level' check. Level 60 is always a check."""
+    """Every how many character levels there is a 'Reach Level' check. The goal level is always a check."""
     display_name = "Level Milestone Step"
     range_start = 1
     range_end = 10
@@ -199,7 +232,10 @@ class WoWForeverOptions(PerGameCommonOptions):
     faction: Faction
     start_zone: StartZone
     content_release: ContentRelease
+    goal_level: GoalLevel
     professions: Professions
+    profession_mode: ProfessionMode
+    team_size: TeamSize
     level_milestone_step: LevelMilestoneStep
     profession_milestone_step: ProfessionMilestoneStep
     quest_weight: QuestWeight
@@ -219,6 +255,15 @@ class WoWForeverOptions(PerGameCommonOptions):
     reputation_weight: ReputationWeight
     pvp_checks: PvpChecks
     pvp_weight: PvpWeight
+
+
+def primary_limit(options: WoWForeverOptions) -> int | None:
+    """How many primary professions the seed may have; None when the mode does not limit them."""
+    if options.profession_mode == ProfessionMode.option_solo:
+        return PRIMARIES_PER_CHARACTER
+    if options.profession_mode == ProfessionMode.option_team:
+        return PRIMARIES_PER_CHARACTER * options.team_size.value
+    return None
 
 
 def category_switches(options: WoWForeverOptions) -> dict[str, bool]:

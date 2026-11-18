@@ -51,6 +51,18 @@ function Names.area(areaId)
     return area and area.name or ns.L.AREA_FMT:format(areaId)
 end
 
+--- Display name of a slot's faction key ("alliance" / "horde", any case); anything else is shown as it is.
+function Names.side(key)
+    local lower = type(key) == "string" and key:lower()
+    if lower == "alliance" then
+        return ns.L.SIDE_ALLIANCE
+    elseif lower == "horde" then
+        return ns.L.SIDE_HORDE
+    end
+    return tostring(key)
+end
+
+--- Reputation faction by id.
 function Names.faction(factionId)
     local data = C_Reputation and tryCall(C_Reputation.GetFactionDataByID, factionId)
     local name = type(data) == "table" and present(data.name)

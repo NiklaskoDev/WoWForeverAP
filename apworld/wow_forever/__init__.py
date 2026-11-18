@@ -1,6 +1,7 @@
+import itertools
 import json
 import pkgutil
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TextIO
 
 from BaseClasses import Tutorial
 from Options import OptionError
@@ -10,9 +11,10 @@ from worlds.LauncherComponents import Component, Type, components, launch
 from . import items, locations, regions, rules
 from .data_loader import GameData, Profession, ProfessionMaterial, ProfessionTier, Zone, load_game_data
 from .items import CARE_PACKAGE_ITEM_NAME, FILLER_ITEM_NAME, GAME_NAME, ITEM_NAME_TO_ID, ITEM_TABLE, WoWForeverItem
-from .locations import GOAL_LEVEL, LocationSpec, build_location_name_to_id
-from .options import RANDOM_START_ZONE, WoWForeverOptions, category_switches, category_weights
+from .locations import LocationSpec, build_location_name_to_id
+from .options import RANDOM_START_ZONE, WoWForeverOptions, category_switches, category_weights, primary_limit
 from .settings import WoWForeverSettings
+from .start_info import start_info_lines
 
 SLOT_DATA_SCHEMA = 1
 EARLY_ZONE_LEVEL = 11  # the early zone must be able to carry a character past the start zone's range
@@ -47,7 +49,7 @@ class WoWForeverWorld(World):
     """
     World of Warcraft: Forever as an honor-system multiworld. Zones and profession tiers are the items;
     quest turn-ins, character levels and profession skill milestones are the checks, plus optional dungeon bosses,
-    map-area discoveries, reputation standings and PvP milestones. Reach level 60 to win.
+    map-area discoveries, reputation standings and PvP milestones. Reach the goal level to win.
     """
 
     game = GAME_NAME
@@ -62,6 +64,7 @@ class WoWForeverWorld(World):
 
     data: GameData
     content_release: int
+    goal_level: int
     faction: str
     allowed_zones: tuple[Zone, ...]
     start_zone: Zone
@@ -76,24 +79,47 @@ class WoWForeverWorld(World):
     def generate_early(self) -> None:
         self.data = load_game_data()
         self.content_release = self.options.content_release.value
+        self.goal_level = self.options.goal_level.value
         self.faction = self.options.faction.current_key
         self.allowed_zones = tuple(
             zone for zone in self.data.zones
-            if zone.release <= self.content_release and zone.faction in (self.faction, "both"))
+            if zone.release <= self.content_release and zone.faction in (self.faction, "both")
+            and zone.min_level <= self.goal_level)
         self.start_zone = self._resolve_start_zone()
-        self.allowed_tiers = tuple(tier for tier in self.data.profession_tiers if tier.release <= self.content_release)
-        self.selected_professions = tuple(
-            profession for profession in self.data.professions
-            if profession.key in self.options.professions.value and profession.release <= self.content_release)
-        self.selected_skill_line_ids = frozenset(profession.skill_line_id for profession in self.selected_professions)
+        self.allowed_tiers = locations.allowed_tiers(self.data, self.content_release, self.goal_level)
         self.material_sources = rules.compute_material_sources(self.data, self.content_release)
+        self.selected_professions = self._select_professions()
+        self.selected_skill_line_ids = frozenset(profession.skill_line_id for profession in self.selected_professions)
         self._check_self_found_materials()
-        self.bracket_zone_ids = rules.compute_bracket_zone_ids(self.allowed_zones)
+        self.bracket_zone_ids = rules.compute_bracket_zone_ids(self.allowed_zones, self.goal_level)
         self.location_specs = locations.select_locations(
             self.content_release, self.faction, frozenset(zone.ui_map_id for zone in self.allowed_zones),
             frozenset(profession.skill_line_id for profession in self.selected_professions),
             self.options.level_milestone_step.value, self.options.profession_milestone_step.value, self.data,
-            category_weights(self.options), self.random, self.options.quest_weight.value)
+            category_weights(self.options), self.random, self.options.quest_weight.value,
+            goal_level=self.goal_level)
+
+    def _select_professions(self) -> tuple[Profession, ...]:
+        """The professions of the seed: those listed in Professions, cut down to the mode's primary limit."""
+        candidates = tuple(
+            profession for profession in self.data.professions
+            if profession.key in self.options.professions.value and profession.release <= self.content_release)
+        limit = primary_limit(self.options)
+        primaries = [profession for profession in candidates if profession.kind == "primary"]
+        if limit is None or len(primaries) <= limit:
+            return candidates  # no random draw here: seeds of the default mode must stay what they were
+        secondaries = [profession for profession in candidates if profession.kind != "primary"]
+        combos = list(itertools.combinations(primaries, limit))
+        self.random.shuffle(combos)
+        market = rules.has_market_access(self)
+        for combo in combos:
+            chosen = (*combo, *secondaries)
+            if market or not rules.missing_gatherers(chosen, self.material_sources, self.data):
+                return tuple(profession for profession in candidates if profession in chosen)
+        raise OptionError(
+            f"{self.player_name}: no {limit} primary professions out of professions can get their own materials "
+            "with the Auction House, trading, mail and shared banks all off. Add gathering professions or turn "
+            "one of those options on")
 
     def _check_self_found_materials(self) -> None:
         missing = rules.unreachable_material_sources(self)
@@ -112,7 +138,7 @@ class WoWForeverWorld(World):
         if chosen == RANDOM_START_ZONE:
             if not start_zones:
                 raise OptionError(f"{self.player_name}: no start zone exists for faction {self.faction} "
-                                  "in this content_release")
+                                  "in this content_release and below the goal level")
             return self.random.choice(sorted(start_zones, key=lambda zone: zone.ui_map_id))
         zone = self.data.zones_by_id[chosen]
         if zone.faction not in (self.faction, "both"):
@@ -120,6 +146,9 @@ class WoWForeverWorld(World):
                               f"but the faction is {self.faction}")
         if zone.release > self.content_release:
             raise OptionError(f"{self.player_name}: start zone {zone.name} is not part of the chosen content_release")
+        if zone.min_level > self.goal_level:
+            raise OptionError(f"{self.player_name}: start zone {zone.name} starts above the goal level "
+                              f"{self.goal_level}")
         return zone
 
     def create_regions(self) -> None:
@@ -159,7 +188,7 @@ class WoWForeverWorld(World):
             "faction": self.faction,
             "start_zone": self.start_zone.ui_map_id,
             "content_release": self.content_release,
-            "goal_level": GOAL_LEVEL,
+            "goal_level": self.goal_level,
             "professions": [profession.skill_line_id for profession in self.selected_professions],
             "level_step": self.options.level_milestone_step.value,
             "profession_step": self.options.profession_milestone_step.value,
@@ -175,6 +204,10 @@ class WoWForeverWorld(World):
             },
             "categories": category_switches(self.options),
         }
+
+    def write_spoiler_header(self, spoiler_handle: TextIO) -> None:
+        for line in start_info_lines(self.fill_slot_data(), self.data):
+            spoiler_handle.write(f"{self.player_name}: {line}\n")
 
     @classmethod
     def _world_version(cls) -> str:

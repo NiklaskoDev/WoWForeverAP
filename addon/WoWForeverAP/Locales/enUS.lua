@@ -60,6 +60,17 @@ ns.locales.enUS = {
     STATUS_UNSYNCED = "Checks waiting to be sent: %d",
     STATUS_SLOTS = "Slots in the inbox: %d",
 
+    -- start info
+    SIDE_ALLIANCE = "Alliance",
+    SIDE_HORDE = "Horde",
+    START_FACTION = "Faction: %s",
+    START_ZONE = "Start zone: %s",
+    START_GOAL = "Goal level: %d",
+    START_PRIMARY = "Primary professions: %s",
+    START_SECONDARY = "Secondary professions: %s",
+    START_NONE = "none",
+    START_SLOT_HEADER = "%d. %s",
+
     -- problems
     SLOT_MISSING = "Slot %s is not in the inbox. Start the client for it, then /reload.",
     INBOX_INVALID = "The inbox is missing or damaged. Check that the client is running and /reload.",
@@ -141,10 +152,11 @@ ns.locales.enUS = {
 
     -- world map and options
     MAP_LOCKED_BANNER = "Locked: travel only",
+    MAP_UNAVAILABLE_BANNER = "Not in your seed",
     MAP_OPEN_CHECKS = "%d open checks",
     MAP_NO_OPEN_CHECKS = "No open checks",
     OPT_MAP_OVERLAY = "Show locked zones on the world map",
-    OPT_MAP_OVERLAY_TIP = "Tints locked zones red and zones outside your seed dark on continent maps.",
+    OPT_MAP_OVERLAY_TIP = "Fills locked zones red and zones outside your seed dark on continent maps.",
     OPT_WARNINGS = "Warn about locked zones and professions",
     OPT_WARNINGS_TIP = "Shows a warning when you enter a locked zone, learn a locked profession or train above your unlocked tier. The addon only warns, it never stops you.",
     OPTIONS_UNAVAILABLE = "The game's options panel is not available in this client. The defaults stay on.",
@@ -157,6 +169,7 @@ ns.locales.enUS = {
     -- help
     HELP_HEADER = "WoWForeverAP commands:",
     HELP_STATUS = "/wfap status - linked slot, items and checks",
+    HELP_START = "/wfap start - faction, start zone, goal and professions of your slot(s)",
     HELP_LINK = "/wfap link [number] - link this character to a slot",
     HELP_UNLINK = "/wfap unlink - unlink this character",
     HELP_ITEMS = "/wfap items - list received items",

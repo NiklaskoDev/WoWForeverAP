@@ -31,7 +31,7 @@ def test_shipped_generated_files_are_up_to_date():
 
 def test_generated_tables_match_the_csv_data():
     data, tables = load_game_data(), generated_data()
-    assert tables["levelGoal"] == data_loader.GOAL_LEVEL == 60
+    assert tables["levelGoal"] == data_loader.MAX_GOAL_LEVEL == 60
     assert set(tables["zones"]) == {zone.ui_map_id for zone in data.zones}
     assert tables["zones"][1429] == {"name": "Elwynn Forest", "min": 1, "max": 10, "faction": "alliance",
                                      "release": 1}

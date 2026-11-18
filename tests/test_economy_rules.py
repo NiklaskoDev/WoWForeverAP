@@ -1,3 +1,4 @@
+import unittest
 from unittest import mock
 
 import worlds.wow_forever as wow_world
@@ -5,7 +6,7 @@ from BaseClasses import CollectionState
 from Options import OptionError
 from test.bases import WorldTestBase
 from worlds.wow_forever import rules
-from worlds.wow_forever.data_loader import parse_game_data, read_shipped_files
+from worlds.wow_forever.data_loader import load_game_data, parse_game_data, read_shipped_files
 
 GAME = "World of Warcraft Forever"
 BLACKSMITHING, TAILORING, MINING, ALCHEMY = 164, 197, 186, 171
@@ -160,3 +161,41 @@ class TestSelfFoundValidation(WorldTestBase):
         data = parse_game_data(files)
         self.assertEqual(len(rules.compute_material_sources(data, 1)[(BLACKSMITHING, 300)]), 1)
         self.assertEqual(len(rules.compute_material_sources(data, 2)[(BLACKSMITHING, 300)]), 2)
+
+
+class TestMissingGatherers(unittest.TestCase):
+    """rules.missing_gatherers on the shipped data, with the selected set given explicitly."""
+    data = load_game_data()
+    sources = rules.compute_material_sources(data, max(release.id for release in data.releases))
+
+    def missing(self, *skill_line_ids: int) -> dict[str, list[str]]:
+        professions = [self.data.professions_by_id[skill_line_id] for skill_line_id in skill_line_ids]
+        result = rules.missing_gatherers(professions, self.sources, self.data)
+        return {crafter.name: [gatherer.name for gatherer in gatherers] for crafter, gatherers in result.items()}
+
+    def test_a_crafter_with_its_gatherer_misses_nothing(self):
+        self.assertEqual(self.missing(BLACKSMITHING, MINING), {})
+        self.assertEqual(self.missing(ALCHEMY, 182), {})  # Herbalism
+
+    def test_a_crafter_without_its_gatherer_names_it(self):
+        self.assertEqual(self.missing(BLACKSMITHING), {"Blacksmithing": ["Mining"]})
+        self.assertEqual(self.missing(ALCHEMY, MINING), {"Alchemy": ["Herbalism"]})
+
+    def test_crafters_with_drop_or_vendor_sources_and_secondaries_miss_nothing(self):
+        self.assertEqual(self.missing(TAILORING, 333, 185, 129, 356), {})  # Tailoring, Enchanting, secondaries
+
+    def test_gatherers_alone_miss_nothing(self):
+        self.assertEqual(self.missing(MINING, 182, 393), {})
+
+    def test_every_crafter_is_reported_with_its_own_gatherer_in_the_order_given(self):
+        # Engineering needs Mining too: two crafters share a gatherer, a third needs another.
+        self.assertEqual(self.missing(165, 164, 202), {"Leatherworking": ["Skinning"], "Blacksmithing": ["Mining"],
+                                                      "Engineering": ["Mining"]})
+        self.assertEqual(list(self.missing(202, 171, 164)), ["Engineering", "Alchemy", "Blacksmithing"])
+
+    def test_an_empty_set_and_repeated_calls_are_stable(self):
+        self.assertEqual(self.missing(), {})
+        self.assertEqual(self.missing(164, 171, 165), self.missing(164, 171, 165))
+
+    def test_only_the_gatherers_outside_the_set_count(self):
+        self.assertEqual(self.missing(BLACKSMITHING, 165, MINING), {"Leatherworking": ["Skinning"]})

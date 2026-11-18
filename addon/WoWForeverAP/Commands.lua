@@ -45,6 +45,26 @@ local function linkedContext()
     return character, character.slotKey, slot
 end
 
+--- Chat lines with the slot's faction, start zone, goal level and professions, from the inbox options.
+--- Professions the generated data does not know are listed as primary ones, under their numbered name.
+function Commands.startLines(slot)
+    local options = ns.Inbox.options(slot)
+    local primary, secondary = {}, {}
+    for _, skillLineId in ipairs(type(options.professions) == "table" and options.professions or {}) do
+        local known = ns.Data.professions[skillLineId]
+        local list = known and known.kind == "secondary" and secondary or primary
+        list[#list + 1] = ns.Names.profession(skillLineId)
+    end
+    local none = ns.L.START_NONE
+    return {
+        ns.L.START_FACTION:format(ns.Names.side(options.faction)),
+        ns.L.START_ZONE:format(options.startZone and ns.Names.zone(options.startZone) or "?"),
+        ns.L.START_GOAL:format(tonumber(options.goalLevel) or 0),
+        ns.L.START_PRIMARY:format(#primary > 0 and table.concat(primary, ", ") or none),
+        ns.L.START_SECONDARY:format(#secondary > 0 and table.concat(secondary, ", ") or none),
+    }
+end
+
 local handlers = {}
 
 function handlers.status()
@@ -64,6 +84,32 @@ function handlers.status()
     ns.Notify.say("STATUS_ITEMS", counts.items)
     ns.Notify.say("STATUS_OPEN", math.max(counts.open - unsynced, 0))
     ns.Notify.say("STATUS_UNSYNCED", unsynced)
+end
+
+function handlers.start()
+    local character, _, slot = linkedContext()
+    if character then
+        if not slot then
+            ns.Notify.say("SLOT_MISSING", character.slotKey)
+            return
+        end
+        for _, line in ipairs(Commands.startLines(slot)) do
+            ns.Notify.print(line)
+        end
+        return
+    end
+    local inbox = ns.Inbox.current()
+    local slotKeys = ns.Inbox.slotKeys(inbox)
+    if #slotKeys == 0 then
+        ns.Notify.say("LINK_NO_SLOTS")
+        return
+    end
+    for index, key in ipairs(slotKeys) do
+        ns.Notify.say("START_SLOT_HEADER", index, ns.Style.escape(key))
+        for _, line in ipairs(Commands.startLines(ns.Inbox.slot(inbox, key))) do
+            ns.Notify.print(line)
+        end
+    end
 end
 
 function handlers.link(argument)
@@ -163,7 +209,7 @@ end
 function handlers.help()
     ns.Notify.say("HELP_HEADER")
     local keys = {
-        "HELP_PANEL", "HELP_STATUS", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS", "HELP_RULES", "HELP_CARE",
+        "HELP_PANEL", "HELP_STATUS", "HELP_START", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS", "HELP_RULES", "HELP_CARE",
         "HELP_OPTIONS", "HELP_CAPTURE",
     }
     for _, key in ipairs(keys) do

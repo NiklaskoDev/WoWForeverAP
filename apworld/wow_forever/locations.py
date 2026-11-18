@@ -8,7 +8,14 @@ from typing import TypeVar
 from BaseClasses import Location
 
 from . import ids
-from .data_loader import GOAL_LEVEL, GameData, level_location_name, load_game_data, profession_location_name
+from .data_loader import (
+    MAX_GOAL_LEVEL,
+    GameData,
+    ProfessionTier,
+    level_location_name,
+    load_game_data,
+    profession_location_name,
+)
 from .items import GAME_NAME
 
 CHARACTER_REGION = "Character"
@@ -55,7 +62,7 @@ def max_tier_skill(data: GameData, content_release: int | None = None) -> int:
 def build_location_name_to_id(data: GameData) -> dict[str, int]:
     """Every location name any seed can contain, over all releases, for the static world table."""
     table = {quest.location_name: ids.location_id(ids.LocCat.QUEST, quest.quest_id) for quest in data.quests}
-    for level in range(2, GOAL_LEVEL + 1):
+    for level in range(2, MAX_GOAL_LEVEL + 1):
         table[level_location_name(level)] = ids.location_id(ids.LocCat.LEVEL, level)
     for profession in data.professions:
         for skill in range(1, max_tier_skill(data) + 1):
@@ -73,10 +80,24 @@ def build_location_name_to_id(data: GameData) -> dict[str, int]:
     return table
 
 
-def milestone_levels(step: int) -> list[int]:
+def allowed_tiers(data: GameData, content_release: int, goal_level: int) -> tuple[ProfessionTier, ...]:
+    """The profession tiers a seed can use: the longest prefix of the released tiers whose trainer level and
+    material bracket both fit under ``goal_level``. It stops at the first tier that fails, because the addon maps
+    "n tier items received" to "the first n tiers"."""
+    brackets = sorted(data.material_brackets, key=lambda bracket: bracket.max_skill)
+    allowed: list[ProfessionTier] = []
+    for tier in sorted((t for t in data.profession_tiers if t.release <= content_release), key=lambda t: t.tier):
+        bracket = next((b for b in brackets if tier.max_skill <= b.max_skill), None)
+        if tier.required_level > goal_level or bracket is None or bracket.required_level > goal_level:
+            break
+        allowed.append(tier)
+    return tuple(allowed)
+
+
+def milestone_levels(step: int, goal_level: int) -> list[int]:
     """Levels with a 'Reach Level' check: every ``step`` levels after 1, and the goal level always."""
-    levels = set(range(1 + step, GOAL_LEVEL + 1, step))
-    levels.add(GOAL_LEVEL)
+    levels = set(range(1 + step, goal_level + 1, step))
+    levels.add(goal_level)
     return sorted(levels)
 
 
@@ -92,7 +113,7 @@ def sample_by_weight(candidates: Sequence[_T], weight: int, rng: random.Random |
 
 
 def _extra_category_specs(content_release: int, faction: str, allowed_zone_ids: frozenset[int],
-                          data: GameData) -> dict[str, list[LocationSpec]]:
+                          data: GameData, goal_level: int) -> dict[str, list[LocationSpec]]:
     """Every location of the extra categories this release, faction and zone set allows, in data order."""
     def usable(release: int) -> bool:
         return release <= content_release
@@ -101,7 +122,7 @@ def _extra_category_specs(content_release: int, faction: str, allowed_zone_ids: 
     for encounter in data.encounters:
         instance = data.instances_by_id[encounter.instance_id]
         if (usable(encounter.release) and usable(instance.release) and instance.faction in (faction, "both")
-                and instance.entrance_ui_map_id in allowed_zone_ids):
+                and instance.min_level <= goal_level and instance.entrance_ui_map_id in allowed_zone_ids):
             bosses.append(LocationSpec(
                 encounter.location_name, ids.location_id(ids.LocCat.BOSS, encounter.encounter_id),
                 data.zones_by_id[instance.entrance_ui_map_id].name, LocationKind.BOSS, native=encounter.encounter_id))
@@ -115,11 +136,12 @@ def _extra_category_specs(content_release: int, faction: str, allowed_zone_ids: 
                      CHARACTER_REGION, LocationKind.REPUTATION, native=reputation.native_id)
         for reputation in data.reputations
         if (usable(reputation.release) and reputation.faction_side in (faction, "both")
+            and reputation.required_level <= goal_level
             and allowed_zone_ids.issuperset(reputation.required_ui_map_ids))]
     pvp = [
         LocationSpec(milestone.location_name, ids.location_id(ids.LocCat.PVP, milestone.pvp_id),
                      CHARACTER_REGION, LocationKind.PVP, native=milestone.pvp_id)
-        for milestone in data.pvp_milestones if usable(milestone.release)]
+        for milestone in data.pvp_milestones if usable(milestone.release) and milestone.required_level <= goal_level]
     return {"boss": bosses, "discovery": discoveries, "reputation": reputations, "pvp": pvp}
 
 
@@ -134,24 +156,27 @@ def select_locations(
     category_weights: Mapping[str, int] | None = None,
     rng: random.Random | None = None,
     quest_weight: int = 100,
+    *,
+    goal_level: int = MAX_GOAL_LEVEL,
 ) -> list[LocationSpec]:
     """Locations of one seed (all filtered by release and faction), without the event location.
 
     ``quest_weight`` is the percentage of the eligible quests to include. ``category_weights`` holds the extra
     categories (boss, discovery, reputation, pvp) that are on, each with the percentage of its eligible locations
-    to include. Sampling uses ``rng`` (quests first); absent categories add nothing."""
+    to include. Sampling uses ``rng`` (quests first); absent categories add nothing. Nothing that needs a level
+    above ``goal_level`` is included."""
     data = data or load_game_data()
     quest_specs = [
         LocationSpec(quest.location_name, ids.location_id(ids.LocCat.QUEST, quest.quest_id),
                      data.zones_by_id[quest.zone_ui_map_id].name, LocationKind.QUEST, quest_id=quest.quest_id)
         for quest in data.quests
         if (quest.release <= content_release and quest.faction in (faction, "both")
-            and allowed_zone_ids.issuperset(quest.effective_zones))]
+            and quest.effective_level <= goal_level and allowed_zone_ids.issuperset(quest.effective_zones))]
     specs: list[LocationSpec] = sample_by_weight(quest_specs, quest_weight, rng)
-    for level in milestone_levels(level_step):
+    for level in milestone_levels(level_step, goal_level):
         specs.append(LocationSpec(level_location_name(level), ids.location_id(ids.LocCat.LEVEL, level),
                                   CHARACTER_REGION, LocationKind.LEVEL, level=level))
-    top_skill = max_tier_skill(data, content_release)
+    top_skill = max((t.max_skill for t in allowed_tiers(data, content_release, goal_level)), default=0)
     for profession in data.professions:
         if profession.skill_line_id not in profession_ids or profession.release > content_release:
             continue
@@ -162,7 +187,7 @@ def select_locations(
                 ids.location_id(ids.LocCat.PROFESSION_SKILL, native), CHARACTER_REGION,
                 LocationKind.PROFESSION_SKILL, skill_line_id=profession.skill_line_id, skill=skill))
     if category_weights:
-        eligible = _extra_category_specs(content_release, faction, allowed_zone_ids, data)
+        eligible = _extra_category_specs(content_release, faction, allowed_zone_ids, data, goal_level)
         for category, candidates in eligible.items():
             if category in category_weights:
                 specs.extend(sample_by_weight(candidates, category_weights[category], rng))

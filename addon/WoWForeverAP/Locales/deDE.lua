@@ -60,6 +60,17 @@ ns.locales.deDE = {
     STATUS_UNSYNCED = "Checks, die noch gesendet werden müssen: %d",
     STATUS_SLOTS = "Slots in der Inbox: %d",
 
+    -- start info
+    SIDE_ALLIANCE = "Allianz",
+    SIDE_HORDE = "Horde",
+    START_FACTION = "Fraktion: %s",
+    START_ZONE = "Startgebiet: %s",
+    START_GOAL = "Zielstufe: %d",
+    START_PRIMARY = "Hauptberufe: %s",
+    START_SECONDARY = "Nebenberufe: %s",
+    START_NONE = "keine",
+    START_SLOT_HEADER = "%d. %s",
+
     -- problems
     SLOT_MISSING = "Slot %s ist nicht in der Inbox. Starte den Client dafür, dann /reload.",
     INBOX_INVALID = "Die Inbox fehlt oder ist beschädigt. Prüfe, ob der Client laeuft, und /reload.",
@@ -141,10 +152,11 @@ ns.locales.deDE = {
 
     -- world map and options
     MAP_LOCKED_BANNER = "Gesperrt: nur durchreisen",
+    MAP_UNAVAILABLE_BANNER = "Nicht in deinem Seed",
     MAP_OPEN_CHECKS = "%d offene Checks",
     MAP_NO_OPEN_CHECKS = "Keine offenen Checks",
     OPT_MAP_OVERLAY = "Gesperrte Zonen auf der Weltkarte zeigen",
-    OPT_MAP_OVERLAY_TIP = "Färbt gesperrte Zonen rot und Zonen außerhalb deines Seeds dunkel auf Kontinentkarten.",
+    OPT_MAP_OVERLAY_TIP = "Füllt gesperrte Zonen rot und Zonen außerhalb deines Seeds dunkel auf Kontinentkarten.",
     OPT_WARNINGS = "Vor gesperrten Zonen und Berufen warnen",
     OPT_WARNINGS_TIP = "Zeigt eine Warnung, wenn du eine gesperrte Zone betrittst, einen gesperrten Beruf erlernst oder über deiner freigeschalteten Stufe trainierst. Das Addon warnt nur und hält dich nie auf.",
     OPTIONS_UNAVAILABLE = "Das Optionsfenster des Spiels ist in diesem Client nicht verfügbar. Die Standardwerte bleiben aktiv.",
@@ -157,6 +169,7 @@ ns.locales.deDE = {
     -- help
     HELP_HEADER = "WoWForeverAP-Befehle:",
     HELP_STATUS = "/wfap status - verknüpfter Slot, Gegenstände und Checks",
+    HELP_START = "/wfap start - Fraktion, Startgebiet, Ziel und Berufe deiner Slots",
     HELP_LINK = "/wfap link [Nummer] - diesen Charakter mit einem Slot verknüpfen",
     HELP_UNLINK = "/wfap unlink - diesen Charakter trennen",
     HELP_ITEMS = "/wfap items - erhaltene Gegenstände auflisten",

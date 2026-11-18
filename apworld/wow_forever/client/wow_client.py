@@ -22,7 +22,9 @@ from CommonClient import (
 from MultiServer import mark_raw
 from NetUtils import ClientStatus
 
+from ..data_loader import load_game_data
 from ..items import GAME_NAME
+from ..start_info import start_info_lines
 from . import inbox, savedvars
 
 LOGGER = logging.getLogger("Client")
@@ -107,6 +109,16 @@ class WoWForeverCommandProcessor(ClientCommandProcessor):
         """Show linked characters, checks waiting to be sent and the inbox path."""
         ctx: WoWForeverContext = self.ctx
         for line in ctx.status_lines():
+            self.output(line)
+        return True
+
+    def _cmd_start(self) -> bool:
+        """Show the faction, start zone, goal level and professions of the connected slot."""
+        ctx: WoWForeverContext = self.ctx
+        if ctx.slot_key is None:
+            self.output("Not connected to a slot: /connect first.")
+            return False
+        for line in start_info_lines(ctx.slot_data, load_game_data()):
             self.output(line)
         return True
 

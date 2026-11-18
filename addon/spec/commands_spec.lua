@@ -59,14 +59,45 @@ describe("Commands", function()
         end)
     end)
 
+    describe("startLines", function()
+        local function slotWith(options)
+            return { options = options }
+        end
+
+        it("shows faction, start zone, goal level and the professions split by kind", function()
+            local lines = ns.Commands.startLines(Env.inbox().slots["S1:Wow"])
+            assert.same({
+                ns.L.START_FACTION:format("Alliance"), ns.L.START_ZONE:format("Elwynn Forest"),
+                ns.L.START_GOAL:format(60), ns.L.START_PRIMARY:format("Alchemy, Mining"),
+                ns.L.START_SECONDARY:format(ns.L.START_NONE),
+            }, lines)
+        end)
+
+        it("lists secondary professions apart and uses the localised names", function()
+            _G.C_Map = { GetMapInfo = function() return { name = "Wald von Elwynn" } end }
+            local lines = ns.Commands.startLines(slotWith({
+                faction = "horde", startZone = 1429, goalLevel = 30, professions = { 185, 171, 356 } }))
+            assert.equals(ns.L.START_FACTION:format("Horde"), lines[1])
+            assert.equals(ns.L.START_ZONE:format("Wald von Elwynn"), lines[2])
+            assert.equals(ns.L.START_PRIMARY:format("Alchemy"), lines[4])
+            assert.equals(ns.L.START_SECONDARY:format("Cooking, Fishing"), lines[5])
+        end)
+
+        it("lists a profession the data does not know as a primary one, and copes with a bare slot", function()
+            local lines = ns.Commands.startLines(slotWith({ professions = { 999999 } }))
+            assert.equals(ns.L.START_PRIMARY:format(ns.L.PROFESSION_FMT:format(999999)), lines[4])
+            assert.equals(5, #ns.Commands.startLines({}))
+        end)
+    end)
+
     describe("/wfap", function()
         it("shows the help for unknown commands and for help", function()
             ns.Commands.run("frobnicate")
             ns.Commands.run("help")
             assert.equals(ns.L.HELP_HEADER, chat()[1])
-            assert.equals(ns.L.HELP_HEADER, chat()[11]) -- the header plus nine command lines come first
-            local expected = { "HELP_PANEL", "HELP_STATUS", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS", "HELP_RULES",
-                               "HELP_CARE", "HELP_OPTIONS", "HELP_CAPTURE" }
+            assert.equals(ns.L.HELP_HEADER, chat()[12]) -- the header plus ten command lines come first
+            local expected = { "HELP_PANEL", "HELP_STATUS", "HELP_START", "HELP_LINK", "HELP_UNLINK", "HELP_ITEMS",
+                               "HELP_RULES", "HELP_CARE", "HELP_OPTIONS", "HELP_CAPTURE" }
             for index, key in ipairs(expected) do
                 assert.equals(ns.L[key], chat()[index + 1], key)
             end
@@ -120,6 +151,49 @@ describe("Commands", function()
         it("status says when the character's slot is missing in the inbox", function()
             db.characters[game.guid].slotKey = "S9:Gone"
             ns.Commands.run("status")
+            assert.same({ ns.L.SLOT_MISSING:format("S9:Gone") }, chat())
+        end)
+
+        it("start of a linked character shows the lines of its slot only", function()
+            _G.WoWForeverAP_Inbox = Env.inbox()
+            WoWForeverAP_Inbox.slots["S2:Other"] = { options = { faction = "horde" } }
+            db.characters[game.guid].slotKey = "S1:Wow"
+            ns.Commands.run("start")
+            assert.same(ns.Commands.startLines(WoWForeverAP_Inbox.slots["S1:Wow"]), chat())
+            assert.equals(5, #chat())
+        end)
+
+        it("start of an unlinked character lists every slot as a numbered block", function()
+            _G.WoWForeverAP_Inbox = Env.inbox()
+            WoWForeverAP_Inbox.slots["S2:Other"] = {
+                options = { faction = "horde", startZone = 14, goalLevel = 30, professions = { 185 } } }
+            ns.Commands.run("start")
+            local expected = { ns.L.START_SLOT_HEADER:format(1, "S1:Wow") }
+            for _, line in ipairs(ns.Commands.startLines(WoWForeverAP_Inbox.slots["S1:Wow"])) do
+                expected[#expected + 1] = line
+            end
+            expected[#expected + 1] = ns.L.START_SLOT_HEADER:format(2, "S2:Other")
+            for _, line in ipairs(ns.Commands.startLines(WoWForeverAP_Inbox.slots["S2:Other"])) do
+                expected[#expected + 1] = line
+            end
+            assert.same(expected, chat())
+            assert.equals(12, #chat())
+        end)
+
+        it("start escapes a pipe in the slot name", function()
+            _G.WoWForeverAP_Inbox = Env.inbox()
+            WoWForeverAP_Inbox.slots["S1:Wo|cffff0000w"] = WoWForeverAP_Inbox.slots["S1:Wow"]
+            WoWForeverAP_Inbox.slots["S1:Wow"] = nil
+            ns.Commands.run("start")
+            assert.equals(ns.L.START_SLOT_HEADER:format(1, "S1:Wo||cffff0000w"), chat()[1])
+        end)
+
+        it("start without slots says so; a linked character with a missing slot gets the missing-slot line", function()
+            ns.Commands.run("start")
+            assert.same({ ns.L.LINK_NO_SLOTS }, chat())
+            game.chat = {}
+            db.characters[game.guid].slotKey = "S9:Gone"
+            ns.Commands.run("start")
             assert.same({ ns.L.SLOT_MISSING:format("S9:Gone") }, chat())
         end)
 

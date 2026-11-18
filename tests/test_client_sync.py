@@ -364,3 +364,28 @@ def test_inbox_writer_loop_survives_an_unexpected_error_and_keeps_writing(tmp_pa
         run_with_context(tmp_path, scenario)
     assert calls == [1, 2]
     assert any("Unexpected error while writing the inbox" in r.getMessage() and r.exc_info for r in caplog.records)
+
+
+def test_start_without_a_connection_asks_to_connect(tmp_path, monkeypatch):
+    async def scenario(ctx):
+        ctx.slot_data = {}
+        outputs: list[str] = []
+        processor = ctx.command_processor(ctx)
+        processor.output = outputs.append
+        processor("/start")
+        assert outputs == ["Not connected to a slot: /connect first."]
+
+    run_with_context(tmp_path, scenario)
+
+
+def test_start_shows_the_faction_zone_goal_and_professions_without_the_game_running(tmp_path):
+    async def scenario(ctx):
+        ctx.wow_path = None  # works before the game or the addon is set up
+        outputs: list[str] = []
+        processor = ctx.command_processor(ctx)
+        processor.output = outputs.append
+        processor("/start")
+        assert outputs == ["Faction: Alliance", "Start zone: Elwynn Forest", "Goal level: 60",
+                           "Primary professions: Alchemy", "Secondary professions: none"]
+
+    run_with_context(tmp_path, scenario)

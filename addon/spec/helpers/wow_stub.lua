@@ -115,6 +115,31 @@ function Frame:SetColorTexture(red, green, blue, alpha)
     self.color = { red, green, blue, alpha }
 end
 
+-- Texture methods record the last call, so specs can see how the addon dressed a texture.
+function Frame:SetTexture(...)
+    self.texture, self.atlas, self.color = (...), nil, nil
+end
+
+function Frame:SetAtlas(atlas, useAtlasSize)
+    self.atlas, self.atlasSize, self.texture, self.color = atlas, useAtlasSize, nil, nil
+end
+
+function Frame:SetTexCoord(left, right, top, bottom)
+    self.texCoord = { left, right, top, bottom }
+end
+
+function Frame:SetVertexColor(red, green, blue, alpha)
+    self.vertexColor = { red, green, blue, alpha }
+end
+
+function Frame:SetDesaturated(desaturated)
+    self.desaturated = desaturated
+end
+
+function Frame:SetBlendMode(mode)
+    self.blendMode = mode
+end
+
 function Frame:SetFrameLevel(level)
     self.level = level
 end

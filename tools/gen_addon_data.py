@@ -41,7 +41,7 @@ def _table_as_expression(value: object, prefix: str) -> str:
 def build_generated(data: "data_loader.GameData") -> str:
     """Text of ``Data/Generated.lua`` for the given game data."""
     tables = {
-        "levelGoal": data_loader.GOAL_LEVEL,
+        "levelGoal": data_loader.MAX_GOAL_LEVEL,
         "zones": {
             zone.ui_map_id: {"name": zone.name, "min": zone.min_level, "max": zone.max_level,
                              "faction": zone.faction, "release": zone.release}
