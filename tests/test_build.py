@@ -134,6 +134,15 @@ def test_stale_generated_data_stops_the_build(tmp_path, monkeypatch):
     assert not (tmp_path / "dist").exists()
 
 
+def test_a_guide_without_markers_stops_the_build_naming_the_file(tmp_path, monkeypatch):
+    guide = tmp_path / "guide.md"
+    guide.write_text("# No markers\n", encoding="utf-8")
+    monkeypatch.setattr(gen_addon_data, "GUIDE_FILE", guide)
+    with pytest.raises(build.BuildError, match="guide.md"):
+        build.build(tmp_path / "dist", VERSION)
+    assert not (tmp_path / "dist").exists()
+
+
 def test_a_toc_without_the_placeholder_is_an_error(tmp_path, monkeypatch):
     fake_addon = tmp_path / "addon"
     (fake_addon / "WoWForeverAP").mkdir(parents=True)

@@ -106,7 +106,11 @@ def write_zip(path: Path, entries: list[Entry]) -> None:
 
 def ensure_generated_data_is_current() -> None:
     """Refuse to package an addon whose generated data lags behind the CSVs."""
-    stale = [path for path, text in gen_addon_data.expected_outputs().items()
+    try:
+        outputs = gen_addon_data.expected_outputs()
+    except gen_addon_data.GuideMarkerError as error:
+        raise BuildError(str(error)) from None
+    stale = [path for path, text in outputs.items()
              if not path.exists() or path.read_text(encoding="utf-8") != text]
     if stale:
         names = ", ".join(gen_addon_data.display_path(path) for path in stale)

@@ -57,7 +57,8 @@ Game data lives in `apworld/wow_forever/data/*.csv`; each file names its sources
 - Zone level ranges and profession tier limits are commonly published Classic Era values.
 
 `addon/WoWForeverAP/Data/Generated.lua` is generated from these CSVs by `tools/gen_addon_data.py`; never edit
-it by hand.
+it by hand. The same tool writes the "Item reference" section of the game guide between its generated markers
+(`apworld/wow_forever/docs/`); never edit that part by hand.
 
 ## Unconfirmed
 
@@ -180,7 +181,7 @@ bash scripts/setup_ap.sh     # clone the pinned Archipelago release into .ap/ an
 pytest                       # Python tests
 ruff check .                 # Python lint
 bash scripts/ci.sh           # Lua lint/tests (luacheck, busted), generated-data check, packaging
-python tools/gen_addon_data.py   # regenerate addon/WoWForeverAP/Data/Generated.lua after changing a CSV
+python tools/gen_addon_data.py   # regenerate Generated.lua and the guide's item reference after changing a CSV
 bash scripts/fetch_att.sh    # clone AllTheThings at the commit in tools/att_version.txt into .att/ (dev only)
 python tools/import_att.py   # regenerate quests.csv from it; the review report goes to data_capture/att_report.txt
 python tools/import_att.py --check   # exit 1 when quests.csv differs from what the import would write

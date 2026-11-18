@@ -13,6 +13,7 @@ unlocks it arrives. What you do in the game sends out checks.
 
 - **Items:** a zone unlock for every zone of your faction, and one *Progressive* item per profession (each
   copy unlocks the next tier). Then the *Care Package* items (see below). Everything else is filler.
+  The item reference below describes every item.
 - **Locations (checks):**
   - turning in a quest (a share of the quests your faction can do, set by `quest_weight`: 1-100 percent, default 25;
     the quest list of your seed shows which ones are checks. Class quests, race quests, repeatable quests,
@@ -162,6 +163,99 @@ Nothing here sends keystrokes, reads game memory, watches network traffic or sta
 Chat messages with the `[AP]` prefix: when a check is recorded ("N checks waiting - /reload or log out to
 send them"), when items arrive after a reload, and when the goal is reached. The addon speaks English and
 German (`/wfap help` lists its commands).
+
+## Item reference
+
+<!-- BEGIN GENERATED: item reference (python tools/gen_addon_data.py). Do not edit by hand. -->
+
+Generated from the game data, like the item descriptions of this world. The data is provisional (see "Unconfirmed content").
+
+### Zones
+
+Each zone is one item, `Zone: <zone>`. Once it has arrived you may quest, kill for experience, gather and loot in the zone; before that, only travel through it.
+
+| Item | Faction | Levels | Start zone | Dungeons | Release |
+|---|---|---|---|---|---|
+| Zone: Elwynn Forest | Alliance | 1-10 | yes |  | Launch |
+| Zone: Dun Morogh | Alliance | 1-10 | yes | Gnomeregan | Launch |
+| Zone: Teldrassil | Alliance | 1-10 | yes |  | Launch |
+| Zone: Durotar | Horde | 1-10 | yes |  | Launch |
+| Zone: Mulgore | Horde | 1-10 | yes |  | Launch |
+| Zone: Tirisfal Glades | Horde | 1-10 | yes | Scarlet Monastery | Launch |
+| Zone: Zephra's Isle | both factions | 1-12 | yes |  | Launch |
+| Zone: Westfall | Alliance | 10-20 |  | The Deadmines | Launch |
+| Zone: Darkshore | Alliance | 10-20 |  |  | Launch |
+| Zone: Loch Modan | Alliance | 10-20 |  |  | Launch |
+| Zone: Redridge Mountains | Alliance | 15-25 |  |  | Launch |
+| Zone: Duskwood | Alliance | 18-30 |  |  | Launch |
+| Zone: Wetlands | Alliance | 20-30 |  |  | Launch |
+| Zone: Silverpine Forest | Horde | 10-20 |  | Shadowfang Keep | Launch |
+| Zone: The Barrens | Horde | 10-25 |  | Wailing Caverns, Razorfen Kraul and Razorfen Downs | Launch |
+| Zone: Ashenvale | both factions | 18-30 |  | Blackfathom Deeps | Launch |
+| Zone: Stonetalon Mountains | both factions | 15-27 |  |  | Launch |
+| Zone: Hillsbrad Foothills | both factions | 20-30 |  |  | Launch |
+| Zone: Thousand Needles | both factions | 25-35 |  |  | Launch |
+| Zone: Arathi Highlands | both factions | 30-40 |  |  | Launch |
+| Zone: Alterac Mountains | both factions | 30-40 |  |  | Launch |
+| Zone: Desolace | both factions | 30-40 |  | Maraudon | Launch |
+| Zone: Stranglethorn Vale | both factions | 30-45 |  |  | Launch |
+| Zone: Badlands | both factions | 35-45 |  | Uldaman | Launch |
+| Zone: Swamp of Sorrows | both factions | 35-45 |  | The Temple of Atal'Hakkar | Launch |
+| Zone: Dustwallow Marsh | both factions | 35-45 |  |  | Launch |
+| Zone: The Hinterlands | both factions | 40-50 |  |  | Launch |
+| Zone: Tanaris | both factions | 40-50 |  | Zul'Farrak | Launch |
+| Zone: Feralas | both factions | 40-50 |  | Dire Maul | Launch |
+| Zone: Searing Gorge | both factions | 43-50 |  |  | Launch |
+| Zone: Azshara | both factions | 45-55 |  |  | Launch |
+| Zone: Blasted Lands | both factions | 45-55 |  |  | Launch |
+| Zone: Un'Goro Crater | both factions | 48-55 |  |  | Launch |
+| Zone: Felwood | both factions | 48-55 |  |  | Launch |
+| Zone: Burning Steppes | both factions | 50-58 |  |  | Launch |
+| Zone: Western Plaguelands | both factions | 51-58 |  | Scholomance | Launch |
+| Zone: Winterspring | both factions | 53-60 |  |  | Launch |
+| Zone: Eastern Plaguelands | both factions | 53-60 |  |  | Launch |
+| Zone: Silithus | both factions | 55-60 |  |  | Launch |
+| Zone: Moonglade | both factions | 55-60 |  |  | Launch |
+| Zone: Deadwind Pass | both factions | 55-60 |  |  | Launch |
+
+### Professions
+
+Each profession is one item, `Progressive <profession>`, with one copy per rank. Do not train a rank before its copy has arrived. Every profession has the same ranks:
+
+| Copies | Rank | Skill cap | Trainer level | Logic level | Release |
+|---|---|---|---|---|---|
+| 1 | Apprentice | 75 | 5 | 5 | Launch |
+| 2 | Journeyman | 150 | 10 | 15 | Launch |
+| 3 | Expert | 225 | 20 | 30 | Launch |
+| 4 | Artisan | 300 | 35 | 45 | Launch |
+
+The logic level is the character level the logic needs for skill checks up to the rank's cap. A seed whose goal_level is below it leaves that rank and every later one out.
+
+| Item | Kind | Self-found materials |
+|---|---|---|
+| Progressive Alchemy | primary | Herbalism |
+| Progressive Blacksmithing | primary | Mining |
+| Progressive Enchanting | primary | loot |
+| Progressive Engineering | primary | Mining |
+| Progressive Herbalism | primary | supplies Alchemy |
+| Progressive Leatherworking | primary | Skinning |
+| Progressive Mining | primary | supplies Blacksmithing and Engineering |
+| Progressive Skinning | primary | supplies Leatherworking |
+| Progressive Tailoring | primary | loot |
+| Progressive Cooking | secondary | loot |
+| Progressive First Aid | secondary | loot |
+| Progressive Fishing | secondary | - |
+
+"Self-found" means the Auction House, trading, mail and shared banks are all off.
+
+### Other items
+
+| Item | Description |
+|---|---|
+| Traveler's Tale | Filler: it unlocks nothing. It fills the locations left over after the unlocks and the Care Package items. |
+| Care Package | Allows one pull from a main character: up to care_package_gold gold or care_package_stacks stacks of materials, as set in your options (care_packages sets how many are in the pool). The logic never needs it. In the game, /wfap care counts the ones received and used; the tool moves no gold or items. |
+
+<!-- END GENERATED: item reference -->
 
 ## Unconfirmed content
 

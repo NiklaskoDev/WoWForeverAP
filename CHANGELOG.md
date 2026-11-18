@@ -4,6 +4,9 @@ Versions follow `{major}.{minor}.{hotfix}[-prN]` — see `docs/ai/versioning.md`
 Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
+### Added
+- Item descriptions (plan 011): every item has a short description generated from the game data, as the world's item descriptions and as an "Item reference" section of the game guide, kept in sync by `tools/gen_addon_data.py --check`.
+
 ### Fixed
 - The world map overlay draws zone-shaped fills (strips) by default instead of dark rectangles from the zone highlight art.
 
