@@ -1,6 +1,6 @@
 # 013 — Finer map strips, sampled over several frames
 
-Status: approved
+Status: implemented (live-client check pending)
 Type: feature
 Version impact: minor (recommended, D6) — a notable visual and performance improvement of an existing feature plus removal of the internal, never-working "art" path; no format, option or API change. Alternative: hotfix, see D6. No release without the programmer's word.
 
@@ -102,6 +102,8 @@ Resolved 2026-11-18 by the programmer: D1 = the smoother grid, 480 × 321 (about
 - **D6 Version impact.** (a) minor (0.3.0 on release) — "notable performance or internal improvement" plus a removal, fine in 0.x. (b) hotfix (ships as 0.2.1 with 012) — treats the finer grid as a visual fix; the art removal sits awkwardly in a fixes-only release. **Recommend (a)**.
 
 ## Risks / follow-ups
+- Implemented deviations (accepted): grid 480 × 321 per D1; overlay and shapes specs use a small grid in `before_each` for speed, while the real 480 × 321 grid is pinned by the constants test, a synchronous full sample, the split-row test and one overlay case sampled over several frames; the `C_Map = {}` → "sampling" case is unreachable (the map type needs `C_Map.GetMapInfo`), so the reachable variant (only `GetMapInfoAtPosition` missing) is specced instead; `step` also falls back to the row rule when the clock stops returning numbers mid-step.
+- Follow-up if the live check shows a render cost: merge vertically identical runs to cut the ~1,800 strip textures.
 - Per-call cost of `GetMapInfoAtPosition` on Forever is unknown; the budget constants may need tuning after the live check (no code change).
 - ~1,200 colour textures in the worst case; if canvas zoom/pan shows a cost, merging vertically identical runs into one rectangle is a separate follow-up (not planned here).
 - Spec runtime grows (~68,000 fake lookups per overlay case that samples); acceptable, watch `scripts/ci.sh` time.
