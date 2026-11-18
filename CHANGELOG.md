@@ -4,6 +4,8 @@ Versions follow `{major}.{minor}.{hotfix}[-prN]` — see `docs/ai/versioning.md`
 Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
+
+## [0.2.0] - 2026-11-18
 ### Added
 - Option `goal_level` (slider, 10-60, default 60; plan 008): the character level that wins the game. Zones that start above it, and quests, profession tiers (a tier is left out when its trainer level or material level is above it, and every tier after it), bosses, reputations and PvP milestones that need a higher level, are no longer in the seed; the level milestones end at the goal level and raids need it. The default keeps today's seeds. In the addon, zones above the goal level show as "not in your seed" with no lock warning.
 - Options `profession_mode` (`all` default, `solo`, `team`) and `team_size` (2-4, default 2; plan 009): limit the primary professions of a seed to 2 (solo) or 2 per team member, with every selected secondary profession kept. `professions` stays the pool: as many or fewer primaries than the limit are used as listed, more are drawn by the seed, respecting the self-found rule (generation stops with a message when no pick can get its materials). The default mode keeps today's seeds.
