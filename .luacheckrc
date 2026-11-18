@@ -21,6 +21,7 @@ read_globals = {
     "C_PvP",
     "C_Reputation",
     "C_QuestLog",
+    "C_Timer",
     "C_TradeSkillUI",
     "CreateDataProvider",
     "CreateFrame",

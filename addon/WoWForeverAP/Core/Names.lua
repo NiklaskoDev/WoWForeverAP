@@ -31,8 +31,32 @@ function Names.profession(skillLineId)
     return profession and profession.name or ns.L.PROFESSION_FMT:format(skillLineId)
 end
 
+-- Quests we asked the client to load this session (not saved). A failed load is not retried, so a quest the
+-- client cannot answer for never causes a request loop.
+local requested = {}
+
+--- The client only knows titles of quests it has cached; asks it to load the others, once per quest.
+--- The answer arrives later as QUEST_DATA_LOAD_RESULT.
+local function requestQuestData(questId)
+    if requested[questId] then
+        return
+    end
+    requested[questId] = true
+    if C_QuestLog then
+        tryCall(C_QuestLog.RequestLoadQuestByID, questId)
+    end
+end
+
+--- True once a title for this quest was missing and its load was requested this session.
+function Names.isRequested(questId)
+    return requested[questId] == true
+end
+
 function Names.quest(questId)
     local title = C_QuestLog and present(tryCall(C_QuestLog.GetTitleForQuestID, questId))
+    if not title then
+        requestQuestData(questId)
+    end
     return title or ns.L.QUEST_FMT:format(questId)
 end
 

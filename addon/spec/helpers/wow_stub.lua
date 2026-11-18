@@ -6,7 +6,7 @@ local FAKE_GLOBALS = {
     "GetLocale", "time", "UnitGUID", "UnitName", "UnitLevel", "UnitFactionGroup", "UnitClass", "GetBuildInfo",
     "CreateFrame", "geterrorhandler", "StaticPopup_Show", "StaticPopupDialogs", "SlashCmdList", "SLASH_WFAP1",
     "C_Map", "C_MapExplorationInfo", "C_PvP", "C_Reputation", "GetInstanceInfo", "GetPVPLifetimeStats",
-    "GetBattlefieldWinner", "C_QuestLog", "C_TradeSkillUI", "GetProfessions", "GetProfessionInfo",
+    "GetBattlefieldWinner", "C_QuestLog", "C_TradeSkillUI", "C_Timer", "GetProfessions", "GetProfessionInfo",
     "Enum", "C_EventUtils", "UIErrorsFrame", "RaidWarningUtil", "RaidNotice_AddMessage", "RaidWarningFrame",
     "UIParent", "GameTooltip", "UISpecialFrames", "ButtonFrameTemplate_HidePortrait", "PanelTemplates_SetNumTabs",
     "PanelTemplates_SetTab", "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider", "Settings",
@@ -131,8 +131,9 @@ function Frame:IsTruncated()
     return self.truncated == true
 end
 
-function Frame:SetDataProvider(provider)
+function Frame:SetDataProvider(provider, retainScrollPosition)
     self.dataProvider = provider
+    self.retainScrollPosition = retainScrollPosition
 end
 
 function Frame:CreateFontString(_, _, font)

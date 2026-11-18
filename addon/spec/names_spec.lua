@@ -51,6 +51,50 @@ describe("Names and Notify", function()
             assert.equals("A Threat Within", ns.Names.quest(783))
             assert.equals("Quest 5", ns.Names.quest(5))
         end)
+
+        it("asks the game once per quest to load an unknown title and shows the numbered label meanwhile", function()
+            local requests = {}
+            _G.C_QuestLog = {
+                GetTitleForQuestID = function() return nil end,
+                RequestLoadQuestByID = function(id) requests[#requests + 1] = id end,
+            }
+            assert.equals("Quest 784", ns.Names.quest(784))
+            assert.equals("Quest 784", ns.Names.quest(784))
+            assert.same({ 784 }, requests)
+            assert.equals("Quest 788", ns.Names.quest(788))
+            assert.same({ 784, 788 }, requests)
+        end)
+
+        it("does not request a quest whose title is known", function()
+            local requested = false
+            _G.C_QuestLog = {
+                GetTitleForQuestID = function() return "A Threat Within" end,
+                RequestLoadQuestByID = function() requested = true end,
+            }
+            assert.equals("A Threat Within", ns.Names.quest(783))
+            assert.is_false(requested)
+            assert.is_false(ns.Names.isRequested(783))
+        end)
+
+        it("keeps the numbered label without the request API and when the request raises an error", function()
+            _G.C_QuestLog = { GetTitleForQuestID = function() return nil end }
+            assert.has_no.errors(function() assert.equals("Quest 5", ns.Names.quest(5)) end)
+            _G.C_QuestLog.RequestLoadQuestByID = function() error("restricted") end
+            assert.has_no.errors(function() assert.equals("Quest 6", ns.Names.quest(6)) end)
+            _G.C_QuestLog = nil
+            assert.has_no.errors(function() assert.equals("Quest 7", ns.Names.quest(7)) end)
+        end)
+
+        it("reports which quests were requested this session", function()
+            _G.C_QuestLog = {
+                GetTitleForQuestID = function() return nil end,
+                RequestLoadQuestByID = function() end,
+            }
+            assert.is_false(ns.Names.isRequested(784))
+            ns.Names.quest(784)
+            assert.is_true(ns.Names.isRequested(784))
+            assert.is_false(ns.Names.isRequested(785))
+        end)
     end)
 
     describe("locations", function()
