@@ -4,6 +4,8 @@ Versions follow `{major}.{minor}.{hotfix}[-prN]` — see `docs/ai/versioning.md`
 Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
+
+## [0.3.0] - 2026-11-18
 ### Added
 - Item descriptions (plan 011): every item has a short description generated from the game data, as the world's item descriptions and as an "Item reference" section of the game guide, kept in sync by `tools/gen_addon_data.py --check`.
 
