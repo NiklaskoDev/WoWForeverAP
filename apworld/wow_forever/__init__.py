@@ -116,7 +116,7 @@ class WoWForeverWorld(World):
         if chosen == RANDOM_START_ZONE:
             if not start_zones:
                 raise OptionError(f"{self.player_name}: no start zone exists for faction {self.faction} "
-                                  "in this content_release")
+                                  "in this content_release and below the goal level")
             return self.random.choice(sorted(start_zones, key=lambda zone: zone.ui_map_id))
         zone = self.data.zones_by_id[chosen]
         if zone.faction not in (self.faction, "both"):
@@ -124,6 +124,9 @@ class WoWForeverWorld(World):
                               f"but the faction is {self.faction}")
         if zone.release > self.content_release:
             raise OptionError(f"{self.player_name}: start zone {zone.name} is not part of the chosen content_release")
+        if zone.min_level > self.goal_level:
+            raise OptionError(f"{self.player_name}: start zone {zone.name} starts above the goal level "
+                              f"{self.goal_level}")
         return zone
 
     def create_regions(self) -> None:

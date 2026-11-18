@@ -1,8 +1,11 @@
 """The goal_level option (plan 008): the level cap that wins the game and prunes everything above it."""
 import hashlib
 import unittest
+from unittest import mock
 
+import worlds.wow_forever as wow_world
 from BaseClasses import CollectionState
+from Options import OptionError
 from test.bases import WorldTestBase
 from worlds.wow_forever import locations, options
 from worlds.wow_forever.data_loader import load_game_data, parse_game_data, read_shipped_files
@@ -129,6 +132,49 @@ class TestLowestGoalLevel(GoalWorldBase):
                 self.assertEqual(len(self.pool_names()), len(self.location_names()))
                 self.assertIn("Reach Level 10", self.location_names())
                 self.assertNotIn("Reach Level 11", self.location_names())
+
+
+def data_with_raised_start_zones(*rows: str):
+    """Shipped data where the named start zone rows start at level 20 instead of 1."""
+    files = read_shipped_files()
+    for row in rows:
+        assert row in files["zones.csv"], f"fixture drift: {row}"
+        raised = row.replace(",1,10,", ",20,30,").replace(",1,12,", ",20,30,")
+        files["zones.csv"] = files["zones.csv"].replace(row, raised)
+    return parse_game_data(files)
+
+
+class TestStartZoneAboveTheGoal(GoalWorldBase):
+    DUN_MOROGH = "1426,Dun Morogh,1,10,alliance,1,1"
+    OTHER_ALLIANCE_STARTS = ("1429,Elwynn Forest,1,10,alliance,1,1", "1438,Teldrassil,1,10,alliance,1,1",
+                             "2521,Zephra's Isle,1,12,both,1,1")
+
+    def generate_with(self, data, **world_options) -> None:
+        with mock.patch.object(wow_world, "load_game_data", return_value=data):
+            self.generate(faction="alliance", **world_options)
+
+    def test_an_explicit_start_zone_above_the_goal_is_an_option_error_naming_the_zone(self):
+        data = data_with_raised_start_zones(self.DUN_MOROGH)
+        with self.assertRaises(OptionError) as error:
+            self.generate_with(data, start_zone="dun_morogh", goal_level=10)
+        self.assertIn("start zone Dun Morogh starts above the goal level 10", str(error.exception))
+
+    def test_the_same_start_zone_is_fine_when_the_goal_reaches_it(self):
+        self.generate_with(data_with_raised_start_zones(self.DUN_MOROGH), start_zone="dun_morogh", goal_level=20)
+        self.assertEqual(self.world.start_zone.name, "Dun Morogh")
+
+    def test_faction_random_never_picks_a_start_zone_above_the_goal(self):
+        data = data_with_raised_start_zones(self.DUN_MOROGH)
+        for seed in range(12):
+            with self.subTest(seed=seed):
+                self.generate_with(data, seed=seed, goal_level=10)
+                self.assertNotEqual(self.world.start_zone.name, "Dun Morogh")
+
+    def test_faction_random_with_no_start_zone_left_is_an_option_error(self):
+        data = data_with_raised_start_zones(self.DUN_MOROGH, *self.OTHER_ALLIANCE_STARTS)
+        with self.assertRaises(OptionError) as error:
+            self.generate_with(data, goal_level=10)
+        self.assertIn("no start zone exists", str(error.exception))
 
 
 class TestGoalRule(GoalWorldBase):
