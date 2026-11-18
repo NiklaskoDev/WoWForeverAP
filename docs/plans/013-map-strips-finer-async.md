@@ -1,6 +1,6 @@
 # 013 — Finer map strips, sampled over several frames
 
-Status: draft
+Status: approved
 Type: feature
 Version impact: minor (recommended, D6) — a notable visual and performance improvement of an existing feature plus removal of the internal, never-working "art" path; no format, option or API change. Alternative: hotfix, see D6. No release without the programmer's word.
 
@@ -93,6 +93,7 @@ Estimate (to confirm live): runs scale with rows, not columns. A continent with 
 `style_spec.lua`: drop the `MAP_SHAPE_SOURCE` line (D5 a).
 
 ## Decisions for the programmer
+Resolved 2026-11-18 by the programmer: D1 = the smoother grid, 480 × 321 (about 154,000 lookups per continent) — NOT the recommended 320 × 214; every size, call-count, texture-count and timing figure in this plan scales accordingly and the coder uses 480 × 321; D2 nothing drawn until a continent is finished; D3 4 ms budget with the 4-row fallback; D4 the map's data-provider OnUpdate drives the steps; D5 remove the unused art path in this plan; D6 version impact minor, shipped as 0.3.0 together with plan 011 (release only on the programmer's word).
 - **D1 Grid size.** (a) 320 × 214 — 2×, ~68,000 calls, ~2× textures (up to ~1,200 per continent). (b) 240 × 160 — 1.5×, ~38,000 calls, ~1.5× textures, steps still visible. (c) 480 × 321 — 3×, ~154,000 calls, ~3× textures, 2–4 s until fills appear. **Recommend (a)**: the requested doubling; steps of ~3 px on a 1,000 px canvas.
 - **D2 What the map shows while sampling (first open per continent and session).** (a) Nothing until done, then all fills at once. (b) Partial: draw rows as they finish (fills grow top to bottom; needs redraw per frame and texture churn). (c) Old cache — there is none in a fresh session, and sampling the coarse grid first is the 17,000-call hitch we remove. **Recommend (a)**: simplest, no flicker, under ~1.5 s by the estimate.
 - **D3 Frame budget.** (a) Time budget `FRAME_BUDGET_MS = 4` per frame via `debugprofilestop`, checked after each row (320 calls), at least one row; fixed 4 rows when the clock is missing. (b) Count only: fixed 4 rows (1,280 calls) per frame. **Recommend (a)**: adapts to the unknown per-call cost on Forever hardware; (b) is simpler but may hitch on slow machines or be needlessly slow on fast ones.
