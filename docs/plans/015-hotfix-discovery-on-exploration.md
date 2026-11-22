@@ -1,6 +1,6 @@
 # 015 — hotfix: discovery checks on first exploration
 
-Status: draft
+Status: implemented (live-client check pending)
 Version: 0.3.1 → 0.3.2
 Gate (fix only · no API/format change · no migration or new dependency · ≤ 3 source files · no critical decision): holds (1 source file plus CHANGELOG; no SavedVariables, data-format or generated-data change)
 
