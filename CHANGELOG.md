@@ -5,6 +5,10 @@ Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-22
+### Fixed
+- Discovering a new map area records its "Discover <zone>: <area>" check right away; before, it only counted after leaving and re-entering the area.
+
 ## [0.3.1] - 2026-11-18
 ### Fixed
 - Checks tab shows quest names instead of "Quest <id>" for quests the character has never seen; names appear once the game has loaded them.

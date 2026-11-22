@@ -1,5 +1,6 @@
--- Area discovery: ZONE_CHANGED* becomes "Discover <area>" checks for the map-exploration areas the player stands
--- in. The read function is shared with dev capture mode (Capture.lua).
+-- Area discovery: ZONE_CHANGED* and MAP_EXPLORATION_UPDATED become "Discover <area>" checks for the map-exploration
+-- areas the player stands in. The zone event fires before the client marks a new area explored, which the
+-- exploration event reports afterwards. The read function is shared with dev capture mode (Capture.lua).
 local _, ns = ...
 
 local Discovery = {}
@@ -52,3 +53,4 @@ end
 for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }) do
     ns.Events.register(event, Discovery.scan)
 end
+ns.Events.tryRegister("MAP_EXPLORATION_UPDATED", Discovery.scan)
