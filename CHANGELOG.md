@@ -4,6 +4,8 @@ Versions follow `{major}.{minor}.{hotfix}[-prN]` — see `docs/ai/versioning.md`
 Sections per version: Added, Changed, Fixed, Removed, Security.
 
 ## [Unreleased]
+
+## [0.3.2] - 2026-11-22
 ### Fixed
 - Discovering a new map area records its "Discover <zone>: <area>" check right away; before, it only counted after leaving and re-entering the area.
 
